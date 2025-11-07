@@ -1,39 +1,39 @@
 # Документация по базе данных
-**Проект:** `JiraCopy` (Исправить)  
-**СУБД:** `PostgreSQL`
-**Версия:** `1.0`
-**Ответственный за документацию:** `Кривенышев Евгений (Ziragon)`
-**ERD-диаграмма:** `DB_diagram.drawio (модули: Users, Board, Issues, Deadlines, Dashboard, Notifications)`
+- **Проект:** `JiraCopy` (Исправить)  
+- **СУБД:** `PostgreSQL`
+- **Версия:** `1.0.1`
+- **Ответственный за документацию:** `Кривенышев Евгений (Ziragon)`
+- **ERD-диаграмма:** `DB_diagram.drawio (модули: Users, Board, Issues, Deadlines, Dashboard, Notifications)`
 
 
 ## Серверная часть (Backend)
 
 #### Язык и фреймворк:
-**1. Java с Spring Boot**
-**2. .NET C#**
-(Выбор будет зависеть от назначенного разработчика)
+1. **Java с Spring Boot**
+2. **.NET C#**
+- (Выбор будет зависеть от назначенного разработчика)
 
 #### Архитектура: Микросервисная
 **Каждый модуль (Users, Board, Issues, Deadlines, Dashboard, Notifications) — отдельный сервис**
 
 
 ## Нуждается в реализации или доработке:
-**1. Доработка альтернативной авторизации (Google/GitHub)**
-**2. Отсутствуют таблицы для файлов/вложений.**
-**3. Кастомные статусы и теги для каждого проекта.**
-**4. Отсутствуют типы задач (Bug, task, story, epic).**
+1. **Доработка альтернативной авторизации (Google/GitHub)**
+2. **Отсутствуют таблицы для файлов/вложений.**
+3. **Кастомные статусы и теги для каждого проекта.**
+4. **Отсутствуют типы задач (Bug, task, story, epic).**
 
 
 ## Общая информация о модулях БД
-## (Каждый модуль соответствует блоку в .drawio. Связи визуализированы стрелками)
-## (В скобках указано название соответствующего блока в файле .drawio)
+#### (Каждый модуль соответствует блоку в .drawio. Связи визуализированы стрелками)
+#### (В скобках указано название соответствующего блока в файле .drawio)
 
-**Модуль пользователей (Users) — Аутентификация, профили, аватары, токены.**
-**Модуль проектов (Board) — Проекты, участники, роли, права доступа.**
-**Модуль задач (Issues) — Задачи, назначение, комментарии, иерархия.**
-**Модуль спринтов (Deadlines) — Спринты, привязка задач.**
-**Модуль аналитики (Dashboard) — Снапшоты, логи действий, метрики.**
-**Модуль уведомлений (Notifications) — Генерация, доставка, предпочтения.**
+- **Модуль пользователей (Users) — Аутентификация, профили, аватары, токены.**
+- **Модуль проектов (Board) — Проекты, участники, роли, права доступа.**
+- **Модуль задач (Issues) — Задачи, назначение, комментарии, иерархия.**
+- **Модуль спринтов (Deadlines) — Спринты, привязка задач.**
+- **Модуль аналитики (Dashboard) — Снапшоты, логи действий, метрики.**
+- **Модуль уведомлений (Notifications) — Генерация, доставка, предпочтения.**
 
 
 # Подробное описание модулей БД
@@ -41,93 +41,88 @@
 #### Назначение: Полный цикл работы с аккаунтами: регистрация (email/password + OAuth), аутентификация (JWT), управление сессиями (refresh-токены), профили и аватары.
 
 #### Сущности и краткая информация: 
-**Users — Основная информация о пользователе (для аутентификации).**
-**User_Profiles — Дополнительные данные профиля (имя, био, настройки).**
-**Avatars — Метаданные файла аватара (URL, тип, размер).**
-**Tokens — Refresh-токены для сессий.**
-    ...
+- **Users — Основная информация о пользователе (для аутентификации).**
+- **User_Profiles — Дополнительные данные профиля (имя, био, настройки).**
+- **Avatars — Метаданные файла аватара (URL, тип, размер).**
+- **Tokens — Refresh-токены для сессий.**
 
-#### Связи (В скобках указывается тип связи и зависимое поле из 1 сущности):
-**User_Profiles -> Users (1:1 - User_Id)**
-**Users -> Avatars (1:1 - Avatar_Id)**
-**Token -> Users (N:1 - User_Id)**
+- #### Связи (В скобках указывается тип связи и зависимое поле из 1 сущности):
+- **User_Profiles -> Users (1:1 - User_Id)**
+- **Users -> Avatars (1:1 - Avatar_Id)**
+- **Token -> Users (N:1 - User_Id)**
 
 
 ## 2. Модуль проектов (Board):
 #### Назначение: Управление проектами (создание, архивация), участниками, кастомными ролями и детализированными правами для каждой роли.
 
 #### Сущности:
-**Projects — Основная информация о проекте (название, владелец, статус).**
-**Project_Members: Участники проекта и их роли.**
-**Project_Roles — Роли в рамках конкретного проекта.**
-**Role_Permissions — Назначенные права для роли.**
-**Project_Permissions — Доступные права в проекте (шаблоны).**
+- **Projects — Основная информация о проекте (название, владелец, статус).**
+- **Project_Members: Участники проекта и их роли.**
+- **Project_Roles — Роли в рамках конкретного проекта.**
+- **Role_Permissions — Назначенные права для роли.**
+- **Project_Permissions — Доступные права в проекте (шаблоны).**
 
 #### Связи:
-**Projects -> Users (N:1 - Owner_Id)**
-**Project_Members -> Users (1:1 - User_Id)**
-**Project_Members -> Project (1:1 - Project_Id)**
-**Project_Roles -> Project (N:1 - Project_Id)**
-**Role_Permissions -> Project_Roles (N:1 - Role_Id)**
-**Role_Permissions -> Project_Permissions (N:1 - Permission_Id)**
+- **Projects -> Users (N:1 - Owner_Id)**
+- **Project_Members -> Users (1:1 - User_Id)**
+- **Project_Members -> Project (1:1 - Project_Id)**
+- **Project_Roles -> Project (N:1 - Project_Id)**
+- **Role_Permissions -> Project_Roles (N:1 - Role_Id)**
+- **Role_Permissions -> Project_Permissions (N:1 - Permission_Id)**
 
 
 ## 3. Модуль задач (Issues):
 #### Назначение: Полный жизненный цикл задач: создание, назначение, комментарии, вложения, иерархия (задачи -> подзадачи).
 
 #### Сущности:
-**Issues — Основная информация о задаче (название, описание, статус, приоритет).**
-**Issue_Assignees — Назначенные исполнители.**
-**Issue_Comments — Комментарии к задаче (с возможностью прикрепления файлов).**
+- **Issues — Основная информация о задаче (название, описание, статус, приоритет).**
+- **Issue_Assignees — Назначенные исполнители.**
+- **Issue_Comments — Комментарии к задаче (с возможностью прикрепления файлов).**
 
 #### Связи:
-**Issues -> Project (N:1 - Project_Id)**
-**Issues -> Issues (N:1 - Parent_Issue_Id)**
-**Issues -> Users (N:1 - Creator_Id)**
-**Issue_Assignees -> Issues (N:1 - Issue_Id)**
-**Issue_Assignees -> Users (N:1 - User_Id)**
-**Issue_Assignees -> Users (N:1 - Assigner_Id)**
-**Issue_Comments -> Issues (N:1 - Issue_Id)**
-**Issue_Comments -> Users (N:1 - User_Id)**
+- **Issues -> Project (N:1 - Project_Id)**
+- **Issues -> Issues (N:1 - Parent_Issue_Id)**
+- **Issues -> Users (N:1 - Creator_Id)**
+- **Issue_Assignees -> Issues (N:1 - Issue_Id)**
+- **Issue_Assignees -> Users (N:1 - User_Id)**
+- **Issue_Assignees -> Users (N:1 - Assigner_Id)**
+- **Issue_Comments -> Issues (N:1 - Issue_Id)**
+- **Issue_Comments -> Users (N:1 - User_Id)**
 
 
 ## 4. Модуль спринтов (Deadlines):
 #### Назначение: Планирование спринтов, привязка задач, отслеживание прогресса.
 
 #### Сущности:
-**Sprints — Информация о спринте (название, даты начала/окончания, цель).**
-**Sprint_Issues — Задачи в спринте (связующая таблица).**
+- **Sprints — Информация о спринте (название, даты начала/окончания, цель).**
+- **Sprint_Issues — Задачи в спринте (связующая таблица).**
 
 #### Зависимости:
-**Sprints -> Projects (N:1 - Project_Id)**
-**Deadlined_Issues -> Issues (N:1 - Issue_Id)**
-**Deadlined_Issues -> Sprints (N:1 - Sprint_Id)**
+- **Sprints -> Projects (N:1 - Project_Id)**
+- **Deadlined_Issues -> Issues (N:1 - Issue_Id)**
+- **Deadlined_Issues -> Sprints (N:1 - Sprint_Id)**
 
 
 ## 5. Модуль аналитики (Dashboard) (WIP):
 #### Логирование событий, снапшоты метрик, дашборд-аналитика.
 
 #### Сущности:
-**Dashboard_Snapshots — Снапшоты состояния проекта.**
-**Activity_Logs — Логи действий (события из системы прав).**
-    ...
+- **Dashboard_Snapshots — Снапшоты состояния проекта.**
+- **Activity_Logs — Логи действий (события из системы прав).**
 
 #### Зависимости:
-**Dashboard_Snapshots -> Project (N:1 - Project_Id)**
-**Activity_Logs -> Project (N:1 - Project_Id)**
-**Activity_Logs -> Users (N:1 - User_Id)**
-    ...
+- **Dashboard_Snapshots -> Project (N:1 - Project_Id)**
+- **Activity_Logs -> Project (N:1 - Project_Id)**
+- **Activity_Logs -> Users (N:1 - User_Id)**
 
 
 ## 6. Модуль уведомлений (Notifications) (WIP):
 #### Генерация push/email/in-app уведомлений по событиям, управление подписками.
 
 #### Сущности:
-**Notifications — Уведомления (генерируются при событиях).**
-**User_Notification_Preferences — Настройки уведомлений по типам событий.**
-    ...
+- **Notifications — Уведомления (генерируются при событиях).**
+- **User_Notification_Preferences — Настройки уведомлений по типам событий.**
 
 #### Зависимости:
-**Notifications -> Users (N:1 - User_Id)**
-**User_Notification_Preferences -> Users (N:1 - User_Id)**
-    ...
+- **Notifications -> Users (N:1 - User_Id)**
+- **User_Notification_Preferences -> Users (N:1 - User_Id)**
