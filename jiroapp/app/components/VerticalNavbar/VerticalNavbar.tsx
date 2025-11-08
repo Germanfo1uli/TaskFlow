@@ -4,20 +4,30 @@ import { useState } from 'react'
 import { FaTasks, FaSearch, FaPlus, FaQuestion, FaUserCircle, FaBell } from 'react-icons/fa'
 import NotificationModal from './Notification/NotificationModal'
 import SearchPanel from './Search/SearchPanel'
+import HelpModal from './Help/HelpModal'
 import styles from './VerticalNavbar.module.css'
 
 const VerticalNavbar = () => {
     const [isNotificationOpen, setIsNotificationOpen] = useState(false)
     const [isSearchOpen, setIsSearchOpen] = useState(false)
+    const [isHelpOpen, setIsHelpOpen] = useState(false)
 
     const handleNotificationClick = () => {
         setIsNotificationOpen(!isNotificationOpen)
         setIsSearchOpen(false)
+        setIsHelpOpen(false)
     }
 
     const handleSearchClick = () => {
         setIsSearchOpen(!isSearchOpen)
         setIsNotificationOpen(false)
+        setIsHelpOpen(false)
+    }
+
+    const handleHelpClick = () => {
+        setIsHelpOpen(!isHelpOpen)
+        setIsNotificationOpen(false)
+        setIsSearchOpen(false)
     }
 
     const closeNotification = () => {
@@ -26,6 +36,10 @@ const VerticalNavbar = () => {
 
     const closeSearch = () => {
         setIsSearchOpen(false)
+    }
+
+    const closeHelp = () => {
+        setIsHelpOpen(false)
     }
 
     return (
@@ -60,7 +74,11 @@ const VerticalNavbar = () => {
                 </div>
 
                 <div className={styles.navBottom}>
-                    <button className={styles.navButton} aria-label="Помощь">
+                    <button
+                        className={`${styles.navButton} ${isHelpOpen ? styles.active : ''}`}
+                        aria-label="Помощь"
+                        onClick={handleHelpClick}
+                    >
                         <FaQuestion className={styles.navButtonIcon} />
                     </button>
 
@@ -74,6 +92,7 @@ const VerticalNavbar = () => {
 
             {isNotificationOpen && <NotificationModal onClose={closeNotification} />}
             {isSearchOpen && <SearchPanel onClose={closeSearch} />}
+            {isHelpOpen && <HelpModal onClose={closeHelp} />}
         </>
     )
 }
