@@ -114,6 +114,10 @@
     transform: scale(1.2);
 }
 
+.notificationButton {
+    position: relative;
+}
+
 .navBottom {
     display: flex;
     flex-direction: column;
@@ -170,7 +174,6 @@
     transform: scale(1.1);
 }
 
-/* Адаптивность */
 @media (max-width: 1024px) {
     .verticalNavbar {
         width: 70px;
