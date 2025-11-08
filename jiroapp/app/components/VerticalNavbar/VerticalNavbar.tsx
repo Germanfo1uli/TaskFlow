@@ -3,17 +3,29 @@
 import { useState } from 'react'
 import { FaTasks, FaSearch, FaPlus, FaQuestion, FaUserCircle, FaBell } from 'react-icons/fa'
 import NotificationModal from './Notification/NotificationModal'
+import SearchPanel from './Search/SearchPanel'
 import styles from './VerticalNavbar.module.css'
 
 const VerticalNavbar = () => {
     const [isNotificationOpen, setIsNotificationOpen] = useState(false)
+    const [isSearchOpen, setIsSearchOpen] = useState(false)
 
     const handleNotificationClick = () => {
         setIsNotificationOpen(!isNotificationOpen)
+        setIsSearchOpen(false)
+    }
+
+    const handleSearchClick = () => {
+        setIsSearchOpen(!isSearchOpen)
+        setIsNotificationOpen(false)
     }
 
     const closeNotification = () => {
         setIsNotificationOpen(false)
+    }
+
+    const closeSearch = () => {
+        setIsSearchOpen(false)
     }
 
     return (
@@ -25,7 +37,11 @@ const VerticalNavbar = () => {
                     </div>
 
                     <div className={styles.navActions}>
-                        <button className={styles.navButton} aria-label="Поиск">
+                        <button
+                            className={`${styles.navButton} ${isSearchOpen ? styles.active : ''}`}
+                            aria-label="Поиск"
+                            onClick={handleSearchClick}
+                        >
                             <FaSearch className={styles.navButtonIcon} />
                         </button>
 
@@ -34,7 +50,7 @@ const VerticalNavbar = () => {
                         </button>
 
                         <button
-                            className={`${styles.navButton} ${styles.notificationButton}`}
+                            className={`${styles.navButton} ${styles.notificationButton} ${isNotificationOpen ? styles.active : ''}`}
                             aria-label="Уведомления"
                             onClick={handleNotificationClick}
                         >
@@ -57,6 +73,7 @@ const VerticalNavbar = () => {
             </div>
 
             {isNotificationOpen && <NotificationModal onClose={closeNotification} />}
+            {isSearchOpen && <SearchPanel onClose={closeSearch} />}
         </>
     )
 }
