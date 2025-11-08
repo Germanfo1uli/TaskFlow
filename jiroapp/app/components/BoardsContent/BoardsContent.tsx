@@ -1,19 +1,12 @@
 'use client'
 
-import { FaSearch, FaUsers, FaPlus, FaTrello, FaClock, FaCheckCircle, FaRocket, FaStar, FaLightbulb } from 'react-icons/fa'
+import { FaSmile, FaPlus, FaTrello, FaClock, FaCheckCircle, FaUsers, FaStar, FaLightbulb } from 'react-icons/fa'
 import styles from './BoardsContent.module.css'
 
 const BoardsContent = () => {
     return (
         <div className={styles.boardsContent}>
             <div className={styles.backgroundElements}>
-                <div className={`${styles.floatingElement} ${styles.element1}`}>✦</div>
-                <div className={`${styles.floatingElement} ${styles.element2}`}>❖</div>
-                <div className={`${styles.floatingElement} ${styles.element3}`}>◈</div>
-                <div className={`${styles.floatingElement} ${styles.element4}`}>✦</div>
-                <div className={`${styles.floatingElement} ${styles.element5}`}>❖</div>
-                <div className={styles.patternDots}></div>
-                <div className={styles.patternLines}></div>
                 <div className={`${styles.glowSpot} ${styles.spot1}`}></div>
                 <div className={`${styles.glowSpot} ${styles.spot2}`}></div>
             </div>
@@ -21,28 +14,10 @@ const BoardsContent = () => {
             <div className={styles.boardsHeader}>
                 <div className={styles.headerContent}>
                     <div className={styles.pageTitleSection}>
-                        <div className={styles.titleDecoration}>
-                            <div className={styles.decorationLine}></div>
-                            <h1 className={styles.pageTitle}>Главная панель</h1>
-                            <div className={styles.decorationLine}></div>
-                        </div>
-                        <p className={styles.pageSubtitle}>Приступим к работе?</p>
-                    </div>
-
-                    <div className={styles.controlsSection}>
-                        <div className={styles.searchControl}>
-                            <FaSearch className={styles.controlIcon} />
-                            <input
-                                type="text"
-                                placeholder="Поиск проектов, задач..."
-                                className={styles.searchInput}
-                            />
-                        </div>
-
-                        <button className={styles.createBoardBtn}>
-                            <FaPlus className={styles.btnIcon} />
-                            Найти команду
-                        </button>
+                        <h1 className={styles.pageTitle}>Главная панель</h1>
+                        <p className={styles.pageSubtitle}>
+                            Управляйте проектами и отслеживайте прогресс в TaskFlow
+                        </p>
                     </div>
                 </div>
             </div>
@@ -104,18 +79,11 @@ const BoardsContent = () => {
 
                 <div className={styles.contentGrid}>
                     <div className={styles.welcomeCard}>
-                        <div className={styles.cardDecoration}>
-                            <div className={`${styles.cornerDecoration} ${styles.cornerTl}`}>◣</div>
-                            <div className={`${styles.cornerDecoration} ${styles.cornerTr}`}>◢</div>
-                            <div className={`${styles.cornerDecoration} ${styles.cornerBl}`}>◤</div>
-                            <div className={`${styles.cornerDecoration} ${styles.cornerBr}`}>◥</div>
-                        </div>
-
                         <div className={styles.welcomeContent}>
                             <div className={styles.welcomeIconContainer}>
                                 <div className={styles.welcomeIconGlow}></div>
                                 <div className={styles.welcomeIcon}>
-                                    <FaRocket className={styles.rocketIcon} />
+                                    <FaSmile className={styles.smileIcon} />
                                 </div>
                             </div>
 
@@ -124,9 +92,6 @@ const BoardsContent = () => {
                                     Добро пожаловать в
                                     <span className={styles.titleAccent}> TaskFlow</span>
                                 </h2>
-                                <p className={styles.welcomeSubtitle}>
-                                    Готовы к продуктивной работе?
-                                </p>
                                 <p className={styles.welcomeDescription}>
                                     Откройте новые возможности для управления проектами.
                                     Создавайте, организуйте и достигайте целей вместе с вашей командой.
@@ -168,7 +133,7 @@ const BoardsContent = () => {
                         <div className={styles.actionCards}>
                             <div className={styles.actionCard}>
                                 <div className={styles.actionIconWrapper}>
-                                    <FaTrello />
+                                    <FaPlus />
                                 </div>
                                 <div className={styles.actionContent}>
                                     <h4>Создать доску</h4>
@@ -178,7 +143,7 @@ const BoardsContent = () => {
 
                             <div className={styles.actionCard}>
                                 <div className={styles.actionIconWrapper}>
-                                    <FaUsers />
+                                    <FaPlus />
                                 </div>
                                 <div className={styles.actionContent}>
                                     <h4>Пригласить команду</h4>
@@ -188,7 +153,7 @@ const BoardsContent = () => {
 
                             <div className={styles.actionCard}>
                                 <div className={styles.actionIconWrapper}>
-                                    <FaClock />
+                                    <FaPlus />
                                 </div>
                                 <div className={styles.actionContent}>
                                     <h4>Настроить сроки</h4>

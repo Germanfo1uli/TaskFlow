@@ -17,46 +17,11 @@
     z-index: 0;
 }
 
-.floatingElement {
-    position: absolute;
-    font-size: 1.2rem;
-    color: rgba(61, 107, 179, 0.08);
-    animation: float 6s ease-in-out infinite;
-}
-
-.element1 { top: 10%; left: 3%; animation-delay: 0s; }
-.element2 { top: 75%; right: 5%; animation-delay: 2s; }
-.element3 { bottom: 15%; left: 10%; animation-delay: 4s; }
-.element4 { top: 20%; right: 8%; animation-delay: 1s; }
-.element5 { bottom: 65%; left: 5%; animation-delay: 3s; }
-
-.patternDots {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: radial-gradient(rgba(61, 107, 179, 0.04) 1px, transparent 1px);
-    background-size: 30px 30px;
-}
-
-.patternLines {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image:
-            linear-gradient(90deg, transparent 99%, rgba(61, 107, 179, 0.02) 99%),
-            linear-gradient(transparent 99%, rgba(61, 107, 179, 0.02) 99%);
-    background-size: 40px 40px;
-}
-
 .glowSpot {
     position: absolute;
     border-radius: 50%;
     filter: blur(40px);
-    opacity: 0.2;
+    opacity: 0.15;
 }
 
 .spot1 {
@@ -75,47 +40,28 @@
     background: linear-gradient(135deg, #4facfe, #3d6bb3);
 }
 
-@keyframes float {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-15px) rotate(180deg); }
-}
-
 .boardsHeader {
     position: relative;
     z-index: 2;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
 }
 
 .headerContent {
     max-width: 1200px;
     margin: 0 auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1rem;
 }
 
 .pageTitleSection {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-}
-
-.titleDecoration {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.decorationLine {
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, #3d6bb3, transparent);
-    opacity: 0.4;
+    text-align: left;
+    max-width: 100%;
+    margin: 0;
 }
 
 .pageTitle {
-    font-size: 2.2rem;
+    font-size: 2.5rem;
     font-weight: 800;
     color: #1e293b;
     margin: 0;
@@ -123,98 +69,16 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    line-height: 1.2;
 }
 
 .pageSubtitle {
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: #64748b;
     margin: 0;
     font-weight: 500;
-    text-align: center;
-    font-style: italic;
-}
-
-.controlsSection {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-}
-
-.searchControl {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.6rem 1rem;
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(61, 107, 179, 0.15);
-    border-radius: 12px;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(61, 107, 179, 0.08);
-}
-
-.searchControl:hover {
-    border-color: rgba(61, 107, 179, 0.3);
-    box-shadow: 0 4px 12px rgba(61, 107, 179, 0.12);
-    transform: translateY(-1px);
-}
-
-.controlIcon {
-    font-size: 0.9rem;
-    color: #3d6bb3;
-    flex-shrink: 0;
-}
-
-.searchInput {
-    border: none;
-    background: transparent;
-    color: #1e293b;
-    font-size: 0.9rem;
-    font-weight: 500;
-    outline: none;
-    width: 180px;
-}
-
-.searchInput::placeholder {
-    color: #94a3b8;
-}
-
-.createBoardBtn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.6rem 1.2rem;
-    background: linear-gradient(135deg, #3d6bb3 0%, #4facfe 100%);
-    border: none;
-    border-radius: 12px;
-    color: white;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 10px rgba(61, 107, 179, 0.25);
-    position: relative;
-    overflow: hidden;
-    font-size: 0.9rem;
-}
-
-.createBoardBtn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: left 0.5s ease;
-}
-
-.createBoardBtn:hover::before {
-    left: 100%;
-}
-
-.createBoardBtn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(61, 107, 179, 0.35);
+    line-height: 1.4;
+    max-width: 600px;
 }
 
 .boardsMainContent {
@@ -392,8 +256,8 @@
     box-shadow: 0 6px 20px rgba(61, 107, 179, 0.3);
 }
 
-.rocketIcon {
-    font-size: 1.8rem;
+.smileIcon {
+    font-size: 2rem;
     color: white;
 }
 
@@ -405,7 +269,7 @@
     font-size: 1.8rem;
     font-weight: 800;
     color: #1e293b;
-    margin: 0 0 0.8rem 0;
+    margin: 0 0 1rem 0;
     line-height: 1.2;
 }
 
@@ -416,19 +280,12 @@
     background-clip: text;
 }
 
-.welcomeSubtitle {
-    font-size: 1.1rem;
-    color: #3d6bb3;
-    font-weight: 600;
-    margin: 0 0 1rem 0;
-}
-
 .welcomeDescription {
-    font-size: 0.95rem;
+    font-size: 1rem;
     color: #64748b;
     line-height: 1.5;
-    margin-left: 23px;
-    max-width: 450px;
+    max-width: 500px;
+    margin: 0;
 }
 
 .featureHighlights {
@@ -523,9 +380,6 @@
 }
 
 .panelHeader {
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
     margin-bottom: 1.2rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid rgba(61, 107, 179, 0.1);
@@ -609,37 +463,14 @@
         padding: 1rem;
     }
 
-    .headerContent {
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .controlsSection {
-        width: 100%;
-        justify-content: space-between;
-    }
-
     .pageTitle {
-        font-size: 2rem;
+        font-size: 2.2rem;
     }
 }
 
 @media (max-width: 768px) {
     .boardsContent {
         padding: 0.8rem;
-    }
-
-    .controlsSection {
-        flex-direction: column;
-        gap: 0.8rem;
-    }
-
-    .searchControl {
-        width: 100%;
-    }
-
-    .searchInput {
-        width: 100%;
     }
 
     .quickStatsSection {
@@ -679,7 +510,7 @@
     }
 
     .pageTitle {
-        font-size: 1.8rem;
+        font-size: 2rem;
     }
 
     .welcomeCard {
@@ -691,16 +522,12 @@
         height: 60px;
     }
 
-    .rocketIcon {
-        font-size: 1.5rem;
+    .smileIcon {
+        font-size: 1.8rem;
     }
 
     .welcomeTitle {
         font-size: 1.4rem;
-    }
-
-    .welcomeSubtitle {
-        font-size: 1rem;
     }
 
     .welcomeDescription {
