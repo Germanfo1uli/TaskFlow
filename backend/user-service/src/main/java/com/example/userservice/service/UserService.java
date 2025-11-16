@@ -6,6 +6,7 @@ import com.example.userservice.exception.UserNotFoundException;
 import com.example.userservice.models.dto.data.LoginData;
 import com.example.userservice.models.dto.response.LoginResponse;
 import com.example.userservice.models.dto.response.TokenResponse;
+import com.example.userservice.models.entity.RefreshToken;
 import com.example.userservice.models.entity.User;
 import com.example.userservice.repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -22,23 +23,27 @@ import java.util.concurrent.CompletableFuture;
 public class UserService {
     private final UserRepository userRepository;
     private final JwtService jwtService;
+    private final ProfileService profileService;
     private final BCryptPasswordEncoder passwordEncoder;
 
+    @Transactional
     @Async
     public CompletableFuture<LoginResponse> registerAsync(
             String email, String password, String deviceInfo) {
 
-        return CompletableFuture.supplyAsync(() -> {
-            if (userRepository.existsByEmail(email)) {
-                throw new EmailAlreadyExistsException("Email уже зарегистрирован");
-            }
+        User savedUser = createAndSaveUser(email, password);
+        profileService.createProfile(savedUser);
+        LoginResponse response = createLoginResponse(savedUser, deviceInfo);
 
-            User user = new User();
-            user.setEmail(email);
-            user.setCreatedAt(LocalDateTime.now());
-            user.setPasswordHash(passwordEncoder.encode(password));
-            return userRepository.save(user);
-        }).thenCompose(savedUser -> createLoginResponse(savedUser, deviceInfo));
+        return CompletableFuture.completedFuture(response);
+    }
+
+    private User createAndSaveUser(String email, String password) {
+        User user = new User();
+        user.setEmail(email);
+        user.setCreatedAt(LocalDateTime.now());
+        user.setPasswordHash(passwordEncoder.encode(password));
+        return userRepository.save(user);
     }
 
     @Async
@@ -52,49 +57,47 @@ public class UserService {
             if (!passwordEncoder.matches(password, user.getPasswordHash())) {
                 throw new InvalidCredentialsException("Неверный логин или пароль");
             }
-            return user;
-        }).thenCompose(user -> createLoginResponse(user, deviceInfo));
+
+            return createLoginResponse(user, deviceInfo);
+        });
+    }
+
+    public LoginResponse createLoginResponse(User user, String deviceInfo) {
+        String accessToken = jwtService.generateAccessToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user, deviceInfo);
+        jwtService.saveRefreshTokenAsync(user, refreshToken, deviceInfo);
+        return new LoginResponse(user.getEmail(), accessToken, refreshToken);
     }
 
     @Async
-    public CompletableFuture<LoginResponse> createLoginResponse(User user, String deviceInfo) {
-        return CompletableFuture.supplyAsync(() -> {
-            String accessToken = jwtService.generateAccessToken(user);
-            String refreshToken = jwtService.generateRefreshToken(user, deviceInfo);
-            return new LoginData(user, accessToken, refreshToken);
-        }).thenCompose(data ->
-                jwtService.saveRefreshTokenAsync(data.user(), data.refreshToken(), deviceInfo)
-                        .thenApply(saved -> new LoginResponse(
-                                data.user().getEmail(),
-                                data.accessToken(),
-                                data.refreshToken()
-                        ))
-        );
-    }
+    public CompletableFuture<TokenResponse> refreshTokenAsync(String refreshToken, String deviceInfo) {
+        return CompletableFuture.supplyAsync(() ->
+                        jwtService.validateRefreshToken(refreshToken)
+                )
+                .thenApply(RefreshToken::getUser)
+                .thenCompose(user ->
+                        jwtService.revokeTokenAsync(refreshToken)
+                                .thenApply(ignored -> user)
+                )
+                .thenCompose(user -> {
+                    String newAccess = jwtService.generateAccessToken(user);
+                    String newRefresh = jwtService.generateRefreshToken(user, deviceInfo);
 
-    @Async
-    public CompletableFuture<TokenResponse> refreshTokenAsync(
-            String refreshToken, String deviceInfo) {
-
-        return jwtService.validateAndRevokeRefreshTokenAsync(refreshToken)
-            .thenCompose(user -> {
-                String newAccess = jwtService.generateAccessToken(user);
-                String newRefresh = jwtService.generateRefreshToken(user, deviceInfo);
-
-                return jwtService.saveRefreshTokenAsync(user, newRefresh, deviceInfo)
-                        .thenApply(saved -> new TokenResponse(newAccess, newRefresh));
-            });
+                    return jwtService.saveRefreshTokenAsync(user, newRefresh, deviceInfo)
+                            .thenApply(saved -> new TokenResponse(newAccess, newRefresh));
+                });
     }
 
     @Async
     public CompletableFuture<TokenResponse> changePasswordAsync(
             String oldPassword, String newPassword,
-            String accessToken, String refreshToken, String deviceInfo) {
+            Long userId, String refreshToken, String deviceInfo) {
 
         return CompletableFuture.supplyAsync(() -> {
-            Long userId = jwtService.extractUserId(accessToken);
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new UserNotFoundException(userId));
+
+            jwtService.validateRefreshToken(refreshToken);
 
             if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
                 throw new InvalidCredentialsException("Неверный старый пароль");
@@ -114,7 +117,7 @@ public class UserService {
                 jwtService.saveRefreshTokenAsync(data.user(), data.refreshToken(), deviceInfo)
                         .thenApply(saved -> data)
         ).thenCompose(data ->
-                jwtService.revokeAllRefreshExcept(refreshToken, data.refreshToken())
+                jwtService.revokeAllRefreshExcept(data.user().getId(), data.refreshToken())
                         .thenApply(ignored -> new TokenResponse(data.accessToken(), data.refreshToken()))
         );
     }
@@ -122,12 +125,13 @@ public class UserService {
     @Async
     public CompletableFuture<TokenResponse> changeEmailAsync(
             String newEmail, String password,
-            String accessToken, String refreshToken, String deviceInfo) {
+            Long userId, String refreshToken, String deviceInfo) {
 
         return CompletableFuture.supplyAsync(() -> {
-            Long userId = jwtService.extractUserId(accessToken);
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new UserNotFoundException(userId));
+
+            jwtService.validateRefreshToken(refreshToken);
 
             if (!passwordEncoder.matches(password, user.getPasswordHash())) {
                 throw new InvalidCredentialsException("Неверный пароль");
@@ -148,7 +152,7 @@ public class UserService {
                 jwtService.saveRefreshTokenAsync(data.user(), data.refreshToken(), deviceInfo)
                         .thenApply(saved -> data)
         ).thenCompose(data ->
-                jwtService.revokeAllRefreshExcept(refreshToken, data.refreshToken())
+                jwtService.revokeAllRefreshExcept(data.user().getId(), data.refreshToken())
                         .thenApply(ignored -> new TokenResponse(data.accessToken(), data.refreshToken()))
         );
     }

@@ -6,13 +6,11 @@ import com.example.userservice.models.entity.RefreshToken;
 import com.example.userservice.models.entity.User;
 import com.example.userservice.repository.TokenRepository;
 import io.jsonwebtoken.*;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.sql.Ref;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
@@ -25,7 +23,6 @@ import java.util.concurrent.CompletableFuture;
 public class JwtService {
     private final JwtConfig jwtConfig;
     private final TokenRepository tokenRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
 
     public String generateAccessToken(User user) {
         if (user == null || user.getId() == null) {
@@ -64,7 +61,7 @@ public class JwtService {
                 .getBody();
     }
 
-    private RefreshToken validateRefreshToken(String refreshToken) {
+    public RefreshToken validateRefreshToken(String refreshToken) {
         Claims claims = parseToken(refreshToken);
         UUID jti = UUID.fromString(claims.getId());
 
@@ -74,14 +71,28 @@ public class JwtService {
         if (stored.getRevoked()) {
             throw new InvalidRefreshTokenException("Токен отозван");
         }
+
         if (stored.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new InvalidRefreshTokenException("Токен истёк");
         }
-        if (!passwordEncoder.matches(refreshToken, stored.getTokenHash())) {
-            throw new InvalidRefreshTokenException("Хеш не совпадает");
-        }
 
         return stored;
+    }
+
+    public RefreshToken getTokenByString(String refreshToken) {
+        Claims claims = parseToken(refreshToken);
+        UUID jti = UUID.fromString(claims.getId());
+
+        return tokenRepository.findByJti(jti)
+                .orElseThrow(() -> new InvalidRefreshTokenException("Токен не найден"));
+    }
+
+    public CompletableFuture<RefreshToken> revokeTokenAsync(String refreshToken) {
+        return CompletableFuture.supplyAsync(() -> {
+            RefreshToken token = getTokenByString(refreshToken);
+            token.setRevoked(true);
+            return tokenRepository.save(token);
+        });
     }
 
     public String extractEmail(String token) {
@@ -110,11 +121,8 @@ public class JwtService {
             LocalDateTime expiresAt = claims.getExpiration()
                     .toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
 
-            String tokenHash = passwordEncoder.encode(rawToken);
-
             RefreshToken token = new RefreshToken();
             token.setUser(user);
-            token.setTokenHash(tokenHash);
             token.setJti(jti);
             token.setExpiresAt(expiresAt);
             token.setRevoked(false);
@@ -125,20 +133,8 @@ public class JwtService {
     }
 
     @Async
-    public CompletableFuture<User> validateAndRevokeRefreshTokenAsync(String refreshToken) {
-        return CompletableFuture.supplyAsync(() -> {
-            RefreshToken stored = validateRefreshToken(refreshToken);
-            stored.setRevoked(true);
-            tokenRepository.save(stored);
-            return stored.getUser();
-        });
-    }
-
-    @Async
-    public CompletableFuture<Void> revokeAllRefreshExcept(String oldToken, String newToken) {
+    public CompletableFuture<Void> revokeAllRefreshExcept(Long userId, String newToken) {
         return CompletableFuture.runAsync(() -> {
-            RefreshToken oldStored = validateRefreshToken(oldToken);
-            Long userId = oldStored.getUser().getId();
 
             Claims newClaims = parseToken(newToken);
             UUID newJti = UUID.fromString(newClaims.getId());
