@@ -26,7 +26,6 @@ const ControlPanel = ({ activePage, onPageChange }: ControlPanelProps) => {
             </div>
 
             <nav className={styles.panelNav}>
-
                 <button
                     className={`${styles.panelNavButton} ${activePage === 'board' ? styles.active : ''}`}
                     onClick={() => handleNavClick('board')}

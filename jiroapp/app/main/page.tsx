@@ -7,11 +7,10 @@ import BoardsContent from '../components/BoardsContent/BoardsContent'
 import Dashboard from '../components/DashboardContent/Dashboard'
 import styles from './MainPage.module.css'
 
-
 type ActivePage = 'dashboard' | 'board'
 
 const MainPage = () => {
-    const [activePage, setActivePage] = useState<ActivePage>('dashboard')
+    const [activePage, setActivePage] = useState<ActivePage>('board')
 
     const handlePageChange = (page: ActivePage) => {
         setActivePage(page)
@@ -24,7 +23,7 @@ const MainPage = () => {
             case 'board':
                 return <BoardsContent />
             default:
-                return <Dashboard />
+                return <BoardsContent />
         }
     }
 
