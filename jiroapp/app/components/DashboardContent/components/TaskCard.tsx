@@ -1,7 +1,8 @@
 'use client'
 
 import { JSX } from 'react'
-import { FaUserCircle, FaEllipsisH, FaPaperclip, FaFlag, FaRegFlag } from 'react-icons/fa'
+import { FaUserCircle, FaPaperclip, FaFlag, FaRegFlag } from 'react-icons/fa'
+import CardMenu from './CardMenu'
 import styles from './TaskCard.module.css'
 
 type Priority = 'low' | 'medium' | 'high'
@@ -28,9 +29,11 @@ interface TaskCardProps {
     card: Card
     getPriorityColor: (priority: Priority) => string
     getPriorityBgColor: (priority: Priority) => string
+    onEdit?: (card: Card) => void
+    onDelete?: (cardId: number) => void
 }
 
-const TaskCard = ({ card, getPriorityColor, getPriorityBgColor }: TaskCardProps) => {
+const TaskCard = ({ card, getPriorityColor, getPriorityBgColor, onEdit, onDelete }: TaskCardProps) => {
     const getPriorityIcon = (priority: Priority): JSX.Element => {
         switch (priority) {
             case 'high':
@@ -42,6 +45,22 @@ const TaskCard = ({ card, getPriorityColor, getPriorityBgColor }: TaskCardProps)
             default:
                 return <FaRegFlag className={styles.priorityIcon} />
         }
+    }
+
+    const handleEdit = () => {
+        if (onEdit) {
+            onEdit(card)
+        }
+    }
+
+    const handleDelete = () => {
+        if (onDelete) {
+            onDelete(card.id)
+        }
+    }
+
+    const handleMenuClose = () => {
+        // Дополнительные действия при закрытии меню, если нужны
     }
 
     return (
@@ -60,9 +79,12 @@ const TaskCard = ({ card, getPriorityColor, getPriorityBgColor }: TaskCardProps)
                         {getPriorityIcon(card.priority)}
                         <h4 className={styles.cardTitle}>{card.title}</h4>
                     </div>
-                    <button className={styles.cardMenuBtn}>
-                        <FaEllipsisH />
-                    </button>
+
+                    <CardMenu
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        onClose={handleMenuClose}
+                    />
                 </div>
 
                 <p className={styles.cardDescription}>

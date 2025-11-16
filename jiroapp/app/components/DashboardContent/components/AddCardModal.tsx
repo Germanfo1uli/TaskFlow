@@ -128,7 +128,7 @@ const AddCardModal = ({ isOpen, onClose, onSave, boards, authors }: AddCardModal
     }
 
     const removeFile = (fileId: string, e: React.MouseEvent) => {
-        e.stopPropagation() 
+        e.stopPropagation()
         const fileToRemove = uploadedFiles.find(file => file.id === fileId)
         if (fileToRemove?.url) {
             URL.revokeObjectURL(fileToRemove.url)

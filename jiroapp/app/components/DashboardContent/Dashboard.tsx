@@ -20,6 +20,7 @@ import styles from './Dashboard.module.css'
 import TaskCard from './components/TaskCard'
 import TreeViewModal from './components/TreeViewModal'
 import AddCardModal from './components/AddCardModal'
+import ConfirmationModal from './components/ConfirmationModal'
 
 type Priority = 'low' | 'medium' | 'high'
 
@@ -60,6 +61,15 @@ const BoardsSection = () => {
     const [filterOption, setFilterOption] = useState<FilterOption>('all')
     const [isTreeViewOpen, setIsTreeViewOpen] = useState<boolean>(false)
     const [isAddCardModalOpen, setIsAddCardModalOpen] = useState<boolean>(false)
+    const [deleteConfirmation, setDeleteConfirmation] = useState<{
+        isOpen: boolean;
+        cardId: number | null;
+        cardTitle: string;
+    }>({
+        isOpen: false,
+        cardId: null,
+        cardTitle: ''
+    })
     const [boards, setBoards] = useState<Board[]>([
         {
             id: 1,
@@ -263,6 +273,42 @@ const BoardsSection = () => {
         setBoards(updatedBoards)
     }
 
+    const handleEditCard = (card: Card) => {
+        // Здесь будет логика для редактирования карточки
+        console.log('Редактировать карточку:', card)
+        // Можно открыть модальное окно редактирования
+        alert(`Редактирование карточки: ${card.title}`)
+    }
+
+    const handleDeleteCard = (cardId: number) => {
+        const cardToDelete = boards
+            .flatMap(board => board.cards)
+            .find(card => card.id === cardId)
+
+        if (cardToDelete) {
+            setDeleteConfirmation({
+                isOpen: true,
+                cardId,
+                cardTitle: cardToDelete.title
+            })
+        }
+    }
+
+    const confirmDelete = () => {
+        if (deleteConfirmation.cardId) {
+            const updatedBoards = boards.map(board => ({
+                ...board,
+                cards: board.cards.filter(card => card.id !== deleteConfirmation.cardId)
+            }))
+            setBoards(updatedBoards)
+            setDeleteConfirmation({ isOpen: false, cardId: null, cardTitle: '' })
+        }
+    }
+
+    const cancelDelete = () => {
+        setDeleteConfirmation({ isOpen: false, cardId: null, cardTitle: '' })
+    }
+
     const filterAndSortCards = (cards: Card[]): Card[] => {
         let filteredCards = [...cards]
 
@@ -459,6 +505,8 @@ const BoardsSection = () => {
                                                     card={filteredCards[0]}
                                                     getPriorityColor={getPriorityColor}
                                                     getPriorityBgColor={getPriorityBgColor}
+                                                    onEdit={handleEditCard}
+                                                    onDelete={handleDeleteCard}
                                                 />
 
                                                 {isExpanded && filteredCards.slice(1).map((card) => (
@@ -467,6 +515,8 @@ const BoardsSection = () => {
                                                         card={card}
                                                         getPriorityColor={getPriorityColor}
                                                         getPriorityBgColor={getPriorityBgColor}
+                                                        onEdit={handleEditCard}
+                                                        onDelete={handleDeleteCard}
                                                     />
                                                 ))}
 
@@ -518,6 +568,16 @@ const BoardsSection = () => {
                 onSave={handleAddCard}
                 boards={boards}
                 authors={authors}
+            />
+
+            <ConfirmationModal
+                isOpen={deleteConfirmation.isOpen}
+                onClose={cancelDelete}
+                onConfirm={confirmDelete}
+                title="Удаление карточки"
+                message={`Вы уверены, что хотите удалить карточку "${deleteConfirmation.cardTitle}"? Это действие нельзя отменить.`}
+                confirmText="Удалить карточку"
+                cancelText="Отмена"
             />
         </div>
     )
