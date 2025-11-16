@@ -19,6 +19,7 @@ import {
 import styles from './Dashboard.module.css'
 import TaskCard from './components/TaskCard'
 import TreeViewModal from './components/TreeViewModal'
+import AddCardModal from './components/AddCardModal'
 
 type Priority = 'low' | 'medium' | 'high'
 
@@ -58,8 +59,8 @@ const BoardsSection = () => {
     const [sortOption, setSortOption] = useState<SortOption>('default')
     const [filterOption, setFilterOption] = useState<FilterOption>('all')
     const [isTreeViewOpen, setIsTreeViewOpen] = useState<boolean>(false)
-
-    const boards: Board[] = [
+    const [isAddCardModalOpen, setIsAddCardModalOpen] = useState<boolean>(false)
+    const [boards, setBoards] = useState<Board[]>([
         {
             id: 1,
             title: 'To Do',
@@ -163,6 +164,25 @@ const BoardsSection = () => {
                 }
             ]
         }
+    ])
+
+    const authors: Author[] = [
+        {
+            name: 'Алексей Петров',
+            avatar: null
+        },
+        {
+            name: 'Мария Иванова',
+            avatar: null
+        },
+        {
+            name: 'Иван Сидоров',
+            avatar: null
+        },
+        {
+            name: 'Елена Козлова',
+            avatar: null
+        }
     ]
 
     const getPriorityColor = (priority: Priority): string => {
@@ -224,6 +244,23 @@ const BoardsSection = () => {
 
     const closeTreeView = (): void => {
         setIsTreeViewOpen(false)
+    }
+
+    const openAddCardModal = (): void => {
+        setIsAddCardModalOpen(true)
+    }
+
+    const closeAddCardModal = (): void => {
+        setIsAddCardModalOpen(false)
+    }
+
+    const handleAddCard = (data: { card: Card; boardIds: number[] }) => {
+        const updatedBoards = boards.map(board =>
+            data.boardIds.includes(board.id)
+                ? { ...board, cards: [...board.cards, data.card] }
+                : board
+        )
+        setBoards(updatedBoards)
     }
 
     const filterAndSortCards = (cards: Card[]): Card[] => {
@@ -453,7 +490,10 @@ const BoardsSection = () => {
                                             </div>
                                         )}
 
-                                        <button className={styles.addCardBtn}>
+                                        <button
+                                            className={styles.addCardBtn}
+                                            onClick={openAddCardModal}
+                                        >
                                             <FaPlus className={styles.addCardIcon} />
                                             Добавить карточку
                                         </button>
@@ -470,6 +510,14 @@ const BoardsSection = () => {
                 onClose={closeTreeView}
                 boards={boards}
                 getPriorityColor={getPriorityColor}
+            />
+
+            <AddCardModal
+                isOpen={isAddCardModalOpen}
+                onClose={closeAddCardModal}
+                onSave={handleAddCard}
+                boards={boards}
+                authors={authors}
             />
         </div>
     )

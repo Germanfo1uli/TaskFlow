@@ -1,0 +1,611 @@
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+    animation: fadeIn 0.3s ease;
+}
+
+.modalContent {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 700px;
+    max-height: 90vh;
+    overflow: hidden;
+    border: 2px solid rgba(59, 130, 246, 0.1);
+    animation: slideUp 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    border-bottom: 2px solid rgba(59, 130, 246, 0.1);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(59, 130, 246, 0.02));
+    border-radius: 20px 20px 0 0;
+    flex-shrink: 0;
+}
+
+.modalTitle {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    font-size: 1.1rem;
+}
+
+.closeButton:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    transform: scale(1.1);
+}
+
+.modalForm {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* Кастомный скроллбар */
+.modalForm::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modalForm::-webkit-scrollbar-track {
+    background: rgba(59, 130, 246, 0.05);
+    border-radius: 4px;
+    margin: 4px;
+}
+
+.modalForm::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+.modalForm::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #2563eb, #3b82f6);
+}
+
+/* Для Firefox */
+.modalForm {
+    scrollbar-width: thin;
+    scrollbar-color: #3b82f6 rgba(59, 130, 246, 0.1);
+}
+
+.formSection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.formRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.formLabel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.labelText {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.labelIcon {
+    font-size: 0.9rem;
+    color: #3b82f6;
+}
+
+.textInput, .textarea, .select {
+    padding: 0.875rem 1rem;
+    border: 2px solid rgba(59, 130, 246, 0.15);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.textInput:focus, .textarea:focus, .select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    transform: translateY(-1px);
+}
+
+.textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.tagsInputContainer {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.addTagButton {
+    padding: 0.875rem 1rem;
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.addTagButton:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.tagsContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.tag {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 16px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.removeTagButton {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 0;
+    font-size: 1rem;
+    line-height: 1;
+    transition: transform 0.2s ease;
+}
+
+.removeTagButton:hover {
+    transform: scale(1.2);
+}
+
+/* Стили для иконок файлов */
+.fileIconPdf {
+    color: #ef4444;
+}
+
+.fileIconWord {
+    color: #2563eb;
+}
+
+.fileIconExcel {
+    color: #16a34a;
+}
+
+.fileIconCode {
+    color: #7c3aed;
+}
+
+.fileIconDesign {
+    color: #ec4899;
+}
+
+.fileIconDefault {
+    color: #64748b;
+}
+
+.fileIcon {
+    font-size: 1.25rem;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Стили для загрузки файлов */
+.fileUploadArea {
+    position: relative;
+    border: 2px dashed rgba(59, 130, 246, 0.3);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+}
+
+.fileUploadArea:hover {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.05);
+    transform: translateY(-1px);
+}
+
+.fileInput {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.uploadPlaceholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    color: #64748b;
+}
+
+.uploadIcon {
+    font-size: 2.5rem;
+    color: #3b82f6;
+    opacity: 0.7;
+}
+
+.uploadText {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.uploadText p {
+    margin: 0;
+    font-weight: 600;
+    color: #374151;
+}
+
+.uploadText span {
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.uploadedFiles {
+    margin-top: 1rem;
+}
+
+.filesTitle {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 0.75rem 0;
+}
+
+.filesList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.fileItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(59, 130, 246, 0.1);
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.fileItem:hover {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(59, 130, 246, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.fileInfo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.fileDetails {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    flex: 1;
+}
+
+.fileName {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #1e293b;
+    word-break: break-word;
+}
+
+.fileSize {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.removeFileButton {
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 0.4rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.removeFileButton:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    transform: scale(1.1);
+}
+
+.boardsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+}
+
+.boardCheckboxLabel {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border: 2px solid rgba(59, 130, 246, 0.1);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: rgba(255, 255, 255, 0.7);
+}
+
+.boardCheckboxLabel:hover {
+    border-color: rgba(59, 130, 246, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.boardCheckboxLabel:has(.boardCheckbox:checked) {
+    border-color: var(--board-color);
+    background: color-mix(in srgb, var(--board-color) 8%, transparent);
+}
+
+.boardCheckbox {
+    display: none;
+}
+
+.boardCheckboxCustom {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #d1d5db;
+    border-radius: 4px;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.boardCheckbox:checked + .boardCheckboxCustom {
+    border-color: var(--board-color);
+    background: var(--board-color);
+}
+
+.boardCheckbox:checked + .boardCheckboxCustom::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.boardTitle {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.modalActions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding-top: 1rem;
+    border-top: 2px solid rgba(59, 130, 246, 0.1);
+}
+
+.cancelButton, .saveButton {
+    padding: 0.875rem 1.5rem;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cancelButton {
+    background: rgba(107, 114, 128, 0.1);
+    color: #64748b;
+}
+
+.cancelButton:hover {
+    background: rgba(107, 114, 128, 0.2);
+    transform: translateY(-1px);
+}
+
+.saveButton {
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.saveButton:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.saveButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.saveIcon {
+    font-size: 0.9rem;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Мобильная адаптация */
+@media (max-width: 768px) {
+    .modalContent {
+        margin: 1rem;
+        max-height: calc(100vh - 2rem);
+    }
+
+    .modalHeader {
+        padding: 1.25rem 1.5rem;
+    }
+
+    .modalForm {
+        padding: 1.5rem;
+    }
+
+    .formRow {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .tagsInputContainer {
+        flex-direction: column;
+    }
+
+    .boardsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .fileUploadArea {
+        padding: 1.5rem;
+    }
+
+    .uploadPlaceholder {
+        gap: 0.75rem;
+    }
+
+    .uploadIcon {
+        font-size: 2rem;
+    }
+
+    .modalActions {
+        flex-direction: column-reverse;
+    }
+
+    .cancelButton, .saveButton {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .modalHeader {
+        padding: 1rem 1.25rem;
+    }
+
+    .modalForm {
+        padding: 1.25rem;
+        gap: 1.25rem;
+    }
+
+    .modalTitle {
+        font-size: 1.25rem;
+    }
+
+    .fileUploadArea {
+        padding: 1rem;
+    }
+
+    .uploadText p {
+        font-size: 0.9rem;
+    }
+
+    .uploadText span {
+        font-size: 0.8rem;
+    }
+
+    .fileItem {
+        padding: 0.625rem 0.875rem;
+    }
+
+    .fileName {
+        font-size: 0.85rem;
+    }
+
+    .fileSize {
+        font-size: 0.7rem;
+    }
+}
