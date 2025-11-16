@@ -1,0 +1,546 @@
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 2rem;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.treeModal {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border-radius: 24px;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 1400px;
+    height: 85vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.modalHeaderLeft {
+    flex: 1;
+}
+
+.modalTitle {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.modalSubtitle {
+    margin: 0;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.closeButton:hover {
+    color: rgba(255, 255, 255, 0.8);
+    transform: scale(1.1);
+}
+
+.modalContent {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+.treeContainer {
+    display: flex;
+    flex: 1;
+    height: 100%;
+    background: white;
+}
+
+.treeSection {
+    flex: 1;
+    padding: 1.5rem;
+    border-right: 1px solid #e2e8f0;
+    overflow-y: auto;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 50%);
+}
+
+.treeHeader {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.treeSectionTitle {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sectionIcon {
+    color: #667eea;
+}
+
+.treeStats {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.tree {
+    font-family: 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.9rem;
+}
+
+.treeNode {
+    margin: 0.15rem 0;
+}
+
+.treeNodeHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    gap: 0.75rem;
+    border: 1px solid transparent;
+}
+
+.treeNodeLeft {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.treeNodeRight {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.treeExpandIcon {
+    color: #64748b;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.treeFolderIcon {
+    color: #f59e0b;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.treeBoardIcon {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+}
+
+.treeNodeName {
+    color: #334155;
+    font-weight: 500;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+.treePriorityBadge {
+    padding: 0.3rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    white-space: nowrap;
+}
+
+.fileSize {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.cardsCount {
+    font-size: 0.8rem;
+    color: #64748b;
+    background: rgba(59, 130, 246, 0.1);
+    padding: 0.3rem 0.6rem;
+    border-radius: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.boardNode {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(59, 130, 246, 0.02));
+    border: 1px solid rgba(59, 130, 246, 0.1);
+}
+
+.boardNode:hover {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    transform: translateX(2px);
+}
+
+.cardNode {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(245, 158, 11, 0.02));
+    border: 1px solid rgba(245, 158, 11, 0.1);
+}
+
+.cardNode:hover {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    transform: translateX(2px);
+}
+
+.fileNode {
+    background: rgba(248, 250, 252, 0.8);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.fileNode:hover {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    transform: translateX(2px);
+}
+
+.treeChildren {
+    margin-left: 1.5rem;
+    border-left: 2px solid #e2e8f0;
+    margin-left: 24px;
+    padding-left: 8px;
+}
+
+/* Иконки файлов */
+.fileIconPdf { color: #ef4444; }
+.fileIconWord { color: #2563eb; }
+.fileIconExcel { color: #16a34a; }
+.fileIconCode { color: #7c3aed; }
+.fileIconDesign { color: #ec4899; }
+.fileIconDefault { color: #64748b; }
+
+/* Детальная панель */
+.detailsSection {
+    width: 400px;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+}
+
+.detailsHeader {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: white;
+}
+
+.detailsTitle {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.detailsContent {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Стили для обзора проекта */
+.projectOverview {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    margin-bottom: 2rem;
+}
+
+.overviewStats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.statItem {
+    text-align: center;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.statItem:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #e2e8f0;
+}
+
+.statNumber {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #3b82f6;
+    margin-bottom: 0.25rem;
+}
+
+.statLabel {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 600;
+}
+
+/* Стили для авторов */
+.sectionSubtitle {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.subsectionIcon {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.authorsList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.authorItem {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #f1f5f9;
+    transition: all 0.2s ease;
+}
+
+.authorItem:hover {
+    border-color: #e2e8f0;
+    transform: translateY(-1px);
+}
+
+.authorAvatar {
+    color: #3b82f6;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.authorInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+}
+
+.authorName {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.authorRole {
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+/* Стили для файлов */
+.filesList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.fileItem {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #f1f5f9;
+    transition: all 0.2s ease;
+}
+
+.fileItem:hover {
+    border-color: #e2e8f0;
+    transform: translateY(-1px);
+}
+
+.fileInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.fileName {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #374151;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.downloadButton {
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.downloadButton:hover {
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+    .treeModal {
+        width: 95%;
+        height: 90vh;
+    }
+
+    .detailsSection {
+        width: 350px;
+    }
+}
+
+@media (max-width: 768px) {
+    .modalOverlay {
+        padding: 1rem;
+    }
+
+    .treeModal {
+        width: 100%;
+        height: 95vh;
+    }
+
+    .modalContent {
+        flex-direction: column;
+    }
+
+    .treeSection {
+        border-right: none;
+        border-bottom: 1px solid #e2e8f0;
+        max-height: 50%;
+    }
+
+    .detailsSection {
+        width: 100%;
+        max-height: 50%;
+    }
+
+    .treeNodeHeader {
+        padding: 0.6rem 0.8rem;
+    }
+
+    .treeNodeName {
+        font-size: 0.85rem;
+    }
+
+    .modalHeader {
+        padding: 1rem 1.5rem;
+    }
+
+    .modalTitle {
+        font-size: 1.25rem;
+    }
+
+    .modalSubtitle {
+        font-size: 0.8rem;
+    }
+
+    .closeButton {
+        font-size: 1.25rem;
+        padding: 0.4rem;
+    }
+
+    .overviewStats {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+}

@@ -2,7 +2,7 @@
 
 import { JSX } from 'react'
 import { FaUserCircle, FaEllipsisH, FaPaperclip, FaFlag, FaRegFlag } from 'react-icons/fa'
-import styles from './Dashboard.module.css'
+import styles from './TaskCard.module.css'
 
 type Priority = 'low' | 'medium' | 'high'
 
@@ -68,22 +68,6 @@ const TaskCard = ({ card, getPriorityColor, getPriorityBgColor }: TaskCardProps)
                 <p className={styles.cardDescription}>
                     {card.description}
                 </p>
-
-                {card.progress > 0 && (
-                    <div className={styles.progressSection}>
-                        <div className={styles.progressHeader}>
-                            <span>Прогресс</span>
-                            <span>{card.progress}%</span>
-                        </div>
-                        <div className={styles.progressBar}>
-                            <div
-                                className={styles.progressFill}
-                                style={{width: `${card.progress}%`}}
-                            ></div>
-                        </div>
-                    </div>
-                )}
-
                 <div className={styles.cardTags}>
                     {card.tags.map((tag, index) => (
                         <span key={index} className={styles.tag}>
@@ -117,6 +101,15 @@ const TaskCard = ({ card, getPriorityColor, getPriorityBgColor }: TaskCardProps)
                                 />
                             ) : (
                                 <FaUserCircle className={styles.defaultAvatar} />
+                            )}
+                        </div>
+                        <div className={styles.authorInfo}>
+                            <span className={styles.authorName}>{card.author.name}</span>
+                            {card.attachments > 0 && (
+                                <div className={styles.authorAttachments}>
+                                    <FaPaperclip className={styles.attachmentIcon} />
+                                    <span>{card.attachments}</span>
+                                </div>
                             )}
                         </div>
                     </div>

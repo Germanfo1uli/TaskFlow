@@ -13,10 +13,12 @@ import {
     FaPlus,
     FaFlag,
     FaRegFlag,
-    FaChevronRight
+    FaChevronRight,
+    FaSitemap
 } from 'react-icons/fa'
 import styles from './Dashboard.module.css'
-import TaskCard from './TaskCard'
+import TaskCard from './components/TaskCard'
+import TreeViewModal from './components/TreeViewModal'
 
 type Priority = 'low' | 'medium' | 'high'
 
@@ -55,6 +57,7 @@ const BoardsSection = () => {
     const [collapsedBoards, setCollapsedBoards] = useState<{[key: number]: boolean}>({})
     const [sortOption, setSortOption] = useState<SortOption>('default')
     const [filterOption, setFilterOption] = useState<FilterOption>('all')
+    const [isTreeViewOpen, setIsTreeViewOpen] = useState<boolean>(false)
 
     const boards: Board[] = [
         {
@@ -215,6 +218,14 @@ const BoardsSection = () => {
         setFilterOption(option)
     }
 
+    const openTreeView = (): void => {
+        setIsTreeViewOpen(true)
+    }
+
+    const closeTreeView = (): void => {
+        setIsTreeViewOpen(false)
+    }
+
     const filterAndSortCards = (cards: Card[]): Card[] => {
         let filteredCards = [...cards]
 
@@ -273,79 +284,89 @@ const BoardsSection = () => {
                         </div>
                     </div>
 
-                    <div className={styles.filterContainer}>
+                    <div className={styles.controlButtons}>
                         <button
-                            className={styles.filterBtn}
-                            onClick={() => setIsFilterOpen(!isFilterOpen)}
+                            className={styles.treeViewBtn}
+                            onClick={openTreeView}
                         >
-                            <FaFilter className={styles.filterIcon} />
-                            Фильтр и сортировка
-                            {isFilterOpen ? <FaChevronUp /> : <FaChevronDown />}
+                            <FaSitemap className={styles.treeViewIcon} />
+                            Показать дерево
                         </button>
 
-                        {isFilterOpen && (
-                            <div className={styles.filterDropdown}>
-                                <div className={styles.filterSection}>
-                                    <h4>Сортировка</h4>
-                                    <div className={styles.filterOptions}>
-                                        <button
-                                            className={`${styles.filterOption} ${sortOption === 'default' ? styles.active : ''}`}
-                                            onClick={() => handleSortChange('default')}
-                                        >
-                                            По умолчанию
-                                        </button>
-                                        <button
-                                            className={`${styles.filterOption} ${sortOption === 'alphabet' ? styles.active : ''}`}
-                                            onClick={() => handleSortChange('alphabet')}
-                                        >
-                                            <FaSortAlphaDown /> По алфавиту
-                                        </button>
-                                        <button
-                                            className={`${styles.filterOption} ${sortOption === 'priority' ? styles.active : ''}`}
-                                            onClick={() => handleSortChange('priority')}
-                                        >
-                                            <FaExclamationCircle /> По важности
-                                        </button>
-                                        <button
-                                            className={`${styles.filterOption} ${sortOption === 'author' ? styles.active : ''}`}
-                                            onClick={() => handleSortChange('author')}
-                                        >
-                                            <FaUserCircle /> По исполнителю
-                                        </button>
-                                    </div>
-                                </div>
+                        <div className={styles.filterContainer}>
+                            <button
+                                className={styles.filterBtn}
+                                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                            >
+                                <FaFilter className={styles.filterIcon} />
+                                Фильтр и сортировка
+                                {isFilterOpen ? <FaChevronUp /> : <FaChevronDown />}
+                            </button>
 
-                                <div className={styles.filterSection}>
-                                    <h4>Фильтр по приоритету</h4>
-                                    <div className={styles.filterOptions}>
-                                        <button
-                                            className={`${styles.filterOption} ${filterOption === 'all' ? styles.active : ''}`}
-                                            onClick={() => handleFilterChange('all')}
-                                        >
-                                            Все задачи
-                                        </button>
-                                        <button
-                                            className={`${styles.filterOption} ${filterOption === 'high' ? styles.active : ''}`}
-                                            onClick={() => handleFilterChange('high')}
-                                        >
-                                            {getFilterPriorityIcon('high')} Высокий приоритет
-                                        </button>
-                                        <button
-                                            className={`${styles.filterOption} ${filterOption === 'medium' ? styles.active : ''}`}
-                                            onClick={() => handleFilterChange('medium')}
-                                        >
-                                            {getFilterPriorityIcon('medium')} Средний приоритет
-                                        </button>
-                                        <button
-                                            className={`${styles.filterOption} ${filterOption === 'low' ? styles.active : ''}`}
-                                            onClick={() => handleFilterChange('low')}
-                                        >
-                                            {getFilterPriorityIcon('low')} Низкий приоритет
-                                        </button>
+                            {isFilterOpen && (
+                                <div className={styles.filterDropdown}>
+                                    <div className={styles.filterSection}>
+                                        <h4>Сортировка</h4>
+                                        <div className={styles.filterOptions}>
+                                            <button
+                                                className={`${styles.filterOption} ${sortOption === 'default' ? styles.active : ''}`}
+                                                onClick={() => handleSortChange('default')}
+                                            >
+                                                По умолчанию
+                                            </button>
+                                            <button
+                                                className={`${styles.filterOption} ${sortOption === 'alphabet' ? styles.active : ''}`}
+                                                onClick={() => handleSortChange('alphabet')}
+                                            >
+                                                <FaSortAlphaDown /> По алфавиту
+                                            </button>
+                                            <button
+                                                className={`${styles.filterOption} ${sortOption === 'priority' ? styles.active : ''}`}
+                                                onClick={() => handleSortChange('priority')}
+                                            >
+                                                <FaExclamationCircle /> По важности
+                                            </button>
+                                            <button
+                                                className={`${styles.filterOption} ${sortOption === 'author' ? styles.active : ''}`}
+                                                onClick={() => handleSortChange('author')}
+                                            >
+                                                <FaUserCircle /> По исполнителю
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className={styles.filterSection}>
+                                        <h4>Фильтр по приоритету</h4>
+                                        <div className={styles.filterOptions}>
+                                            <button
+                                                className={`${styles.filterOption} ${filterOption === 'all' ? styles.active : ''}`}
+                                                onClick={() => handleFilterChange('all')}
+                                            >
+                                                Все задачи
+                                            </button>
+                                            <button
+                                                className={`${styles.filterOption} ${filterOption === 'high' ? styles.active : ''}`}
+                                                onClick={() => handleFilterChange('high')}
+                                            >
+                                                {getFilterPriorityIcon('high')} Высокий приоритет
+                                            </button>
+                                            <button
+                                                className={`${styles.filterOption} ${filterOption === 'medium' ? styles.active : ''}`}
+                                                onClick={() => handleFilterChange('medium')}
+                                            >
+                                                {getFilterPriorityIcon('medium')} Средний приоритет
+                                            </button>
+                                            <button
+                                                className={`${styles.filterOption} ${filterOption === 'low' ? styles.active : ''}`}
+                                                onClick={() => handleFilterChange('low')}
+                                            >
+                                                {getFilterPriorityIcon('low')} Низкий приоритет
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -396,7 +417,6 @@ const BoardsSection = () => {
                                     <div className={styles.cardsList}>
                                         {filteredCards.length > 0 ? (
                                             <>
-                                                {/* Всегда показываем первую карточку */}
                                                 <TaskCard
                                                     key={filteredCards[0].id}
                                                     card={filteredCards[0]}
@@ -404,7 +424,6 @@ const BoardsSection = () => {
                                                     getPriorityBgColor={getPriorityBgColor}
                                                 />
 
-                                                {/* Показываем остальные карточки только если раздел развернут */}
                                                 {isExpanded && filteredCards.slice(1).map((card) => (
                                                     <TaskCard
                                                         key={card.id}
@@ -414,7 +433,6 @@ const BoardsSection = () => {
                                                     />
                                                 ))}
 
-                                                {/* Индикатор скрытых карточек, если их несколько и раздел не развернут */}
                                                 {!isExpanded && hasMultipleCards && (
                                                     <div className={styles.hiddenCardsIndicator}>
                                                         <span className={styles.hiddenCardsText}>
@@ -446,6 +464,13 @@ const BoardsSection = () => {
                     })}
                 </div>
             </div>
+
+            <TreeViewModal
+                isOpen={isTreeViewOpen}
+                onClose={closeTreeView}
+                boards={boards}
+                getPriorityColor={getPriorityColor}
+            />
         </div>
     )
 }

@@ -167,8 +167,9 @@
 
 @media (max-width: 1024px) {
     .controlPanel {
-        width: 240px;
+        width: 250px;
         padding: 1.25rem;
+        margin-left: 4.4rem;
     }
     .projectName { font-size: 1.1rem; }
     .projectDescription { font-size: 0.75rem; }
