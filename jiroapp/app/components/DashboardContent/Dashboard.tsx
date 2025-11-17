@@ -14,13 +14,16 @@ import {
     FaFlag,
     FaRegFlag,
     FaChevronRight,
-    FaSitemap
+    FaSitemap,
+    FaCog
 } from 'react-icons/fa'
 import styles from './Dashboard.module.css'
 import TaskCard from './components/TaskCard'
 import TreeViewModal from './components/tree/TreeViewModal'
 import AddCardModal from './components/modal/AddCardModal'
 import ConfirmationModal from './components/modal/ConfirmationModal'
+import BoardManagerModal from './components/modal/BoardManagerModal'
+import EditCardModal from './components/modal/ EditCardModal'
 
 type Priority = 'low' | 'medium' | 'high'
 
@@ -61,6 +64,9 @@ const BoardsSection = () => {
     const [filterOption, setFilterOption] = useState<FilterOption>('all')
     const [isTreeViewOpen, setIsTreeViewOpen] = useState<boolean>(false)
     const [isAddCardModalOpen, setIsAddCardModalOpen] = useState<boolean>(false)
+    const [isBoardManagerOpen, setIsBoardManagerOpen] = useState<boolean>(false)
+    const [editingCard, setEditingCard] = useState<Card | null>(null)
+    const [currentBoardId, setCurrentBoardId] = useState<number>(1)
     const [deleteConfirmation, setDeleteConfirmation] = useState<{
         isOpen: boolean;
         cardId: number | null;
@@ -264,6 +270,18 @@ const BoardsSection = () => {
         setIsAddCardModalOpen(false)
     }
 
+    const openBoardManager = (): void => {
+        setIsBoardManagerOpen(true)
+    }
+
+    const closeBoardManager = (): void => {
+        setIsBoardManagerOpen(false)
+    }
+
+    const handleSaveBoards = (updatedBoards: Board[]): void => {
+        setBoards(updatedBoards)
+    }
+
     const handleAddCard = (data: { card: Card; boardIds: number[] }) => {
         const updatedBoards = boards.map(board =>
             data.boardIds.includes(board.id)
@@ -274,10 +292,47 @@ const BoardsSection = () => {
     }
 
     const handleEditCard = (card: Card) => {
-        // Здесь будет логика для редактирования карточки
-        console.log('Редактировать карточку:', card)
-        // Можно открыть модальное окно редактирования
-        alert(`Редактирование карточки: ${card.title}`)
+        setEditingCard(card)
+        const boardWithCard = boards.find(board =>
+            board.cards.some(c => c.id === card.id)
+        )
+        if (boardWithCard) {
+            setCurrentBoardId(boardWithCard.id)
+        }
+    }
+
+    const handleUpdateCard = (data: { card: Card; boardIds: number[] }) => {
+        const updatedBoards = boards.map(board => {
+            if (board.cards.some(c => c.id === data.card.id) && !data.boardIds.includes(board.id)) {
+                return {
+                    ...board,
+                    cards: board.cards.filter(c => c.id !== data.card.id)
+                }
+            }
+
+            if (data.boardIds.includes(board.id)) {
+                const cardExists = board.cards.some(c => c.id === data.card.id)
+
+                if (cardExists) {
+                    return {
+                        ...board,
+                        cards: board.cards.map(c =>
+                            c.id === data.card.id ? data.card : c
+                        )
+                    }
+                } else {
+                    return {
+                        ...board,
+                        cards: [...board.cards, data.card]
+                    }
+                }
+            }
+
+            return board
+        })
+
+        setBoards(updatedBoards)
+        setEditingCard(null)
     }
 
     const handleDeleteCard = (cardId: number) => {
@@ -374,6 +429,14 @@ const BoardsSection = () => {
                         >
                             <FaSitemap className={styles.treeViewIcon} />
                             Показать дерево
+                        </button>
+
+                        <button
+                            className={styles.boardManagerBtn}
+                            onClick={openBoardManager}
+                        >
+                            <FaCog className={styles.boardManagerIcon} />
+                            Управление досками
                         </button>
 
                         <div className={styles.filterContainer}>
@@ -568,6 +631,23 @@ const BoardsSection = () => {
                 onSave={handleAddCard}
                 boards={boards}
                 authors={authors}
+            />
+
+            <BoardManagerModal
+                isOpen={isBoardManagerOpen}
+                onClose={closeBoardManager}
+                boards={boards}
+                onSave={handleSaveBoards}
+            />
+
+            <EditCardModal
+                isOpen={!!editingCard}
+                onClose={() => setEditingCard(null)}
+                onSave={handleUpdateCard}
+                card={editingCard}
+                boards={boards}
+                authors={authors}
+                currentBoardId={currentBoardId}
             />
 
             <ConfirmationModal
