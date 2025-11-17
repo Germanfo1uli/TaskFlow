@@ -54,7 +54,10 @@ const ControlPanel = ({ activePage, onPageChange }: ControlPanelProps) => {
                     <FaCog className={styles.panelNavIcon} />
                     <span className={styles.panelNavText}>Настройки</span>
                 </button>
-                <button className={styles.panelNavButton}>
+                <button
+                    className={`${styles.panelNavButton} ${activePage === 'developers' ? styles.active : ''}`}
+                    onClick={() => handleNavClick('developers')}
+                >
                     <FaUsers className={styles.panelNavIcon} />
                     <span className={styles.panelNavText}>Разработчики</span>
                 </button>
