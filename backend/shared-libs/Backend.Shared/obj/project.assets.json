@@ -8,27 +8,24 @@
     "net8.0": []
   },
   "packageFolders": {
-    "C:\\Users\\Никита\\.nuget\\packages\\": {}
+    "C:\\Users\\gunze\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Projects\\JiroProj\\backend\\shared-libs\\Backend.Shared\\Backend.Shared.csproj",
+      "projectUniqueName": "C:\\Users\\gunze\\RiderProjects\\JiroProj\\backend\\shared-libs\\Backend.Shared\\Backend.Shared.csproj",
       "projectName": "Backend.Shared",
-      "projectPath": "C:\\Projects\\JiroProj\\backend\\shared-libs\\Backend.Shared\\Backend.Shared.csproj",
-      "packagesPath": "C:\\Users\\Никита\\.nuget\\packages\\",
-      "outputPath": "C:\\Projects\\JiroProj\\backend\\shared-libs\\Backend.Shared\\obj\\",
+      "projectPath": "C:\\Users\\gunze\\RiderProjects\\JiroProj\\backend\\shared-libs\\Backend.Shared\\Backend.Shared.csproj",
+      "packagesPath": "C:\\Users\\gunze\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\gunze\\RiderProjects\\JiroProj\\backend\\shared-libs\\Backend.Shared\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\Никита\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        "C:\\Users\\gunze\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
       ],
       "sources": {
-        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-        "C:\\Program Files\\dotnet\\library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -67,7 +64,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.400/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.408/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
