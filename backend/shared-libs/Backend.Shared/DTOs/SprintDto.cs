@@ -8,4 +8,12 @@ public class SprintDto
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public long ProjectId { get; set; }
+	public SprintStatus Status { get; set; }
+}
+
+public enum SprintStatus
+{
+    Planned,
+    Active, 
+    Completed
 }

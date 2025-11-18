@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Backend.Shared.DTOs;
 
 namespace Backend.Sprints.Api.Models.Entities;
 
@@ -29,5 +30,7 @@ public class Sprint
     public DateTime EndDate { get; set; }
 
     [Column("status")]
-    public string Status { get; set; } = "planned"; // планируется planned, active, completed?
+    public SprintStatus Status { get; set; } = SprintStatus.Planned;
+
+	public virtual ICollection<SprintIssue> SprintIssues { get; set; } = new List<SprintIssue>();
 }

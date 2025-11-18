@@ -10,4 +10,6 @@ public class SprintIssue
 
     [Column("sprint_id")]
     public long SprintId { get; set; }
+
+	public virtual Sprint Sprint { get; set; } = null!;
 }

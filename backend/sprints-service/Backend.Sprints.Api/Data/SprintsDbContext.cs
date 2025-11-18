@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Backend.Sprints.Api.Models.Entities;
+using Backend.Shared.DTOs;
 
 namespace Backend.Sprints.Api.Data;
 
@@ -21,14 +22,20 @@ public class SprintsDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
             
-            entity.Property(e => e.Status)
-                .HasMaxLength(50)
-                .HasDefaultValue("planned");
+        	entity.Property(e => e.Status)
+            	.HasConversion<string>()
+            	.HasMaxLength(50)
+            	.HasDefaultValue(SprintStatus.Planned);
             
             entity.HasIndex(e => e.ProjectId);
             entity.HasIndex(e => e.StartDate);
             entity.HasIndex(e => e.EndDate);
             entity.HasIndex(e => e.Status);
+
+            entity.HasMany(s => s.SprintIssues)
+                  .WithOne(si => si.Sprint)
+                  .HasForeignKey(si => si.SprintId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<SprintIssue>(entity =>
