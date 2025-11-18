@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Backend.Sprints.Api.Migrations
 {
     [DbContext(typeof(SprintsDbContext))]
-    [Migration("20251118043159_InitialCreate")]
+    [Migration("20251118151426_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -34,10 +34,6 @@ namespace Backend.Sprints.Api.Migrations
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
 
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("timestamp with time zone")
@@ -62,9 +58,13 @@ namespace Backend.Sprints.Api.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("start_date");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("planned")
+                        .HasColumnName("status");
 
                     b.HasKey("Id");
 
@@ -73,6 +73,8 @@ namespace Backend.Sprints.Api.Migrations
                     b.HasIndex("ProjectId");
 
                     b.HasIndex("StartDate");
+
+                    b.HasIndex("Status");
 
                     b.ToTable("sprints", "sprints_service_schema");
                 });
@@ -86,10 +88,6 @@ namespace Backend.Sprints.Api.Migrations
                     b.Property<long>("SprintId")
                         .HasColumnType("bigint")
                         .HasColumnName("sprint_id");
-
-                    b.Property<DateTime>("AddedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("added_at");
 
                     b.HasKey("IssueId", "SprintId");
 

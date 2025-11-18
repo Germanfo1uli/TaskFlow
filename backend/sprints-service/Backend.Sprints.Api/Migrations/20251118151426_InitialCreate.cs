@@ -21,8 +21,7 @@ namespace Backend.Sprints.Api.Migrations
                 columns: table => new
                 {
                     issue_id = table.Column<long>(type: "bigint", nullable: false),
-                    sprint_id = table.Column<long>(type: "bigint", nullable: false),
-                    added_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    sprint_id = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -41,8 +40,7 @@ namespace Backend.Sprints.Api.Migrations
                     goal = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     start_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     end_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false, defaultValue: "planned")
                 },
                 constraints: table =>
                 {
@@ -78,6 +76,12 @@ namespace Backend.Sprints.Api.Migrations
                 schema: "sprints_service_schema",
                 table: "sprints",
                 column: "start_date");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_sprints_status",
+                schema: "sprints_service_schema",
+                table: "sprints",
+                column: "status");
         }
 
         /// <inheritdoc />

@@ -10,7 +10,4 @@ public class SprintIssue
 
     [Column("sprint_id")]
     public long SprintId { get; set; }
-
-    [Column("added_at")]
-    public DateTime AddedAt { get; set; } = DateTime.UtcNow;
 }
