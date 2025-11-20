@@ -5,6 +5,7 @@ import com.example.userservice.models.entity.Avatar;
 import com.example.userservice.models.entity.User;
 import com.example.userservice.repository.AvatarRepository;
 import com.example.userservice.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -58,6 +59,7 @@ public class AvatarService {
         return avatarRepository.findByUserId(userId);
     }
 
+    @Transactional
     public void deleteAvatar(Long userId) {
         avatarRepository.deleteByUserId(userId);
     }
