@@ -2,6 +2,8 @@ package com.example.userservice.models.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "avatars", schema = "user_service_schema")
@@ -14,6 +16,7 @@ public class Avatar {
 
     @Lob
     @Column(name = "data", nullable = false)
+    @JdbcTypeCode(SqlTypes.VARBINARY)
     private byte[] data;
 
     @Column(name = "mime_type", nullable = false)

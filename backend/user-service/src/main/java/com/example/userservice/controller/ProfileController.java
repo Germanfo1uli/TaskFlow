@@ -39,4 +39,13 @@ public class ProfileController {
         UserProfileResponse response = profileService.getProfileByIdAsync(userId).join();
         return ResponseEntity.ok(response);
     }
+
+    @Operation(summary = "Получение профиля пользователя по userId")
+    @GetMapping("/{userId}/profile")
+    public ResponseEntity<UserProfileResponse> getUserProfileById(
+            @PathVariable Long userId) {
+
+        UserProfileResponse response = profileService.getProfileByIdAsync(userId).join();
+        return ResponseEntity.ok(response);
+    }
 }
