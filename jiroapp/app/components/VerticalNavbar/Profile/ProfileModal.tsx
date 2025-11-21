@@ -29,9 +29,9 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                 <div className={styles.modalHeader}>
                     <div className={styles.headerContent}>
                         <div className={styles.titleSection}>
-                            <h1 className={styles.modalTitle}>Профиль</h1>
+                            <h1 className={styles.modalTitle}>Профиль сотрудника</h1>
                             <p className={styles.modalSubtitle}>
-                                Управление персональной информацией
+                                Управление персональной информацией и настройками
                             </p>
                         </div>
 
@@ -43,29 +43,42 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
 
                 <div className={styles.modalContent}>
                     <div className={styles.profileMainContent}>
-                        <AvatarUpload
-                            avatar={profile.avatar}
-                            onAvatarChange={handleAvatarChange}
-                            isLoading={isLoading}
-                        />
+                        <div className={styles.profileHeader}>
+                            <AvatarUpload
+                                avatar={profile.avatar}
+                                onAvatarChange={handleAvatarChange}
+                                isLoading={isLoading}
+                            />
+                            <div className={styles.profileHeaderInfo}>
+                                <h2 className={styles.profileName}>{profile.name}</h2>
+                                <p className={styles.profilePosition}>{profile.position}</p>
+                                <span className={styles.profileEmail}>{profile.email}</span>
+                            </div>
+                        </div>
 
-                        <ProfileStats
-                            completedTasks={profile.completedTasks}
-                            activeProjects={profile.activeProjects}
-                            joinDate={profile.joinDate}
-                            position={profile.position}
-                        />
+                        <div className={styles.contentGrid}>
+                            <div className={styles.statsSection}>
+                                <ProfileStats
+                                    completedTasks={profile.completedTasks}
+                                    activeProjects={profile.activeProjects}
+                                    joinDate={profile.joinDate}
+                                    position={profile.position}
+                                />
+                            </div>
 
-                        <ProfileForm
-                            initialData={{
-                                name: profile.name,
-                                email: profile.email,
-                                bio: profile.bio,
-                                position: profile.position
-                            }}
-                            onSubmit={handleProfileSubmit}
-                            isLoading={isLoading}
-                        />
+                            <div className={styles.formSection}>
+                                <ProfileForm
+                                    initialData={{
+                                        name: profile.name,
+                                        email: profile.email,
+                                        bio: profile.bio,
+                                        position: profile.position
+                                    }}
+                                    onSubmit={handleProfileSubmit}
+                                    isLoading={isLoading}
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

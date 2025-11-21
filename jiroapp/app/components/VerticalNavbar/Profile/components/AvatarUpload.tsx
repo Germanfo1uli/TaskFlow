@@ -16,6 +16,9 @@ export const AvatarUpload = ({ avatar, onAvatarChange, isLoading }: AvatarUpload
         const file = event.target.files?.[0];
         if (file && file.type.startsWith('image/')) {
             onAvatarChange(file);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
         }
     };
 
@@ -39,6 +42,10 @@ export const AvatarUpload = ({ avatar, onAvatarChange, isLoading }: AvatarUpload
         }
     };
 
+    const handleClick = () => {
+        fileInputRef.current?.click();
+    };
+
     return (
         <div className={styles.avatarUploadContainer}>
             <div
@@ -46,7 +53,7 @@ export const AvatarUpload = ({ avatar, onAvatarChange, isLoading }: AvatarUpload
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
+                onClick={handleClick}
             >
                 {avatar ? (
                     <div className={styles.avatarPreview}>
