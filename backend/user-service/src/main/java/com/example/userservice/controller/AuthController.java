@@ -24,7 +24,7 @@ public class AuthController {
 
     public final AuthService authService;
 
-    @Operation(summary = "User registration")
+    @Operation(summary = "Регистрация пользователя")
     @PostMapping("/register")
     public ResponseEntity<LoginResponse> register(
             @Valid @RequestBody RegisterRequest request) {
@@ -34,7 +34,7 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "User authentication")
+    @Operation(summary = "Авторизация пользователя")
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(
             @Valid @RequestBody LoginRequest request) {
@@ -44,7 +44,7 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Get new tokens")
+    @Operation(summary = "Получение новых токенов")
     @PostMapping("/refresh")
     public ResponseEntity<TokenPair> refresh(
             @Valid @RequestBody RefreshRequest request) {
@@ -55,7 +55,7 @@ public class AuthController {
     }
 
     @Operation(
-            summary = "Password change",
+            summary = "Смена пароля",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @PatchMapping("/change-password")
@@ -71,7 +71,7 @@ public class AuthController {
     }
 
     @Operation(
-            summary = "Email change",
+            summary = "Смена почты",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @PatchMapping("/change-email")
@@ -87,7 +87,7 @@ public class AuthController {
     }
 
     @Operation(
-            summary = "User logout",
+            summary = "Логаут пользователя",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @PostMapping("/logout")

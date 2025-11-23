@@ -1,7 +1,9 @@
 package com.example.userservice.controller;
 
 import com.example.userservice.models.entity.Avatar;
+import com.example.userservice.security.JwtUser;
 import com.example.userservice.service.AvatarService;
+import com.example.userservice.service.AvatarValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
@@ -23,13 +25,15 @@ import java.util.concurrent.TimeUnit;
 @Validated
 public class AvatarController {
     public final AvatarService avatarService;
+    public final AvatarValidator validator;
 
     @PostMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, String>> uploadAvatar(
-            @AuthenticationPrincipal Long userId,
+            @AuthenticationPrincipal JwtUser principal,
             @RequestParam("file") MultipartFile file) {
 
-        avatarService.uploadAvatar(userId, file);
+        validator.validate(file);
+        avatarService.uploadAvatar(principal.userId(), file);
 
         return ResponseEntity.ok(Map.of(
                 "message", "Аватарка успешно загружена",
@@ -38,8 +42,8 @@ public class AvatarController {
     }
 
     @GetMapping("/me/avatar")
-    public ResponseEntity<byte[]> getMyAvatar(@AuthenticationPrincipal Long userId) {
-        return getAvatarResponse(userId);
+    public ResponseEntity<byte[]> getMyAvatar(@AuthenticationPrincipal JwtUser principal) {
+        return getAvatarResponse(principal.userId());
     }
 
     @GetMapping("/{userId}/avatar")
@@ -69,8 +73,8 @@ public class AvatarController {
     }
 
     @DeleteMapping("/me/avatar")
-    public ResponseEntity<?> deleteAvatar(@AuthenticationPrincipal Long userId) {
-        avatarService.deleteAvatar(userId);
+    public ResponseEntity<?> deleteAvatar(@AuthenticationPrincipal JwtUser principal) {
+        avatarService.deleteAvatar(principal.userId());
         return ResponseEntity.ok(Map.of("message", "Аватарка удалена"));
     }
 }

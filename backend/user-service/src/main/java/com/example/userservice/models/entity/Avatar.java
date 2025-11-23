@@ -1,13 +1,19 @@
 package com.example.userservice.models.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "avatars", schema = "user_service_schema")
 @Data
+@Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
 public class Avatar {
 
     @Id
@@ -29,6 +35,6 @@ public class Avatar {
     @Column(name = "file_size", nullable = false)
     private Integer fileSize;
 
-    @Column(name = "filename", nullable = false)
+    @Column(name = "filename", nullable = false, unique = true)
     private String filename;
 }

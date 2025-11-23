@@ -1,5 +1,6 @@
 package com.example.userservice.service;
 
+import com.example.userservice.exception.BadRequestException;
 import com.example.userservice.exception.UserNotFoundException;
 import com.example.userservice.models.entity.Avatar;
 import com.example.userservice.models.entity.User;
@@ -11,8 +12,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -20,39 +23,35 @@ public class AvatarService {
     private final AvatarRepository avatarRepository;
     private final UserRepository userRepository;
 
-    private static final long MAX_SIZE = 10 * 1024 * 1024; // 10 МБ
-    private static final Set<String> ALLOWED_TYPES = Set.of(
-            "image/jpeg", "image/png", "image/gif", "image/webp"
-    );
-
+    @Transactional
     public void uploadAvatar(Long userId, MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("Файл пустой");
-        }
-        if (file.getSize() > MAX_SIZE) {
-            throw new IllegalArgumentException("Файл слишком большой (макс. 10 МБ)");
-        }
-        if (!ALLOWED_TYPES.contains(file.getContentType())) {
-            throw new IllegalArgumentException("Недопустимый тип файла");
-        }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
-        Avatar avatar = avatarRepository.findByUserId(userId)
-                .orElse(new Avatar());
+        avatarRepository.findByUserId(userId).ifPresent(avatarRepository::delete);
+
+        String ext = getExtension(Objects.requireNonNull(file.getOriginalFilename()));
+        String uniqueName = "avatar_" + userId + "_" + UUID.randomUUID() + "." + ext;
+
+        Avatar avatar = Avatar.builder()
+                .user(user)
+                .mimeType(file.getContentType())
+                .fileSize((int) file.getSize())
+                .filename(uniqueName)
+                .build();
 
         try {
             avatar.setData(file.getBytes());
         } catch (IOException e) {
-            throw new RuntimeException("Ошибка чтения файла", e);
+            throw new BadRequestException("Failed to read file");
         }
-        avatar.setMimeType(file.getContentType());
-        avatar.setFileSize((int) file.getSize());
-        avatar.setFilename(file.getOriginalFilename());
-        avatar.setUser(user);
 
         avatarRepository.save(avatar);
+    }
+
+    private String getExtension(String originalName) {
+        return originalName.substring(originalName.lastIndexOf('.') + 1).toLowerCase();
     }
 
     public Optional<Avatar> findByUserId(Long userId) {
