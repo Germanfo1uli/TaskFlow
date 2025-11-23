@@ -6,7 +6,7 @@
     overflow-y: hidden;
     background: linear-gradient(135deg, #f0f8ff 0%, #e6f2ff 50%, #f0f7ff 100%);
     padding: 1rem;
-    margin-left: 15rem;
+    margin-left: 12rem;
 }
 
 .backgroundElements {
@@ -453,7 +453,18 @@
     50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.1); }
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1700px) {
+    .boardsContent {
+        margin-left: 20rem;
+    }
+
+
+}
+
+@media (max-width: 1600px) {
+    .boardsContent {
+        margin-left: 22rem;
+    }
     .contentGrid {
         grid-template-columns: 1fr;
         gap: 1.5rem;
@@ -462,14 +473,28 @@
     .quickActionsPanel {
         order: -1;
     }
+
+}
+
+@media (max-width: 1200px) {
+    .boardsContent {
+        margin-left: 22rem;
+    }
+    .contentGrid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .quickActionsPanel {
+        order: -1;
+    }
+
 }
 
 @media (max-width: 1024px) {
     .boardsContent {
-        padding: 1rem;
-        margin-left: 20rem;
+        margin-left: 18.5rem;
     }
-
     .pageTitle {
         font-size: 2.2rem;
     }
@@ -515,6 +540,10 @@
 }
 
 @media (max-width: 480px) {
+    .boardsContent {
+        margin-left: 18.5rem;
+    }
+
     .pageTitle {
         font-size: 1.8rem;
     }
