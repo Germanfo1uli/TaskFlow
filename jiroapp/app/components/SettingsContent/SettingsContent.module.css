@@ -1,7 +1,7 @@
 .settingsContent {
     flex: 1;
     min-height: 100vh;
-    background: #f8fafc;
+    background: linear-gradient(135deg, #f0f8ff 0%, #e6f2ff 50%, #f0f7ff 100%);
     margin-left: 16rem;
     display: flex;
     flex-direction: column;
@@ -145,20 +145,38 @@
     transform: translateY(-2px);
 }
 
-@media (max-width: 1200px) {
+
+@media (max-width: 1700px) {
+    .settingsContent {
+        margin-left: 22rem;
+    }
     .formGrid {
         grid-template-columns: 1fr;
         gap: 1.5rem;
     }
 }
 
+@media (max-width: 1200px) {
+    .settingsContent {
+        margin-left: 22rem;
+    }
+    .formGrid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+}
+
+
 @media (max-width: 1024px) {
     .settingsContent {
-        margin-left: 0;
+        margin-left: 18.5rem;
     }
 }
 
 @media (max-width: 768px) {
+    .settingsContent {
+        margin-left: 18rem;
+    }
     .settingsHeader {
         padding: 1.5rem;
     }
@@ -190,6 +208,9 @@
 }
 
 @media (max-width: 480px) {
+    .settingsContent {
+        margin-left: 18.5rem;
+    }
     .settingsHeader {
         padding: 1.25rem;
     }
