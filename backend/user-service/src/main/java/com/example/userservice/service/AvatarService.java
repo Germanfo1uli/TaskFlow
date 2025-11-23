@@ -60,6 +60,6 @@ public class AvatarService {
 
     @Transactional
     public void deleteAvatar(Long userId) {
-        avatarRepository.deleteByUserId(userId);
+        avatarRepository.deleteByUser_Id(userId);
     }
 }

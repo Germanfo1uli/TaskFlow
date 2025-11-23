@@ -9,5 +9,5 @@ import java.util.UUID;
 
 public interface TokenRepository extends JpaRepository<RefreshToken, Long> {
     Optional<RefreshToken> findByJti(UUID jti);
-    List<RefreshToken> findAllByUserIdAndRevokedFalse(Long userId);
+    List<RefreshToken> findAllByUser_IdAndRevokedFalse(Long userId);
 }

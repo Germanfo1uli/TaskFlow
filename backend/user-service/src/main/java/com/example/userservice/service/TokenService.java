@@ -78,7 +78,7 @@ public class TokenService {
     @Transactional
     public void revokeAllExcept(Long userId, String newToken) {
         UUID newJti = extractJti(newToken);
-        List<RefreshToken> active = tokenRepository.findAllByUserIdAndRevokedFalse(userId);
+        List<RefreshToken> active = tokenRepository.findAllByUser_IdAndRevokedFalse(userId);
         active.stream()
                 .filter(t -> !t.getJti().equals(newJti))
                 .forEach(t -> t.setRevoked(true));
