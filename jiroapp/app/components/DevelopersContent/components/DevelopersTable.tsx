@@ -13,7 +13,7 @@ import {
     Box,
     Tooltip
 } from '@mui/material';
-import { FaTrash } from 'react-icons/fa';
+import { FaTrash, FaEdit } from 'react-icons/fa';
 import { Developer } from '../types/developer.types';
 import { DeveloperRoleChip } from './DeveloperRoleChip';
 import { useDeveloperProjects } from '../hooks/useDeveloperProjects';
@@ -22,14 +22,20 @@ interface DevelopersTableProps {
     developers: Developer[];
     isLeader: boolean;
     onRemoveDeveloper: (developerId: number) => void;
+    onEditDeveloper: (developer: Developer) => void;
 }
 
 export const DevelopersTable = ({
                                     developers,
                                     isLeader,
-                                    onRemoveDeveloper
+                                    onRemoveDeveloper,
+                                    onEditDeveloper
                                 }: DevelopersTableProps) => {
     const { getDeveloperProjects } = useDeveloperProjects();
+
+    const canEditDeveloper = (developer: Developer) => {
+        return isLeader && !developer.isCurrentUser;
+    };
 
     const canRemoveDeveloper = (developer: Developer) => {
         return isLeader && !developer.isCurrentUser && developer.role !== 'leader';
@@ -60,7 +66,7 @@ export const DevelopersTable = ({
                 }
             }}
         >
-            <Table sx={{ minWidth: 750 }}>
+            <Table sx={{ minWidth: 800 }}>
                 <TableHead>
                     <TableRow
                         sx={{
@@ -88,6 +94,7 @@ export const DevelopersTable = ({
                         <TableCell>Роль</TableCell>
                         <TableCell>Проекты</TableCell>
                         <TableCell>Выполнено задач</TableCell>
+                        <TableCell>Просроченные задачи</TableCell>
                         <TableCell align="center">Действия</TableCell>
                     </TableRow>
                 </TableHead>
@@ -271,33 +278,96 @@ export const DevelopersTable = ({
                                     </Box>
                                 </TableCell>
 
-                                <TableCell align="center">
-                                    {canRemoveDeveloper(developer) && (
-                                        <Tooltip
-                                            title="Удалить из проекта"
-                                            arrow
-                                            placement="top"
+                                <TableCell>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Box
+                                            sx={{
+                                                width: 36,
+                                                height: 36,
+                                                borderRadius: '10px',
+                                                background: developer.overdueTasks > 0
+                                                    ? 'linear-gradient(135deg, #ef4444, #f87171)'
+                                                    : 'linear-gradient(135deg, #10b981, #34d399)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: 'white',
+                                                fontWeight: 700,
+                                                fontSize: '0.9rem',
+                                                boxShadow: developer.overdueTasks > 0
+                                                    ? '0 4px 12px rgba(239, 68, 68, 0.3)'
+                                                    : '0 4px 12px rgba(16, 185, 129, 0.3)'
+                                            }}
                                         >
-                                            <IconButton
-                                                onClick={() => onRemoveDeveloper(developer.id)}
-                                                sx={{
-                                                    color: '#ef4444',
-                                                    background: 'rgba(239, 68, 68, 0.1)',
-                                                    border: '1px solid rgba(239, 68, 68, 0.2)',
-                                                    width: 40,
-                                                    height: 40,
-                                                    transition: 'all 0.3s ease',
-                                                    '&:hover': {
-                                                        background: 'rgba(239, 68, 68, 0.2)',
-                                                        transform: 'scale(1.1) rotate(5deg)',
-                                                        boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
-                                                    }
-                                                }}
+                                            {developer.overdueTasks || 0}
+                                        </Box>
+                                        <Typography
+                                            sx={{
+                                                fontWeight: 600,
+                                                color: developer.overdueTasks > 0 ? '#ef4444' : '#1e293b',
+                                                fontSize: '1rem'
+                                            }}
+                                        >
+                                            {developer.overdueTasks > 0 ? 'просрочено' : 'нет'}
+                                        </Typography>
+                                    </Box>
+                                </TableCell>
+
+                                <TableCell align="center">
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+                                        {canEditDeveloper(developer) && (
+                                            <Tooltip
+                                                title="Редактировать участника"
+                                                arrow
+                                                placement="top"
                                             >
-                                                <FaTrash style={{ fontSize: '16px' }} />
-                                            </IconButton>
-                                        </Tooltip>
-                                    )}
+                                                <IconButton
+                                                    onClick={() => onEditDeveloper(developer)}
+                                                    sx={{
+                                                        color: '#3b82f6',
+                                                        background: 'rgba(59, 130, 246, 0.1)',
+                                                        border: '1px solid rgba(59, 130, 246, 0.2)',
+                                                        width: 40,
+                                                        height: 40,
+                                                        transition: 'all 0.3s ease',
+                                                        '&:hover': {
+                                                            background: 'rgba(59, 130, 246, 0.2)',
+                                                            transform: 'scale(1.1)',
+                                                            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+                                                        }
+                                                    }}
+                                                >
+                                                    <FaEdit style={{ fontSize: '16px' }} />
+                                                </IconButton>
+                                            </Tooltip>
+                                        )}
+                                        {canRemoveDeveloper(developer) && (
+                                            <Tooltip
+                                                title="Удалить из проекта"
+                                                arrow
+                                                placement="top"
+                                            >
+                                                <IconButton
+                                                    onClick={() => onRemoveDeveloper(developer.id)}
+                                                    sx={{
+                                                        color: '#ef4444',
+                                                        background: 'rgba(239, 68, 68, 0.1)',
+                                                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                                                        width: 40,
+                                                        height: 40,
+                                                        transition: 'all 0.3s ease',
+                                                        '&:hover': {
+                                                            background: 'rgba(239, 68, 68, 0.2)',
+                                                            transform: 'scale(1.1) rotate(5deg)',
+                                                            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
+                                                        }
+                                                    }}
+                                                >
+                                                    <FaTrash style={{ fontSize: '16px' }} />
+                                                </IconButton>
+                                            </Tooltip>
+                                        )}
+                                    </Box>
                                 </TableCell>
                             </TableRow>
                         );

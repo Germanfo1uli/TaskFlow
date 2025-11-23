@@ -6,6 +6,7 @@ export interface Developer {
     avatar: string | null;
     role: DeveloperRole;
     completedTasks: number;
+    overdueTasks: number;
     projects: string[];
     isCurrentUser?: boolean;
 }

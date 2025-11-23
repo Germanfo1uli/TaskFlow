@@ -7,6 +7,7 @@ export const mockDevelopers: Developer[] = [
         avatar: null,
         role: 'leader',
         completedTasks: 24,
+        overdueTasks: 2,
         projects: ['TASKFLOW PRO', 'Мобильное приложение', 'API Gateway'],
         isCurrentUser: true
     },
@@ -16,6 +17,7 @@ export const mockDevelopers: Developer[] = [
         avatar: null,
         role: 'executor',
         completedTasks: 18,
+        overdueTasks: 1,
         projects: ['TASKFLOW PRO', 'Дизайн система']
     },
     {
@@ -24,6 +26,7 @@ export const mockDevelopers: Developer[] = [
         avatar: null,
         role: 'executor',
         completedTasks: 15,
+        overdueTasks: 0,
         projects: ['TASKFLOW PRO', 'База данных', 'Бэкенд API']
     },
     {
@@ -32,6 +35,7 @@ export const mockDevelopers: Developer[] = [
         avatar: null,
         role: 'assistant',
         completedTasks: 8,
+        overdueTasks: 3,
         projects: ['TASKFLOW PRO', 'Тестирование']
     },
     {
@@ -40,6 +44,7 @@ export const mockDevelopers: Developer[] = [
         avatar: null,
         role: 'executor',
         completedTasks: 12,
+        overdueTasks: 0,
         projects: ['Мобильное приложение', 'Frontend']
     }
 ];

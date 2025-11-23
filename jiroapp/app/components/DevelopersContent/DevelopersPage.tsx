@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { Button, Snackbar, Alert, Box, CircularProgress } from '@mui/material';
-import { FaUserPlus, FaSync } from 'react-icons/fa';
+import { FaUserPlus, FaSync, FaEdit } from 'react-icons/fa';
 import { Developer, NewDeveloper } from './types/developer.types';
 import { mockDevelopers } from './data/mockDevelopers';
 import { DevelopersTable } from './components/DevelopersTable';
 import { AddDeveloperDialog } from './components/AddDeveloperDialog';
 import { DeleteConfirmationDialog } from './components/DeleteConfirmationDialog';
+import { EditDeveloperDialog } from './components/EditDeveloperDialog';
 import { useDeveloperProjects } from './hooks/useDeveloperProjects';
 import { useDashboard } from '../DashboardContent/hooks/useDashboard';
 import styles from './DevelopersPage.module.css';
@@ -15,6 +16,8 @@ import styles from './DevelopersPage.module.css';
 export const DevelopersPage = () => {
     const [developers, setDevelopers] = useState<Developer[]>(mockDevelopers);
     const [isAddDeveloperOpen, setIsAddDeveloperOpen] = useState(false);
+    const [isEditDeveloperOpen, setIsEditDeveloperOpen] = useState(false);
+    const [editingDeveloper, setEditingDeveloper] = useState<Developer | null>(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [deleteConfirmation, setDeleteConfirmation] = useState<{
         isOpen: boolean;
@@ -44,23 +47,6 @@ export const DevelopersPage = () => {
     const { boards } = useDashboard();
     const isLeader = developers.some(dev => dev.isCurrentUser && dev.role === 'leader');
 
-    const updateAllDeveloperProjects = () => {
-        setIsRefreshing(true);
-
-        const updatedDevelopers = developers.map(developer => ({
-            ...developer,
-            projects: getDeveloperProjects(developer),
-            completedTasks: calculateCompletedTasks(developer.name)
-        }));
-
-        setDevelopers(updatedDevelopers);
-
-        setTimeout(() => {
-            setIsRefreshing(false);
-            showSnackbar('Данные разработчиков обновлены', 'success');
-        }, 500);
-    };
-
     const calculateCompletedTasks = (developerName: string): number => {
         let completedTasks = 0;
 
@@ -75,6 +61,44 @@ export const DevelopersPage = () => {
         });
 
         return completedTasks;
+    };
+
+    const calculateOverdueTasks = (developerName: string): number => {
+        let overdueTasks = 0;
+        const today = new Date();
+
+        boards.forEach(board => {
+            if (board.title !== 'Done') {
+                board.cards?.forEach(card => {
+                    if (card.author.name === developerName && card.dueDate) {
+                        const dueDate = new Date(card.dueDate);
+                        if (dueDate < today) {
+                            overdueTasks++;
+                        }
+                    }
+                });
+            }
+        });
+
+        return overdueTasks;
+    };
+
+    const updateAllDeveloperProjects = () => {
+        setIsRefreshing(true);
+
+        const updatedDevelopers = developers.map(developer => ({
+            ...developer,
+            projects: getDeveloperProjects(developer),
+            completedTasks: calculateCompletedTasks(developer.name),
+            overdueTasks: calculateOverdueTasks(developer.name)
+        }));
+
+        setDevelopers(updatedDevelopers);
+
+        setTimeout(() => {
+            setIsRefreshing(false);
+            showSnackbar('Данные разработчиков обновлены', 'success');
+        }, 500);
     };
 
     useEffect(() => {
@@ -92,10 +116,12 @@ export const DevelopersPage = () => {
             avatar: null,
             role: developerData.role,
             completedTasks: calculateCompletedTasks(developerData.name),
+            overdueTasks: calculateOverdueTasks(developerData.name),
             projects: getDeveloperProjects({
                 name: developerData.name,
                 role: developerData.role,
                 completedTasks: 0,
+                overdueTasks: 0,
                 projects: [],
                 avatar: null,
                 id: 0
@@ -106,6 +132,22 @@ export const DevelopersPage = () => {
         setNewDeveloper({ name: '', role: 'executor' });
         setIsAddDeveloperOpen(false);
         showSnackbar(`Участник ${developerData.name} добавлен в проект`, 'success');
+    };
+
+    const handleEditDeveloper = (developer: Developer) => {
+        setEditingDeveloper(developer);
+        setIsEditDeveloperOpen(true);
+    };
+
+    const handleUpdateDeveloper = (updatedDeveloper: Developer) => {
+        setDevelopers(prev =>
+            prev.map(dev =>
+                dev.id === updatedDeveloper.id ? updatedDeveloper : dev
+            )
+        );
+        setIsEditDeveloperOpen(false);
+        setEditingDeveloper(null);
+        showSnackbar(`Данные участника ${updatedDeveloper.name} обновлены`, 'success');
     };
 
     const handleRemoveDeveloper = (developerId: number) => {
@@ -157,19 +199,27 @@ export const DevelopersPage = () => {
                                 startIcon={isRefreshing ? <CircularProgress size={16} /> : <FaSync />}
                                 sx={{
                                     minWidth: 'auto',
-                                    padding: '6px 12px',
-                                    borderRadius: '8px',
-                                    background: 'rgba(59, 130, 246, 0.1)',
-                                    color: '#3b82f6',
+                                    padding: '8px 16px',
+                                    borderRadius: '12px',
+                                    background: 'linear-gradient(135deg, #3b82f6, #60a5fa)',
+                                    color: 'white',
+                                    fontWeight: 600,
+                                    textTransform: 'none',
+                                    fontSize: '0.9rem',
+                                    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
                                     '&:hover': {
-                                        background: 'rgba(59, 130, 246, 0.2)',
+                                        background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
+                                        boxShadow: '0 6px 20px rgba(59, 130, 246, 0.4)',
+                                        transform: 'translateY(-1px)'
                                     },
-                                    '& .MuiButton-startIcon': {
-                                        marginRight: '6px'
-                                    }
+                                    '&:disabled': {
+                                        background: 'rgba(100, 116, 139, 0.2)',
+                                        color: 'rgba(100, 116, 139, 0.5)'
+                                    },
+                                    transition: 'all 0.3s ease'
                                 }}
                             >
-                                {isRefreshing ? 'Обновление...' : 'Обновить'}
+                                {isRefreshing ? 'Обновление...' : 'Обновить данные'}
                             </Button>
                         </Box>
                         <p className={styles.pageSubtitle}>
@@ -178,34 +228,6 @@ export const DevelopersPage = () => {
                             {isRefreshing && ' (Обновление...)'}
                         </p>
                     </div>
-
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        {isLeader && (
-                            <Button
-                                variant="contained"
-                                startIcon={<FaUserPlus />}
-                                onClick={() => setIsAddDeveloperOpen(true)}
-                                className={styles.addDeveloperBtn}
-                                sx={{
-                                    background: 'linear-gradient(135deg, #3b82f6, #60a5fa)',
-                                    borderRadius: '14px',
-                                    padding: '12px 28px',
-                                    fontWeight: 700,
-                                    textTransform: 'none',
-                                    fontSize: '0.95rem',
-                                    boxShadow: '0 6px 20px rgba(59, 130, 246, 0.3)',
-                                    '&:hover': {
-                                        background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
-                                        boxShadow: '0 8px 25px rgba(59, 130, 246, 0.4)',
-                                        transform: 'translateY(-2px)'
-                                    },
-                                    transition: 'all 0.3s ease'
-                                }}
-                            >
-                                Добавить участника
-                            </Button>
-                        )}
-                    </Box>
                 </div>
             </div>
 
@@ -214,6 +236,7 @@ export const DevelopersPage = () => {
                     developers={developers}
                     isLeader={isLeader}
                     onRemoveDeveloper={handleRemoveDeveloper}
+                    onEditDeveloper={handleEditDeveloper}
                 />
             </div>
 
@@ -223,6 +246,16 @@ export const DevelopersPage = () => {
                 onAdd={handleAddDeveloper}
                 newDeveloper={newDeveloper}
                 onNewDeveloperChange={setNewDeveloper}
+            />
+
+            <EditDeveloperDialog
+                open={isEditDeveloperOpen}
+                developer={editingDeveloper}
+                onClose={() => {
+                    setIsEditDeveloperOpen(false);
+                    setEditingDeveloper(null);
+                }}
+                onUpdate={handleUpdateDeveloper}
             />
 
             <DeleteConfirmationDialog
