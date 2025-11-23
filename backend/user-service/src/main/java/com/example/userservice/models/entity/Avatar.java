@@ -11,8 +11,12 @@ import org.hibernate.type.SqlTypes;
 public class Avatar {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @OneToOne
+    @MapsId
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @Lob
     @Column(name = "data", nullable = false)
@@ -27,8 +31,4 @@ public class Avatar {
 
     @Column(name = "filename", nullable = false)
     private String filename;
-
-    @OneToOne
-    @JoinColumn(name = "user_id")
-    private User user;
 }
