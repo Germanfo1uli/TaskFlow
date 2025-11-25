@@ -6,6 +6,7 @@ import com.example.userservice.models.dto.response.UserProfileResponse;
 import com.example.userservice.security.JwtUser;
 import com.example.userservice.service.UserService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,6 +20,7 @@ import jakarta.validation.Valid;
 @RequiredArgsConstructor
 @Validated
 @SecurityRequirement(name = "bearerAuth")
+@Tag(name = "Profile Management", description = "Управление профилями и личной информацией")
 public class ProfileController {
 
     public final UserService userService;

@@ -35,9 +35,7 @@ public class UserService {
 
         profile.setBio(bio);
         profile.setName(name);
-        return new ChangeProfileResponse(
-                profile.getId(), profile.getName(), profile.getBio());
-
+        return new ChangeProfileResponse(profile.getName(), profile.getBio());
     }
 
     public UserProfileResponse getProfileById(Long userId) {

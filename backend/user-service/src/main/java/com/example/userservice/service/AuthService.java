@@ -1,8 +1,7 @@
 package com.example.userservice.service;
 
 import com.example.userservice.exception.*;
-import com.example.userservice.models.dto.response.TokenPair;
-import com.example.userservice.models.dto.response.LoginResponse;
+import com.example.userservice.models.dto.response.*;
 import com.example.userservice.models.entity.RefreshToken;
 import com.example.userservice.models.entity.SystemRole;
 import com.example.userservice.models.entity.User;
@@ -27,7 +26,7 @@ public class AuthService {
     private final UserService userService;
 
     @Transactional
-    public LoginResponse register(String name, String email, String password, String deviceFingerprint) {
+    public RegisterResponse register(String name, String email, String password, String deviceFingerprint) {
 
         if (userRepository.existsByEmail(email)) {
             throw new EmailAlreadyExistsException("Email already in use");
@@ -43,10 +42,11 @@ public class AuthService {
         userService.createProfile(user, name);
 
         TokenPair pair = tokenService.createTokenPair(user, deviceFingerprint);
-        return new LoginResponse(user.getEmail(), pair.accessToken(), pair.refreshToken());
+        return new RegisterResponse(user.getId(), name, user.getEmail(), pair);
     }
 
     public LoginResponse login(String email, String password, String deviceFingerprint) {
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new InvalidCredentialsException("Incorrect login or password"));
 
@@ -63,11 +63,12 @@ public class AuthService {
         }
 
         TokenPair pair = tokenService.createTokenPair(user, deviceFingerprint);
-        return new LoginResponse(user.getEmail(), pair.accessToken(), pair.refreshToken());
+        return new LoginResponse(user.getId(), user.getEmail(), pair);
     }
 
     @Transactional
     public TokenPair refresh(String refreshTokenString, String deviceFingerprint) {
+
         RefreshToken current = tokenService.validateRefreshToken(refreshTokenString, deviceFingerprint);
 
         User user = current.getUser();
@@ -89,8 +90,8 @@ public class AuthService {
     }
 
     @Transactional
-    public TokenPair changePassword(Long userId, String oldPassword, String newPassword,
-                                        String currentRefresh, String deviceFingerprint) {
+    public ChangePasswordResponse changePassword(Long userId, String oldPassword, String newPassword,
+                                                 String currentRefresh, String deviceFingerprint) {
 
         tokenService.validateRefreshToken(currentRefresh, deviceFingerprint);
 
@@ -107,12 +108,13 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(newPassword));
 
         revocationService.revokeAllExcept(userId, currentRefresh);
-        return tokenService.createTokenPair(user, deviceFingerprint);
+        TokenPair pair = tokenService.createTokenPair(user, deviceFingerprint);
+        return ChangePasswordResponse.of(userId, LocalDateTime.now(), pair);
     }
 
     @Transactional
-    public TokenPair changeEmail(Long userId, String newEmail, String password,
-                                     String currentRefresh, String deviceFingerprint) {
+    public ChangeEmailResponse changeEmail(Long userId, String newEmail, String password,
+                                           String currentRefresh, String deviceFingerprint) {
 
         tokenService.validateRefreshToken(currentRefresh, deviceFingerprint);
 
@@ -134,11 +136,12 @@ public class AuthService {
         user.setEmail(newEmail);
 
         revocationService.revokeAllExcept(userId, currentRefresh);
-        return tokenService.createTokenPair(user, deviceFingerprint);
+        TokenPair pair = tokenService.createTokenPair(user, deviceFingerprint);
+        return ChangeEmailResponse.of(userId, LocalDateTime.now(), newEmail, pair);
     }
 
     @Transactional
-    public void deleteAccount(Long userId, String password) {
+    public DeleteAccountResponse deleteAccount(Long userId, String password) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
@@ -150,5 +153,6 @@ public class AuthService {
         user.setDeletedAt(LocalDateTime.now());
 
         revocationService.revokeAllByUser(userId);
+        return DeleteAccountResponse.of(userId, LocalDateTime.now());
     }
 }

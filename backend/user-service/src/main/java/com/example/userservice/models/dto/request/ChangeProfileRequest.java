@@ -1,10 +1,12 @@
 package com.example.userservice.models.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(description = "Запрос на изменение данных профиля")
 public record ChangeProfileRequest (
-    @NotBlank(message = "Name is required")
-    String name,
+        @Schema(description = "Имя пользователя", example = "Ziragon")
+        String name,
 
-    String bio
+        @Schema(description = "О себе (необязательно)", example = "Я лучший программист...")
+        String bio
 ) {}

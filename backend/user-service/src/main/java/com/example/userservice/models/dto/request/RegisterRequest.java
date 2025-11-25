@@ -6,7 +6,8 @@ import jakarta.validation.constraints.NotBlank;
 
 @Schema(description = "Запрос на регистрацию пользователя")
 public record RegisterRequest (
-        @NotBlank(message = "Username is required")
+        @Schema(description = "Имя пользователя", example = "Ziragon")
+        @NotBlank(message = "Name is required")
         String name,
 
         @Schema(description = "Email пользователя", example = "user@example.com")
@@ -14,10 +15,7 @@ public record RegisterRequest (
         @NotBlank(message = "Email is required")
         String email,
 
-        @Schema(description = "Пароль", example = "Password", minLength = 8)
+        @Schema(description = "Пароль пользователя", example = "Password", minLength = 8)
         @NotBlank(message = "Password is required")
-        String password,
-
-        @Schema(description = "Информация об устройстве (опционально)", example = "Chrome 120, Windows 11", hidden = true)
-        String deviceInfo
+        String password
 ) {}

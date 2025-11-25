@@ -1,9 +1,7 @@
 package com.example.userservice.service;
 
-import com.example.userservice.exception.InvalidRefreshTokenException;
 import com.example.userservice.models.entity.RefreshToken;
 import com.example.userservice.repository.TokenRepository;
-import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
