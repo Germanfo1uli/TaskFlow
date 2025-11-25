@@ -10,7 +10,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users", schema = "user_service_schema")
+@Table(name = "users", schema = "user_service_schema",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"username", "tag"}))
 @Data
 @Builder(toBuilder = true)
 @NoArgsConstructor
@@ -21,11 +22,20 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "username", nullable = false)
+    private String username;
+
+    @Column(name = "tag", nullable = false, length = 4)
+    private String tag;
+
     @Column(name = "email", nullable = false, unique = true)
     private String email;
 
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
+
+    @Column(name = "bio", nullable = true)
+    private String bio;
 
     @Column(name = "created_at", updatable = false)
     @CreationTimestamp
@@ -40,9 +50,6 @@ public class User {
 
     @Column(name = "locked_at")
     private LocalDateTime lockedAt;
-
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, optional = false)
-    private UserProfile profile;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Avatar avatar;

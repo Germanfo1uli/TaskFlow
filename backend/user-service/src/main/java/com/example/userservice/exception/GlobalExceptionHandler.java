@@ -41,29 +41,36 @@ public class GlobalExceptionHandler {
     }
 
     // 400 кастом ошибка валидации (для файлов)
-    @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<Object> handleInvalidCredentials(BadRequestException ex,
+    @ExceptionHandler(InvalidFileException.class)
+    public ResponseEntity<Object> handleInvalidCredentials(InvalidFileException ex,
                                                            HttpServletRequest request) {
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }
 
+    // 400 слабый пароль
+    @ExceptionHandler(WeakPasswordException.class)
+    public ResponseEntity<Object> handleWeakPassword(WeakPasswordException ex,
+                                                     HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
+    // 400 username не соотв. требованиям
+    @ExceptionHandler(InvalidUsernameException.class)
+    public ResponseEntity<Object> handleInvalidUsername(InvalidUsernameException ex,
+                                                     HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
     // 401 неверный логин пароль
-    @ExceptionHandler(InvalidCredentialsException.class)
-    public ResponseEntity<Object> handleInvalidCredentials(InvalidCredentialsException ex,
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<Object> handleInvalidCredentials(AuthenticationException ex,
                                                            HttpServletRequest request) {
         return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
     }
 
-    // 401 проблемы с рефреш токеном
-    @ExceptionHandler(InvalidRefreshTokenException.class)
-    public ResponseEntity<Object> handleInvalidRefreshToken(InvalidRefreshTokenException ex,
-                                                            HttpServletRequest request) {
-        return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
-    }
-
-    // 401 проблемы с ацесс токеном
-    @ExceptionHandler(InvalidJwtException.class)
-    public ResponseEntity<Object> handleInvalidJwt(InvalidJwtException ex,
+    // 401 проблемы с токенами
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<Object> handleInvalidJwt(InvalidTokenException ex,
                                                    HttpServletRequest request) {
         return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
     }
@@ -77,7 +84,7 @@ public class GlobalExceptionHandler {
 
     // 403 доступ запрещен (не ADMIN роль)
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Object> handleLocked(AccessDeniedException ex,
+    public ResponseEntity<Object> handleDenied(AccessDeniedException ex,
                                                HttpServletRequest req) {
         return buildResponse(HttpStatus.FORBIDDEN, "Access denied", req);
     }
@@ -116,6 +123,13 @@ public class GlobalExceptionHandler {
                                                  HttpServletRequest req) {
         return buildResponse(HttpStatus.PAYLOAD_TOO_LARGE,
                 "File size must not exceed 10 MB", req);
+    }
+
+    // 422 ошибка генерации тега
+    @ExceptionHandler(UsernameTagExhaustedException.class)
+    public ResponseEntity<Object> handleTagExhausted(UsernameTagExhaustedException ex,
+                                                     HttpServletRequest request) {
+        return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), request);
     }
 
     // 500 обработка всех RuntimeException

@@ -1,6 +1,6 @@
 package com.example.userservice.service;
 
-import com.example.userservice.exception.BadRequestException;
+import com.example.userservice.exception.InvalidFileException;
 import com.example.userservice.exception.UserNotFoundException;
 import com.example.userservice.models.entity.Avatar;
 import com.example.userservice.models.entity.User;
@@ -43,7 +43,7 @@ public class AvatarService {
         try {
             avatar.setData(file.getBytes());
         } catch (IOException e) {
-            throw new BadRequestException("Failed to read file");
+            throw new InvalidFileException(e.getMessage());
         }
 
         avatarRepository.save(avatar);

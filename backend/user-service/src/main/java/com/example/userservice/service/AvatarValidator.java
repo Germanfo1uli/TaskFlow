@@ -1,6 +1,6 @@
 package com.example.userservice.service;
 
-import com.example.userservice.exception.BadRequestException;
+import com.example.userservice.exception.InvalidFileException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -14,10 +14,10 @@ public class AvatarValidator {
 
     public void validate(MultipartFile file) {
         if (file == null || file.isEmpty())
-            throw new BadRequestException("File is required");
+            throw new InvalidFileException("File is required");
         if (file.getSize() > MAX_SIZE)
-            throw new BadRequestException("File size must be <= 10 MB");
+            throw new InvalidFileException("File size must be <= 10 MB");
         if (!ALLOWED_TYPES.contains(file.getContentType()))
-            throw new BadRequestException("Only JPG, PNG, WebP, Gif are allowed");
+            throw new InvalidFileException("Only JPG, PNG, WebP, Gif are allowed");
     }
 }

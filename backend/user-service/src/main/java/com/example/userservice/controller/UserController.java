@@ -2,7 +2,8 @@ package com.example.userservice.controller;
 
 import com.example.userservice.models.dto.request.ChangeProfileRequest;
 import com.example.userservice.models.dto.response.ChangeProfileResponse;
-import com.example.userservice.models.dto.response.UserProfileResponse;
+import com.example.userservice.models.dto.response.MyProfileResponse;
+import com.example.userservice.models.dto.response.PublicProfileResponse;
 import com.example.userservice.security.JwtUser;
 import com.example.userservice.service.UserService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -20,8 +21,8 @@ import jakarta.validation.Valid;
 @RequiredArgsConstructor
 @Validated
 @SecurityRequirement(name = "bearerAuth")
-@Tag(name = "Profile Management", description = "Управление профилями и личной информацией")
-public class ProfileController {
+@Tag(name = "User Management", description = "Управление профилями и личной информацией")
+public class UserController {
 
     public final UserService userService;
 
@@ -32,25 +33,25 @@ public class ProfileController {
             @AuthenticationPrincipal JwtUser principal) {
 
         ChangeProfileResponse response = userService.updateProfileById(
-                principal.userId(), request.name(), request.bio());
+                principal.userId(), request.username(), request.bio());
         return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "Получение профиля пользователя (ЛИЧНОГО ПРОФИЛЯ, userId берется из Access Token)")
     @GetMapping("/me/profile")
-    public ResponseEntity<UserProfileResponse> getMyProfile(
+    public ResponseEntity<MyProfileResponse> getMyProfile(
             @AuthenticationPrincipal JwtUser principal) {
 
-        UserProfileResponse response = userService.getProfileById(principal.userId());
+        MyProfileResponse response = userService.getMyProfile(principal.userId());
         return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "Получение профиля пользователя по userId")
     @GetMapping("/{userId}/profile")
-    public ResponseEntity<UserProfileResponse> getProfileById(
+    public ResponseEntity<PublicProfileResponse> getProfileById(
             @PathVariable Long userId) {
 
-        UserProfileResponse response = userService.getProfileById(userId);
+        PublicProfileResponse response = userService.getProfileById(userId);
         return ResponseEntity.ok(response);
     }
 }

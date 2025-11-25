@@ -30,12 +30,12 @@ public class AuthController {
     @Operation(summary = "Регистрация пользователя")
     @PostMapping("/register")
     @SecurityRequirements()
-    public ResponseEntity<RegisterResponse> register(
+    public ResponseEntity<LoginResponse> register(
             @Valid @RequestBody RegisterRequest request,
             @RequestAttribute("deviceFingerprint") String deviceFingerprint) {
 
-        RegisterResponse response = authService.register(
-                request.name(), request.email(), request.password(), deviceFingerprint);
+        LoginResponse response = authService.register(
+                request.username(), request.email(), request.password(), deviceFingerprint);
         return ResponseEntity.ok(response);
     }
 

@@ -2,7 +2,7 @@ package com.example.userservice.service;
 
 import com.example.userservice.config.JwtConfig;
 import com.example.userservice.exception.DeviceMismatchException;
-import com.example.userservice.exception.InvalidRefreshTokenException;
+import com.example.userservice.exception.InvalidTokenException;
 import com.example.userservice.models.dto.response.TokenPair;
 import com.example.userservice.models.entity.RefreshToken;
 import com.example.userservice.models.entity.User;
@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -59,7 +58,7 @@ public class TokenService {
         UUID jti = UUID.fromString(claims.getId());
 
         RefreshToken stored = tokenRepository.findByJti(jti)
-                .orElseThrow(() -> new InvalidRefreshTokenException("Token not found"));
+                .orElseThrow(() -> new InvalidTokenException("Token not found"));
 
         if (!stored.getDeviceFingerprint().equals(deviceFingerprint)) {
             log.warn("Device mismatch: jti: {}, userId: {}",
@@ -71,11 +70,11 @@ public class TokenService {
         }
 
         if (stored.getRevoked()) {
-            throw new InvalidRefreshTokenException("Token is revoked");
+            throw new InvalidTokenException("Token is revoked");
         }
 
         if (stored.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new InvalidRefreshTokenException("Token is expired");
+            throw new InvalidTokenException("Token is expired");
         }
 
         return stored;
@@ -86,7 +85,7 @@ public class TokenService {
         UUID jti = UUID.fromString(claims.getId());
 
         return tokenRepository.findByJti(jti)
-                .orElseThrow(() -> new InvalidRefreshTokenException("Token not found"));
+                .orElseThrow(() -> new InvalidTokenException("Token not found"));
     }
 
     @Transactional

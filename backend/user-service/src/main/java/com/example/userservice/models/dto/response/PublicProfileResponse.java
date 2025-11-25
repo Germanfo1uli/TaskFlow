@@ -2,10 +2,11 @@ package com.example.userservice.models.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "Ответ на авторизацию пользователя")
-public record LoginResponse(
+import java.time.LocalDateTime;
+
+public record PublicProfileResponse(
         @Schema(description = "ID пользователя", example = "123")
-        Long userId,
+        Long id,
 
         @Schema(description = "Имя пользователя", example = "Ziragon")
         String username,
@@ -13,9 +14,9 @@ public record LoginResponse(
         @Schema(description = "Тег пользователя", example = "1234")
         String tag,
 
-        @Schema(description = "Email пользователя", example = "user@example.com")
-        String email,
+        @Schema(description = "О себе", example = "Я лучший программист...")
+        String bio,
 
-        @Schema(description = "Пара токенов")
-        TokenPair pair
+        @Schema(description = "Дата создания аккаунта", example = "2025-01-01T10:30:00")
+        LocalDateTime createdAt
 ) {}

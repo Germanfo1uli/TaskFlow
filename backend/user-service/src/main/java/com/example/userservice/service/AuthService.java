@@ -20,35 +20,48 @@ import java.time.LocalDateTime;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final UserService userService;
     private final TokenService tokenService;
     private final TokenRevocationService revocationService;
     private final BCryptPasswordEncoder passwordEncoder;
-    private final UserService userService;
 
     @Transactional
-    public RegisterResponse register(String name, String email, String password, String deviceFingerprint) {
+    public LoginResponse register(String username, String email, String password, String deviceFingerprint) {
+
+        if (!username.matches("^[a-zA-Z0-9]+$")) {
+            throw new InvalidUsernameException("Invalid username format");
+        }
+
+        if (!password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{12,}$")) {
+            throw new WeakPasswordException("Password does not meet requirements");
+        }
 
         if (userRepository.existsByEmail(email)) {
             throw new EmailAlreadyExistsException("Email already in use");
         }
 
+        String tag = userService.generateUniqueTag(username);
+
         User user = User.builder()
                 .email(email)
                 .passwordHash(passwordEncoder.encode(password))
+                .username(username)
+                .tag(tag)
                 .systemRole(SystemRole.USER)
                 .build();
         userRepository.save(user);
 
-        userService.createProfile(user, name);
-
         TokenPair pair = tokenService.createTokenPair(user, deviceFingerprint);
-        return new RegisterResponse(user.getId(), name, user.getEmail(), pair);
+        return new LoginResponse(
+                user.getId(), user.getUsername(),
+                user.getTag(), user.getEmail(), pair
+        );
     }
 
     public LoginResponse login(String email, String password, String deviceFingerprint) {
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new InvalidCredentialsException("Incorrect login or password"));
+                .orElseThrow(() -> new AuthenticationException("Incorrect login or password"));
 
         if (user.getDeletedAt() != null) {
             throw new AccountDeletedException();
@@ -59,11 +72,14 @@ public class AuthService {
         }
 
         if (!passwordEncoder.matches(password, user.getPasswordHash())) {
-            throw new InvalidCredentialsException("Incorrect login or password");
+            throw new AuthenticationException("Incorrect login or password");
         }
 
         TokenPair pair = tokenService.createTokenPair(user, deviceFingerprint);
-        return new LoginResponse(user.getId(), user.getEmail(), pair);
+        return new LoginResponse(
+                user.getId(), user.getUsername(),
+                user.getTag(), user.getEmail(), pair
+        );
     }
 
     @Transactional
@@ -93,16 +109,21 @@ public class AuthService {
     public ChangePasswordResponse changePassword(Long userId, String oldPassword, String newPassword,
                                                  String currentRefresh, String deviceFingerprint) {
 
+        if (!newPassword.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{12,}$")) {
+            throw new WeakPasswordException("Password does not meet requirements");
+        }
+
         tokenService.validateRefreshToken(currentRefresh, deviceFingerprint);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
         if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
-            throw new InvalidCredentialsException("Incorrect password");
+            throw new AuthenticationException("Incorrect password");
         }
+
         if (oldPassword.equals(newPassword)) {
-            throw new InvalidCredentialsException("Password must be different");
+            throw new AuthenticationException("Password must be different");
         }
 
         user.setPasswordHash(passwordEncoder.encode(newPassword));
@@ -122,11 +143,11 @@ public class AuthService {
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
         if (!passwordEncoder.matches(password, user.getPasswordHash())) {
-            throw new InvalidCredentialsException("Incorrect password");
+            throw new AuthenticationException("Incorrect password");
         }
 
         if (newEmail.equals(user.getEmail())) {
-            throw new InvalidCredentialsException("Email must be different");
+            throw new AuthenticationException("Email must be different");
         }
 
         if (userRepository.existsByEmail(newEmail)) {
@@ -147,7 +168,7 @@ public class AuthService {
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
         if (!passwordEncoder.matches(password, user.getPasswordHash())) {
-            throw new InvalidCredentialsException("Incorrect login or password");
+            throw new AuthenticationException("Incorrect login or password");
         }
 
         user.setDeletedAt(LocalDateTime.now());
