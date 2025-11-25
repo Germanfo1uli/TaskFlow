@@ -12,7 +12,7 @@
     flex-direction: column;
     justify-content: space-between;
     padding: 1.5rem 1rem;
-    z-index: 1000;
+    z-index: 2;
     box-shadow: 4px 0 20px rgba(30, 60, 114, 0.5);
     box-sizing: border-box;
     overflow: hidden;
@@ -180,85 +180,6 @@
     transform: scale(1.1);
 }
 
-@media (max-width: 1024px) {
-    .verticalNavbar {
-        width: 70px;
-        padding: 1.25rem 0.75rem;
-    }
-    .navLogoIcon {
-        font-size: 1.8rem;
-    }
-    .navButton {
-        width: 45px;
-        height: 45px;
-    }
-    .navProfile {
-        width: 45px;
-        height: 45px;
-    }
-    .profileAvatar {
-        width: 35px;
-        height: 35px;
-    }
-    .avatarIcon {
-        font-size: 1.8rem;
-    }
-}
-
-@media (max-width: 768px) {
-    .verticalNavbar {
-        width: 60px;
-        padding: 1rem 0.5rem;
-    }
-    .navLogoIcon {
-        font-size: 1.6rem;
-    }
-    .navButton {
-        width: 40px;
-        height: 40px;
-    }
-    .navProfile {
-        width: 40px;
-        height: 40px;
-    }
-    .profileAvatar {
-        width: 30px;
-        height: 30px;
-    }
-    .avatarIcon {
-        font-size: 1.6rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .verticalNavbar {
-        width: 50px;
-        padding: 0.75rem 0.25rem;
-    }
-    .navLogoIcon {
-        font-size: 1.4rem;
-    }
-    .navButton {
-        width: 35px;
-        height: 35px;
-        font-size: 1rem;
-    }
-    .navProfile {
-        width: 35px;
-        height: 35px;
-    }
-    .profileAvatar {
-        width: 25px;
-        height: 25px;
-    }
-    .avatarIcon {
-        font-size: 1.4rem;
-    }
-}
-
-
-/* VerticalNavbar.module.css - добавьте эти стили */
-
 .toggleControlPanelButton {
     display: flex;
     align-items: center;
@@ -313,29 +234,241 @@
     z-index: 1;
 }
 
+.projectsList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    width: 100%;
+}
 
+.projectButton {
+    width: 52px;
+    height: 52px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: visible;
+    flex-shrink: 0;
+    position: relative;
+    background: transparent;
+}
 
+.projectButton:hover {
+    transform: translateY(-2px) scale(1.15);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.projectImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+}
+
+.projectButton:hover .projectImage {
+    transform: scale(1.1);
+}
+
+.projectPlaceholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #ffffff, #e6f0ff);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #3d6bb3;
+    font-weight: 700;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+
+.projectButton:hover .projectPlaceholder {
+    background: linear-gradient(135deg, #f0f8ff, #ffffff);
+    transform: scale(1.1);
+}
+
+.projectTooltip {
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%) translateX(10px);
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(10px);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    pointer-events: none;
+}
+
+.projectTooltip::before {
+    content: '';
+    position: absolute;
+    left: -5px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border: 5px solid transparent;
+    border-right-color: rgba(15, 23, 42, 0.95);
+}
+
+.projectButton:hover .projectTooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(-50%) translateX(12px);
+}
+
+@keyframes projectAppear {
+    0% {
+        opacity: 0;
+        transform: scale(0.8) translateY(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.projectButton {
+    animation: projectAppear 0.4s ease-out;
+}
 
 @media (max-width: 1024px) {
+    .verticalNavbar {
+        width: 70px;
+        padding: 1.25rem 0.75rem;
+    }
+    .navLogoIcon {
+        font-size: 1.8rem;
+    }
+    .navButton {
+        width: 45px;
+        height: 45px;
+    }
+    .navProfile {
+        width: 45px;
+        height: 45px;
+    }
+    .profileAvatar {
+        width: 35px;
+        height: 35px;
+    }
+    .avatarIcon {
+        font-size: 1.8rem;
+    }
     .toggleControlPanelButton {
         width: 45px;
         height: 45px;
         font-size: 1.1rem;
     }
+    .projectButton {
+        width: 48px;
+        height: 48px;
+    }
+    .projectPlaceholder {
+        font-size: 1rem;
+    }
+    .projectTooltip {
+        font-size: 0.7rem;
+        padding: 0.4rem 0.6rem;
+    }
 }
 
 @media (max-width: 768px) {
+    .verticalNavbar {
+        width: 60px;
+        padding: 1rem 0.5rem;
+    }
+    .navLogoIcon {
+        font-size: 1.6rem;
+    }
+    .navButton {
+        width: 40px;
+        height: 40px;
+    }
+    .navProfile {
+        width: 40px;
+        height: 40px;
+    }
+    .profileAvatar {
+        width: 30px;
+        height: 30px;
+    }
+    .avatarIcon {
+        font-size: 1.6rem;
+    }
     .toggleControlPanelButton {
         width: 40px;
         height: 40px;
         font-size: 1rem;
     }
+    .projectButton {
+        width: 44px;
+        height: 44px;
+    }
+    .projectPlaceholder {
+        font-size: 0.95rem;
+    }
+    .projectTooltip {
+        font-size: 0.65rem;
+        padding: 0.35rem 0.5rem;
+    }
 }
 
 @media (max-width: 480px) {
+    .verticalNavbar {
+        width: 50px;
+        padding: 0.75rem 0.25rem;
+    }
+    .navLogoIcon {
+        font-size: 1.4rem;
+    }
+    .navButton {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+    .navProfile {
+        width: 35px;
+        height: 35px;
+    }
+    .profileAvatar {
+        width: 25px;
+        height: 25px;
+    }
+    .avatarIcon {
+        font-size: 1.4rem;
+    }
     .toggleControlPanelButton {
         width: 35px;
         height: 35px;
         font-size: 0.9rem;
+    }
+    .projectButton {
+        width: 40px;
+        height: 40px;
+    }
+    .projectPlaceholder {
+        font-size: 0.9rem;
+    }
+    .projectTooltip {
+        font-size: 0.6rem;
+        padding: 0.3rem 0.4rem;
     }
 }

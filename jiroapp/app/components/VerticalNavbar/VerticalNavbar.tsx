@@ -6,6 +6,8 @@ import NotificationModal from './Notification/NotificationModal'
 import SearchPanel from './Search/SearchPanel'
 import HelpModal from './Help/HelpModal'
 import { ProfileModal } from '../VerticalNavbar/Profile/ProfileModal'
+import CreateProjectModal from './CreateProject/CreateProjectModal'
+import { Project } from './CreateProject/types/types'
 import styles from './VerticalNavbar.module.css'
 
 interface VerticalNavbarProps {
@@ -18,17 +20,29 @@ const VerticalNavbar = ({ onToggleControlPanel, isControlPanelOpen = true }: Ver
     const [isSearchOpen, setIsSearchOpen] = useState(false)
     const [isHelpOpen, setIsHelpOpen] = useState(false)
     const [isProfileOpen, setIsProfileOpen] = useState(false)
+    const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false)
+    const [projects, setProjects] = useState<Project[]>([])
 
     const handleNotificationClick = () => {
         setIsNotificationOpen(!isNotificationOpen)
         setIsSearchOpen(false)
         setIsHelpOpen(false)
         setIsProfileOpen(false)
+        setIsCreateProjectOpen(false)
     }
 
     const handleSearchClick = () => {
         setIsSearchOpen(!isSearchOpen)
         setIsNotificationOpen(false)
+        setIsHelpOpen(false)
+        setIsProfileOpen(false)
+        setIsCreateProjectOpen(false)
+    }
+
+    const handleCreateProjectClick = () => {
+        setIsCreateProjectOpen(!isCreateProjectOpen)
+        setIsNotificationOpen(false)
+        setIsSearchOpen(false)
         setIsHelpOpen(false)
         setIsProfileOpen(false)
     }
@@ -38,6 +52,7 @@ const VerticalNavbar = ({ onToggleControlPanel, isControlPanelOpen = true }: Ver
         setIsNotificationOpen(false)
         setIsSearchOpen(false)
         setIsProfileOpen(false)
+        setIsCreateProjectOpen(false)
     }
 
     const handleProfileClick = () => {
@@ -45,6 +60,7 @@ const VerticalNavbar = ({ onToggleControlPanel, isControlPanelOpen = true }: Ver
         setIsNotificationOpen(false)
         setIsSearchOpen(false)
         setIsHelpOpen(false)
+        setIsCreateProjectOpen(false)
     }
 
     const handleToggleControlPanel = () => {
@@ -53,21 +69,15 @@ const VerticalNavbar = ({ onToggleControlPanel, isControlPanelOpen = true }: Ver
         }
     }
 
-    const closeNotification = () => {
-        setIsNotificationOpen(false)
+    const handleProjectCreated = (project: Project) => {
+        setProjects(prev => [project, ...prev])
     }
 
-    const closeSearch = () => {
-        setIsSearchOpen(false)
-    }
-
-    const closeHelp = () => {
-        setIsHelpOpen(false)
-    }
-
-    const closeProfile = () => {
-        setIsProfileOpen(false)
-    }
+    const closeNotification = () => setIsNotificationOpen(false)
+    const closeSearch = () => setIsSearchOpen(false)
+    const closeHelp = () => setIsHelpOpen(false)
+    const closeProfile = () => setIsProfileOpen(false)
+    const closeCreateProject = () => setIsCreateProjectOpen(false)
 
     return (
         <>
@@ -92,7 +102,11 @@ const VerticalNavbar = ({ onToggleControlPanel, isControlPanelOpen = true }: Ver
                             <FaSearch className={styles.navButtonIcon} />
                         </button>
 
-                        <button className={styles.navButton} aria-label="Создать">
+                        <button
+                            className={`${styles.navButton} ${isCreateProjectOpen ? styles.active : ''}`}
+                            aria-label="Создать проект"
+                            onClick={handleCreateProjectClick}
+                        >
                             <FaPlus className={styles.navButtonIcon} />
                         </button>
 
@@ -104,6 +118,31 @@ const VerticalNavbar = ({ onToggleControlPanel, isControlPanelOpen = true }: Ver
                             <FaBell className={styles.navButtonIcon} />
                         </button>
                     </div>
+
+                    {projects.length > 0 && (
+                        <div className={styles.projectsList}>
+                            {projects.map(project => (
+                                <button
+                                    key={project.id}
+                                    className={styles.projectButton}
+                                    aria-label={`Проект: ${project.name}`}
+                                >
+                                    {project.image ? (
+                                        <img
+                                            src={project.image}
+                                            alt={project.name}
+                                            className={styles.projectImage}
+                                        />
+                                    ) : (
+                                        <div className={styles.projectPlaceholder}>
+                                            {project.name.charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
+                                    <span className={styles.projectTooltip}>{project.name}</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 <div className={styles.navBottom}>
@@ -131,6 +170,13 @@ const VerticalNavbar = ({ onToggleControlPanel, isControlPanelOpen = true }: Ver
             {isSearchOpen && <SearchPanel onClose={closeSearch} />}
             {isHelpOpen && <HelpModal onClose={closeHelp} />}
             {isProfileOpen && <ProfileModal isOpen={isProfileOpen} onClose={closeProfile} />}
+            {isCreateProjectOpen && (
+                <CreateProjectModal
+                    isOpen={isCreateProjectOpen}
+                    onClose={closeCreateProject}
+                    onProjectCreated={handleProjectCreated}
+                />
+            )}
         </>
     )
 }
