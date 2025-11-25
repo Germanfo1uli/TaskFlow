@@ -25,7 +25,7 @@ public class TokenService {
     private final TokenRepository tokenRepository;
 
     @Transactional
-    public TokenPair createTokenPair(User user, String deviceInfo) {
+    public TokenPair createTokenPair(User user, String deviceFingerprint) {
 
         UUID jti = UUID.randomUUID();
 
@@ -33,7 +33,7 @@ public class TokenService {
         Date refreshExp = new Date(System.currentTimeMillis() + refreshTtlMillis);
 
         String access = jwtHelper.generateAccess(user);
-        String refresh = jwtHelper.generateRefresh(user, jti, refreshExp, deviceInfo);
+        String refresh = jwtHelper.generateRefresh(user, jti, refreshExp, deviceFingerprint);
 
         RefreshToken rt = RefreshToken.builder()
                 .user(user)
@@ -41,7 +41,7 @@ public class TokenService {
                 .expiresAt(refreshExp.toInstant()
                         .atZone(ZoneId.systemDefault())
                         .toLocalDateTime())
-                .deviceInfo(deviceInfo)
+                .deviceFingerprint(deviceFingerprint)
                 .revoked(false)
                 .build();
         tokenRepository.save(rt);

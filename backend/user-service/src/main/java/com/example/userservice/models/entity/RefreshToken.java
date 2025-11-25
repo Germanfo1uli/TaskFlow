@@ -34,8 +34,8 @@ public class RefreshToken {
     @Column(name = "is_revoked")
     private Boolean revoked = false;
 
-    @Column(name = "device_info")
-    private String deviceInfo;
+    @Column(name = "device_fingerprint", nullable = false)
+    private String deviceFingerprint;
 
     @Column(name = "created_at", updatable = false)
     @CreationTimestamp

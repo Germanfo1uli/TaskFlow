@@ -9,6 +9,7 @@ import com.example.userservice.models.entity.User;
 import com.example.userservice.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -63,8 +65,18 @@ public class AuthService {
         return new LoginResponse(user.getEmail(), pair.accessToken(), pair.refreshToken());
     }
 
-    public TokenPair refresh(String refreshTokenString, String deviceInfo) {
+    public TokenPair refresh(String refreshTokenString, String deviceFingerprint) {
         RefreshToken current = tokenService.validateRefreshToken(refreshTokenString);
+
+        if (!current.getDeviceFingerprint().equals(deviceFingerprint)) {
+            log.warn("Device mismatch: jti: {}, userId: {}",
+                    current.getJti(), current.getUser().getId());
+
+            tokenService.revokeAllByUser(current.getUser().getId());
+
+            throw new DeviceMismatchException();
+        }
+
         User user = current.getUser();
         tokenService.revokeByString(refreshTokenString);
 
@@ -76,7 +88,7 @@ public class AuthService {
             throw new AccountLockedException();
         }
 
-        return tokenService.createTokenPair(user, deviceInfo);
+        return tokenService.createTokenPair(user, deviceFingerprint);
     }
 
     public void logout(String refreshTokenString) {

@@ -72,12 +72,13 @@ public class AuthController {
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<TokenPair> changePassword(
             @Valid @RequestBody ChangePasswordRequest request,
-            @AuthenticationPrincipal JwtUser principal) {
+            @AuthenticationPrincipal JwtUser principal,
+            @RequestAttribute("deviceFingerprint") String deviceFingerprint) {
 
         TokenPair response = authService.changePassword(
                 principal.userId(), request.oldPassword(),
                 request.newPassword(), request.refreshToken(),
-                request.deviceInfo());
+                deviceFingerprint);
         return ResponseEntity.ok(response);
     }
 
@@ -88,12 +89,13 @@ public class AuthController {
     @PatchMapping("/change-email")
     public ResponseEntity<TokenPair> changeEmail(
             @Valid @RequestBody ChangeEmailRequest request,
-            @AuthenticationPrincipal JwtUser principal) {
+            @AuthenticationPrincipal JwtUser principal,
+            @RequestAttribute("deviceFingerprint") String deviceFingerprint) {
 
         TokenPair response = authService.changeEmail(
                 principal.userId(), request.newEmail(),
                 request.password(), request.refreshToken(),
-                request.deviceInfo());
+                deviceFingerprint);
         return ResponseEntity.ok(response);
     }
 

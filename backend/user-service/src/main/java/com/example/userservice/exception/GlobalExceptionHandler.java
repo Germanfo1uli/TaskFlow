@@ -68,6 +68,13 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
     }
 
+    // 401 несовпадение информации об устройстве
+    @ExceptionHandler(DeviceMismatchException.class)
+    public ResponseEntity<Object> handleInvalidJwt(DeviceMismatchException ex,
+                                                   HttpServletRequest request) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
+    }
+
     // 403 доступ запрещен (не ADMIN роль)
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Object> handleLocked(AccessDeniedException ex,
