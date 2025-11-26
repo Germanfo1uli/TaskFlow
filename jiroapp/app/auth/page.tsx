@@ -2,31 +2,32 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { FaArrowRight, FaTasks, FaEye, FaEyeSlash, FaUser, FaLock, FaEnvelope } from 'react-icons/fa'
-import { Formik, Form, Field, FormikHelpers } from 'formik'
-import * as Yup from 'yup'
+import { FaArrowRight, FaTasks } from 'react-icons/fa'
+import { Formik, FormikHelpers } from 'formik'
+import { FormValues } from './types/auth'
+import { useAuth } from './hooks/useAuth'
+import { LoginSchema, RegisterSchema } from './validations/validationSchemas'
+import AuthForm from './components/AuthForm'
+import SocialLogin from './components/SocialLogin'
 import styles from './AuthPage.module.css'
-
-interface FormValues {
-    name: string
-    email: string
-    password: string
-    confirmPassword: string
-}
 
 const AuthPage = () => {
     const [isLogin, setIsLogin] = useState<boolean>(true)
-    const [showPassword, setShowPassword] = useState<boolean>(false)
-    const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false)
     const [isVisible, setIsVisible] = useState<boolean>(false)
     const router = useRouter()
+    const { loginUser, registerUser } = useAuth()
 
     useEffect(() => {
+        const token = localStorage.getItem('token')
+        if (token) {
+            router.push('/main')
+        }
+
         const timer = setTimeout(() => {
             setIsVisible(true)
         }, 100)
         return () => clearTimeout(timer)
-    }, [])
+    }, [router])
 
     const handleBack = () => {
         setIsVisible(false)
@@ -35,36 +36,24 @@ const AuthPage = () => {
         }, 600)
     }
 
-    const LoginSchema = Yup.object().shape({
-        email: Yup.string()
-            .email('Некорректный email')
-            .required('Обязательное поле'),
-        password: Yup.string()
-            .min(6, 'Пароль должен содержать минимум 6 символов')
-            .required('Обязательное поле')
-    })
-
-    const RegisterSchema = Yup.object().shape({
-        name: Yup.string()
-            .min(2, 'Имя должно содержать минимум 2 символа')
-            .required('Обязательное поле'),
-        email: Yup.string()
-            .email('Некорректный email')
-            .required('Обязательное поле'),
-        password: Yup.string()
-            .min(6, 'Пароль должен содержать минимум 6 символов')
-            .required('Обязательное поле'),
-        confirmPassword: Yup.string()
-            .oneOf([Yup.ref('password')], 'Пароли должны совпадать')
-            .required('Обязательное поле')
-    })
-
-    const handleSubmit = (values: FormValues, { setSubmitting }: FormikHelpers<FormValues>) => {
-        console.log(values)
-        setTimeout(() => {
-            setSubmitting(false)
-            router.push('/main')
-        }, 2000)
+    const handleSubmit = async (values: FormValues, { setSubmitting }: FormikHelpers<FormValues>) => {
+        if (isLogin) {
+            const result = await loginUser(values.email, values.password)
+            if (result.success) {
+                router.push('/main')
+            } else {
+                alert(result.message)
+                setSubmitting(false)
+            }
+        } else {
+            const result = await registerUser(values.name, values.email, values.password)
+            if (result.success) {
+                router.push('/main')
+            } else {
+                alert(result.message)
+                setSubmitting(false)
+            }
+        }
     }
 
     const initialValues: FormValues = {
@@ -123,134 +112,16 @@ const AuthPage = () => {
                         onSubmit={handleSubmit}
                     >
                         {({ errors, touched, isSubmitting }) => (
-                            <Form className={styles.authForm}>
-                                {!isLogin && (
-                                    <div className={styles.formGroup}>
-                                        <label htmlFor="name" className={styles.formLabel}>
-                                            <FaUser className={styles.inputIcon} /> Имя
-                                        </label>
-                                        <Field
-                                            type="text"
-                                            name="name"
-                                            className={`${styles.formInput} ${errors.name && touched.name ? styles.error : ''}`}
-                                            placeholder="Введите ваше имя"
-                                        />
-                                        {errors.name && touched.name && (
-                                            <div className={styles.errorMessage}>{errors.name}</div>
-                                        )}
-                                    </div>
-                                )}
-
-                                <div className={styles.formGroup}>
-                                    <label htmlFor="email" className={styles.formLabel}>
-                                        <FaEnvelope className={styles.inputIcon} /> Email
-                                    </label>
-                                    <Field
-                                        type="email"
-                                        name="email"
-                                        className={`${styles.formInput} ${errors.email && touched.email ? styles.error : ''}`}
-                                        placeholder="Введите ваш email"
-                                    />
-                                    {errors.email && touched.email && (
-                                        <div className={styles.errorMessage}>{errors.email}</div>
-                                    )}
-                                </div>
-
-                                <div className={styles.formGroup}>
-                                    <label htmlFor="password" className={styles.formLabel}>
-                                        <FaLock className={styles.inputIcon} /> Пароль
-                                    </label>
-                                    <div className={styles.passwordInputWrapper}>
-                                        <Field
-                                            type={showPassword ? "text" : "password"}
-                                            name="password"
-                                            className={`${styles.formInput} ${errors.password && touched.password ? styles.error : ''}`}
-                                            placeholder="Введите ваш пароль"
-                                        />
-                                        <button
-                                            type="button"
-                                            className={styles.passwordToggle}
-                                            onClick={() => setShowPassword(!showPassword)}
-                                        >
-                                            {showPassword ? <FaEyeSlash /> : <FaEye />}
-                                        </button>
-                                    </div>
-                                    {errors.password && touched.password && (
-                                        <div className={styles.errorMessage}>{errors.password}</div>
-                                    )}
-                                </div>
-
-                                {!isLogin && (
-                                    <div className={styles.formGroup}>
-                                        <label htmlFor="confirmPassword" className={styles.formLabel}>
-                                            <FaLock className={styles.inputIcon} /> Подтвердите пароль
-                                        </label>
-                                        <div className={styles.passwordInputWrapper}>
-                                            <Field
-                                                type={showConfirmPassword ? "text" : "password"}
-                                                name="confirmPassword"
-                                                className={`${styles.formInput} ${errors.confirmPassword && touched.confirmPassword ? styles.error : ''}`}
-                                                placeholder="Подтвердите ваш пароль"
-                                            />
-                                            <button
-                                                type="button"
-                                                className={styles.passwordToggle}
-                                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                            >
-                                                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-                                            </button>
-                                        </div>
-                                        {errors.confirmPassword && touched.confirmPassword && (
-                                            <div className={styles.errorMessage}>{errors.confirmPassword}</div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {isLogin && (
-                                    <div className={styles.forgotPassword}>
-                                        <button type="button" className={styles.forgotPasswordButton}>
-                                            Забыли пароль?
-                                        </button>
-                                    </div>
-                                )}
-
-                                <div className={styles.formActions}>
-                                    <button
-                                        type="submit"
-                                        className={styles.submitButton}
-                                        disabled={isSubmitting}
-                                    >
-                                        {isSubmitting ? (
-                                            <div className={styles.loadingSpinner}></div>
-                                        ) : (
-                                            <>
-                                                {isLogin ? 'Войти' : 'Зарегистрироваться'}
-                                                <FaArrowRight className={styles.submitIcon} />
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
-                            </Form>
+                            <AuthForm
+                                isLogin={isLogin}
+                                errors={errors}
+                                touched={touched}
+                                isSubmitting={isSubmitting}
+                            />
                         )}
                     </Formik>
 
-                    {isLogin && (
-                        <div className={styles.socialLogin}>
-                            <div className={styles.divider}>
-                                <span>или войдите с помощью</span>
-                            </div>
-                            <div className={styles.socialButtons}>
-                                <button className={`${styles.socialButton} ${styles.google}`}>
-                                    <span className={styles.socialIcon}>G</span>
-                                    Google
-                                </button>
-                                <button className={`${styles.socialButton} ${styles.github}`}>
-                                    <span className={styles.socialIcon}>GH</span>
-                                    GitHub
-                                </button>
-                            </div>
-                        </div>
-                    )}
+                    {isLogin && <SocialLogin />}
                 </div>
             </div>
         </div>

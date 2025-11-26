@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import VerticalNavbar from '../components/VerticalNavbar/VerticalNavbar'
 import ControlPanel from '../components/ControlPanel/ControlPanel'
@@ -14,6 +16,14 @@ type ActivePage = 'dashboard' | 'board' | 'developers' | 'settings'
 const MainPage = () => {
     const [activePage, setActivePage] = useState<ActivePage>('board')
     const [isControlPanelOpen, setIsControlPanelOpen] = useState(true)
+    const router = useRouter()
+
+    useEffect(() => {
+        const token = localStorage.getItem('token')
+        if (!token) {
+            router.push('/welcome')
+        }
+    }, [router])
 
     const handlePageChange = (page: ActivePage) => {
         setActivePage(page)
