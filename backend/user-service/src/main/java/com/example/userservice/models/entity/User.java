@@ -11,7 +11,13 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users", schema = "user_service_schema",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"username", "tag"}))
+        uniqueConstraints = @UniqueConstraint(columnNames = {"username", "tag"}),
+        indexes = {
+                @Index(columnList = "username, tag"),
+                @Index(columnList = "username"),
+                @Index(columnList = "tag")
+        }
+)
 @Data
 @Builder(toBuilder = true)
 @NoArgsConstructor

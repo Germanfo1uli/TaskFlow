@@ -57,6 +57,13 @@ public class GlobalExceptionHandler {
     // 400 username не соотв. требованиям
     @ExceptionHandler(InvalidUsernameException.class)
     public ResponseEntity<Object> handleInvalidUsername(InvalidUsernameException ex,
+                                                        HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
+    // 400 невалидная строка поиска
+    @ExceptionHandler(InvalidQueryException.class)
+    public ResponseEntity<Object> handleInvalidQuery(InvalidQueryException ex,
                                                      HttpServletRequest request) {
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }

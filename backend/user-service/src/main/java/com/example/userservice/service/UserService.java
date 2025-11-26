@@ -1,9 +1,6 @@
 package com.example.userservice.service;
 
-import com.example.userservice.exception.AccountDeletedException;
-import com.example.userservice.exception.AccountLockedException;
-import com.example.userservice.exception.UserNotFoundException;
-import com.example.userservice.exception.UsernameTagExhaustedException;
+import com.example.userservice.exception.*;
 import com.example.userservice.models.dto.data.UserFlags;
 import com.example.userservice.models.dto.response.ChangeProfileResponse;
 import com.example.userservice.models.dto.response.MyProfileResponse;
@@ -15,6 +12,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -98,5 +99,46 @@ public class UserService {
         return userRepository.findFlagsById(userId)
                 .map(UserFlags::isDeleted)
                 .orElse(true);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PublicProfileResponse> searchUsers(String query) {
+        if (query == null || query.isBlank()) {
+            throw new InvalidQueryException("Query cannot be empty");
+        }
+
+        String trimmed = query.trim().toLowerCase();
+        final List<User> foundUsers;
+
+        // точный поиск username#tag
+        if (trimmed.contains("#")) {
+            String[] parts = trimmed.split("#", 2);
+            String tag = parts[1];
+
+            if (!tag.matches("\\d{4}")) {
+                throw new InvalidQueryException("Tag must be exactly 4 digits");
+            }
+
+            // Для точного поиска достаточно findFirst
+            foundUsers = userRepository.findByUsernameAndTag(parts[0], tag)
+                    .map(List::of)
+                    .orElseGet(List::of);
+        }
+        // поиск по тегу (до 10 записей бд)
+        else if (trimmed.startsWith("#")) {
+            String tag = trimmed.substring(1);
+            if (!tag.matches("\\d{4}")) {
+                throw new InvalidQueryException("Tag must be exactly 4 digits");
+            }
+            foundUsers = userRepository.findTop10ByTagAndDeletedAtIsNullAndLockedAtIsNull(tag);
+        }
+        // поиск по юзернейму (до 10 записей бд)
+        else {
+            foundUsers = userRepository.findTop10ByUsernameAndDeletedAtIsNullAndLockedAtIsNull(trimmed);
+        }
+
+        return foundUsers.stream()
+                .map(PublicProfileResponse::fromUser)
+                .collect(Collectors.toList());
     }
 }
