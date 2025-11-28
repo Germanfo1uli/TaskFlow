@@ -90,18 +90,6 @@ export const ProfileForm = ({ initialData, onSubmit, isLoading }: ProfileFormPro
                                 <ErrorMessage name="email" component="div" className={styles.errorMessage} />
                             </div>
 
-                            <div className={styles.formGroup}>
-                                <label htmlFor="position">Должность</label>
-                                <Field
-                                    id="position"
-                                    name="position"
-                                    type="text"
-                                    disabled={!values.__editing}
-                                    className={!values.__editing ? styles.disabled : ''}
-                                />
-                                <ErrorMessage name="position" component="div" className={styles.errorMessage} />
-                            </div>
-
                             <div className={`${styles.formGroup} ${styles.fullWidth}`}>
                                 <label htmlFor="bio">О себе</label>
                                 <Field

@@ -306,3 +306,54 @@
         justify-content: center;
     }
 }
+
+.profileTags {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.tagContainer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: fit-content;
+}
+
+.profileTag {
+    font-size: 0.9rem;
+    color: #3d6bb3;
+    font-weight: 600;
+    background: rgba(61, 107, 179, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    display: inline-block;
+}
+
+.copyButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 4px;
+    background: rgba(61, 107, 179, 0.1);
+    color: #3d6bb3;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.copyButton:hover {
+    background: rgba(61, 107, 179, 0.2);
+    transform: scale(1.05);
+}
+
+.copyButton:active {
+    transform: scale(0.95);
+}
+
+.copyIcon {
+    font-size: 0.7rem;
+}

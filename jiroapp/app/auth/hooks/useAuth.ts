@@ -33,7 +33,10 @@ export const useAuth = () => {
                         userId: data.userId,
                         username: data.username,
                         email: data.email,
-                        tag: data.tag
+                        tag: data.tag,
+                        bio: data.bio || '',
+                        position: data.position || 'Сотрудник',
+                        joinDate: data.joinDate || new Date().toISOString().split('T')[0]
                     }));
 
                     dismissToast(loadingToast);
@@ -82,7 +85,10 @@ export const useAuth = () => {
                         userId: data.userId,
                         username: data.username,
                         email: data.email,
-                        tag: data.tag
+                        tag: data.tag,
+                        bio: data.bio || '',
+                        position: data.position || 'Сотрудник',
+                        joinDate: data.joinDate || new Date().toISOString().split('T')[0]
                     }));
 
                     dismissToast(loadingToast);
@@ -127,6 +133,15 @@ export const useAuth = () => {
         return userStr ? JSON.parse(userStr) : null;
     };
 
+    const updateUserData = (newUserData: any) => {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            const user = JSON.parse(userStr);
+            const updatedUser = { ...user, ...newUserData };
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+        }
+    };
+
     return {
         showPassword,
         showConfirmPassword,
@@ -137,5 +152,6 @@ export const useAuth = () => {
         logoutUser,
         isAuthenticated,
         getCurrentUser,
+        updateUserData,
     };
 };

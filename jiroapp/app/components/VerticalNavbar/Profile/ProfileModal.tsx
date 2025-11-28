@@ -1,15 +1,14 @@
-import { FaTimes, FaSignOutAlt } from 'react-icons/fa';
+import { FaTimes, FaSignOutAlt, FaCopy } from 'react-icons/fa';
 import { useProfile } from './hooks/useProfile';
 import { AvatarUpload } from './components/AvatarUpload';
 import { ProfileForm } from './components/ProfileForm';
 import { ProfileStats } from './components/ProfileStats';
 import { LogoutConfirmation } from './components/LogoutConfirmation';
 import styles from './ProfileModal.module.css';
-import styles2 from '../../CreateProject/CreateProjectModal.module.css';
 import { useAuth } from '@/app/auth/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-
+import { useNotification } from '@/app/auth/hooks/useNotification';
 
 interface ProfileModalProps {
     isOpen: boolean;
@@ -18,18 +17,31 @@ interface ProfileModalProps {
 
 export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
     const { profile, isLoading, updateProfile, updateAvatar } = useProfile();
-    const { logoutUser } = useAuth();
+    const { logoutUser, getCurrentUser } = useAuth();
+    const { showSuccess, showError } = useNotification();
     const router = useRouter();
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
     if (!isOpen) return null;
 
     const handleProfileSubmit = async (formData: any) => {
-        await updateProfile(formData);
+        try {
+            await updateProfile(formData);
+            showSuccess('Профиль успешно обновлен!');
+        } catch (error: any) {
+            console.error('Ошибка при обновлении профиля:', error);
+            showError(error.message || 'Ошибка при обновлении профиля');
+        }
     };
 
     const handleAvatarChange = async (file: File) => {
-        await updateAvatar(file);
+        try {
+            await updateAvatar(file);
+            showSuccess('Аватар успешно обновлен!');
+        } catch (error: any) {
+            console.error('Ошибка при обновлении аватара:', error);
+            showError(error.message || 'Ошибка при обновлении аватара');
+        }
     };
 
     const handleLogoutClick = () => {
@@ -39,23 +51,26 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
     const handleConfirmLogout = async () => {
         try {
             const refreshToken = localStorage.getItem('refreshToken');
+            const token = localStorage.getItem('token');
 
-            // По хорошему бы это разделить, но я повешусь уже, честно
-            if (refreshToken) {
+            if (refreshToken && token) {
                 await fetch('http://localhost:8080/api/auth/logout', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({ refreshToken }),
                 });
             }
 
             logoutUser(router.push);
+            onClose();
 
         } catch (error) {
             console.error('Ошибка при выходе:', error);
             logoutUser(router.push);
+            onClose();
         }
     };
 
@@ -63,6 +78,24 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
         setShowLogoutConfirm(false);
     };
 
+    const handleCopyTag = async () => {
+        const tag = profile.tag || getCurrentUser()?.tag;
+        if (tag) {
+            try {
+                await navigator.clipboard.writeText(`#${tag}`);
+                showSuccess('Тег скопирован в буфер обмена!');
+            } catch (err) {
+                const textArea = document.createElement('textarea');
+                textArea.value = `#${tag}`;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showSuccess('Тег скопирован в буфер обмена!');
+            }
+        }
+    };
+    const currentUser = getCurrentUser();
     return (
         <>
             <div className={styles.profileModalOverlay} onClick={onClose}>
@@ -102,9 +135,26 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                                     isLoading={isLoading}
                                 />
                                 <div className={styles.profileHeaderInfo}>
-                                    <h2 className={styles.profileName}>{profile.name}</h2>
-                                    <p className={styles.profilePosition}>{profile.position}</p>
-                                    <span className={styles.profileEmail}>{profile.email}</span>
+                                    <h2 className={styles.profileName}>
+                                        {profile.name || currentUser?.username || 'Пользователь'}
+                                    </h2>
+                                    <div className={styles.profileTags}>
+                                        <span className={styles.profileEmail}>
+                                            {profile.email || currentUser?.email}
+                                        </span>
+                                        <div className={styles.tagContainer}>
+                                            <span className={styles.profileTag}>
+                                                #{profile.tag || currentUser?.tag}
+                                            </span>
+                                            <button
+                                                className={styles.copyButton}
+                                                onClick={handleCopyTag}
+                                                title="Скопировать тег"
+                                            >
+                                                <FaCopy className={styles.copyIcon} />
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -114,17 +164,15 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                                         completedTasks={profile.completedTasks}
                                         activeProjects={profile.activeProjects}
                                         joinDate={profile.joinDate}
-                                        position={profile.position}
                                     />
                                 </div>
 
                                 <div className={styles.formSection}>
                                     <ProfileForm
                                         initialData={{
-                                            name: profile.name,
-                                            email: profile.email,
-                                            bio: profile.bio,
-                                            position: profile.position
+                                            name: profile.name || currentUser?.username || '',
+                                            email: profile.email || currentUser?.email || '',
+                                            bio: profile.bio || currentUser?.bio || '',
                                         }}
                                         onSubmit={handleProfileSubmit}
                                         isLoading={isLoading}
