@@ -1,14 +1,13 @@
-import { FaTasks, FaProjectDiagram, FaCalendarAlt, FaStar } from 'react-icons/fa';
+import { FaTasks, FaProjectDiagram, FaCalendarAlt } from 'react-icons/fa';
 import styles from './ProfileStats.module.css';
 
 interface ProfileStatsProps {
     completedTasks: number;
     activeProjects: number;
     joinDate: string;
-    position: string;
 }
 
-export const ProfileStats = ({ completedTasks, activeProjects, joinDate, position }: ProfileStatsProps) => {
+export const ProfileStats = ({ completedTasks, activeProjects, joinDate }: ProfileStatsProps) => {
     const formatJoinDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('ru-RU', {
             year: 'numeric',
@@ -35,12 +34,6 @@ export const ProfileStats = ({ completedTasks, activeProjects, joinDate, positio
             value: formatJoinDate(joinDate),
             label: 'В команде с',
             color: '#10b981'
-        },
-        {
-            icon: FaStar,
-            value: position,
-            label: 'Должность',
-            color: '#f59e0b'
         }
     ];
 

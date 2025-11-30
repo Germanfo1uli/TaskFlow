@@ -16,7 +16,7 @@ interface ProfileModalProps {
 }
 
 export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
-    const { profile, isLoading, updateProfile, updateAvatar } = useProfile();
+    const { profile, isLoading, updateProfile, updateAvatar, deleteAvatar } = useProfile();
     const { logoutUser, getCurrentUser } = useAuth();
     const { showSuccess, showError } = useNotification();
     const router = useRouter();
@@ -41,6 +41,16 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
         } catch (error: any) {
             console.error('Ошибка при обновлении аватара:', error);
             showError(error.message || 'Ошибка при обновлении аватара');
+        }
+    };
+
+    const handleAvatarDelete = async () => {
+        try {
+            await deleteAvatar();
+            showSuccess('Аватар успешно удален!');
+        } catch (error: any) {
+            console.error('Ошибка при удалении аватара:', error);
+            showError(error.message || 'Ошибка при удалении аватара');
         }
     };
 
@@ -132,6 +142,7 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                                 <AvatarUpload
                                     avatar={profile.avatar}
                                     onAvatarChange={handleAvatarChange}
+                                    onAvatarDelete={handleAvatarDelete}
                                     isLoading={isLoading}
                                 />
                                 <div className={styles.profileHeaderInfo}>

@@ -33,6 +33,7 @@ export const useProfile = () => {
                 email: user.email || '',
                 tag: user.tag || '',
                 bio: user.bio || '',
+                avatar: user.avatar || null,
                 position: user.position || 'Сотрудник',
                 joinDate: user.joinDate || new Date().toISOString().split('T')[0]
             }));
@@ -157,7 +158,13 @@ export const useProfile = () => {
             }
 
             const formData = new FormData();
-            formData.append('avatar', avatarFile);
+            formData.append('file', avatarFile); // Исправлено с 'avatar' на 'file'
+
+            console.log('Отправка файла аватара:', {
+                fileName: avatarFile.name,
+                fileSize: avatarFile.size,
+                fileType: avatarFile.type
+            });
 
             const response = await fetch('http://localhost:8080/api/users/me/avatar', {
                 method: 'POST',
@@ -168,15 +175,29 @@ export const useProfile = () => {
             });
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                let errorMessage = `HTTP error! status: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    console.error('Детали ошибки от сервера:', errorData);
+                    errorMessage = errorData.message || errorData.error || errorMessage;
+                } catch (parseError) {
+                    console.error('Ошибка парсинга ответа:', parseError);
+                }
+                throw new Error(errorMessage);
             }
 
             const data = await response.json();
+            console.log('Успешный ответ от сервера при обновлении аватара:', data);
+
             setProfile(prev => ({
                 ...prev,
-                avatar: data.avatarUrl
+                avatar: data.avatarUrl || data.url || data.imageUrl
             }));
+
+            // Обновляем аватар в данных пользователя
+            updateUserData({
+                avatar: data.avatarUrl || data.url || data.imageUrl
+            });
 
         } catch (error) {
             console.error('Ошибка при обновлении аватара:', error);
@@ -188,9 +209,59 @@ export const useProfile = () => {
                     ...prev,
                     avatar: avatarUrl
                 }));
+                updateUserData({
+                    avatar: avatarUrl
+                });
             } else {
                 throw error;
             }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const deleteAvatar = async (): Promise<void> => {
+        setIsLoading(true);
+
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                throw new Error('Токен авторизации отсутствует');
+            }
+
+            const response = await fetch('http://localhost:8080/api/users/me/avatar', {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+            });
+
+            if (!response.ok) {
+                let errorMessage = `HTTP error! status: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    console.error('Детали ошибки от сервера:', errorData);
+                    errorMessage = errorData.message || errorData.error || errorMessage;
+                } catch (parseError) {
+                    console.error('Ошибка парсинга ответа:', parseError);
+                }
+                throw new Error(errorMessage);
+            }
+
+            // Успешное удаление аватара
+            setProfile(prev => ({
+                ...prev,
+                avatar: null
+            }));
+
+            // Обновляем данные пользователя
+            updateUserData({
+                avatar: null
+            });
+
+        } catch (error) {
+            console.error('Ошибка при удалении аватара:', error);
+            throw error;
         } finally {
             setIsLoading(false);
         }
@@ -200,6 +271,7 @@ export const useProfile = () => {
         profile,
         isLoading,
         updateProfile,
-        updateAvatar
+        updateAvatar,
+        deleteAvatar
     };
 };

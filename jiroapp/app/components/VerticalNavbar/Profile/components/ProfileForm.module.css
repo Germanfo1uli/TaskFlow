@@ -4,20 +4,20 @@
     border: 1px solid rgba(61, 107, 179, 0.1);
     border-radius: 12px;
     padding: 1.25rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0;
 }
 
 .formHeader {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.25rem;
-    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.875rem;
     border-bottom: 1px solid rgba(61, 107, 179, 0.1);
 }
 
 .formHeader h3 {
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 600;
     color: #1e293b;
     margin: 0;
@@ -26,8 +26,8 @@
 .editButton {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
+    gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
     border: 1px solid rgba(61, 107, 179, 0.3);
     border-radius: 6px;
     background: transparent;
@@ -35,7 +35,7 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
 }
 
 .editButton:hover {
@@ -44,7 +44,7 @@
 }
 
 .editIcon {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
 }
 
 .profileForm {
@@ -54,7 +54,7 @@
 .formGrid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: 0.875rem;
 }
 
 .formGroup {
@@ -67,18 +67,18 @@
 }
 
 .formGroup label {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
     color: #1e293b;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.35rem;
 }
 
 .formGroup input,
 .formGroup textarea {
-    padding: 0.6rem;
+    padding: 0.5rem;
     border: 1px solid rgba(61, 107, 179, 0.2);
     border-radius: 6px;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     transition: all 0.2s ease;
     background: white;
     font-family: inherit;
@@ -101,13 +101,13 @@
 
 .formGroup textarea {
     resize: vertical;
-    min-height: 60px;
+    min-height: 55px;
 }
 
 .errorMessage {
     color: #ef4444;
-    font-size: 0.75rem;
-    margin-top: 0.25rem;
+    font-size: 0.7rem;
+    margin-top: 0.2rem;
     font-weight: 500;
 }
 
@@ -115,13 +115,13 @@
     display: flex;
     gap: 0.75rem;
     justify-content: flex-end;
-    margin-top: 1.25rem;
-    padding-top: 1rem;
+    margin-top: 1rem;
+    padding-top: 0.875rem;
     border-top: 1px solid rgba(61, 107, 179, 0.1);
 }
 
 .cancelButton {
-    padding: 0.6rem 1rem;
+    padding: 0.5rem 0.875rem;
     border: 1px solid rgba(100, 116, 139, 0.3);
     border-radius: 6px;
     background: transparent;
@@ -129,7 +129,7 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
 }
 
 .cancelButton:hover {
@@ -140,8 +140,8 @@
 .saveButton {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.6rem 1rem;
+    gap: 0.4rem;
+    padding: 0.5rem 0.875rem;
     border: none;
     border-radius: 6px;
     background: #3d6bb3;
@@ -149,7 +149,7 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
 }
 
 .saveButton:hover:not(:disabled) {
@@ -164,7 +164,7 @@
 }
 
 .saveIcon {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
 }
 
 @media (max-width: 768px) {
