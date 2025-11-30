@@ -4,7 +4,9 @@ import com.example.gateway.service.TokenService;
 import com.example.gateway.service.TokenService.JwtClaims;
 import com.example.gateway.service.TokenBlacklistService;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.HttpHeaders;
@@ -20,6 +22,18 @@ import java.util.List;
 @Slf4j
 public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAuthenticationFilter.Config> {
 
+    // основа гейтвея: валидация токенов
+    // фильтр перехватывает access-токены для их валидации перед попаданием в остальные микросервисы
+    // гейтвей валидирует токены, проверяет, находятся ли они в blacklist (в Redis)
+    // если валидация прошла, то парсим токены и перед отправкой далее закидываем в header'ы запроса данные из токена
+    // затем эти данные легко обрабатываются остальными микросервисами
+
+    @Value("${gateway.secret.header.name}")
+    private String gatewaySecretHeader;
+
+    @Value("${gateway.secret.value:default-secret}")
+    private String gatewaySecretValue;
+
     private final TokenService tokenService;
     private final TokenBlacklistService blacklistService;
     private static final String BEARER_PREFIX = "Bearer ";
@@ -34,8 +48,13 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
     public GatewayFilter apply(Config config) {
         return (exchange, chain) -> {
             String path = exchange.getRequest().getURI().getPath();
+            String method = String.valueOf(exchange.getRequest().getMethod());
 
-            // Пропускаем публичные пути
+            if ("OPTIONS".equals(method)) {
+                return chain.filter(exchange);
+            }
+
+            // скип публичных путей
             if (config.getSkipPaths().stream().anyMatch(skipPath ->
                     path.equals(skipPath) || path.matches(skipPath.replace("*", ".*"))
             )) {
@@ -52,7 +71,7 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 
             String token = authHeader.substring(BEARER_PREFIX.length());
 
-            // Проверяем черный список
+            // проверка blacklist токена, expire'а и запись header'ов
             return blacklistService.isBlacklisted(token)
                     .flatMap(isBlacklisted -> {
                         if (isBlacklisted) {
@@ -62,17 +81,16 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
                         try {
                             JwtClaims claims = tokenService.parseToken(token);
 
-                            // Проверяем expiration (опционально, JWT сам проверяет)
                             if (tokenService.isTokenExpired(token)) {
                                 return reject(exchange, HttpStatus.UNAUTHORIZED, "Token expired");
                             }
 
-                            // Добавляем заголовки
                             ServerWebExchange mutatedExchange = exchange.mutate()
                                     .request(r -> r.headers(headers -> {
                                         headers.add("X-User-Id", claims.userId().toString());
                                         headers.add("X-User-Role", claims.role());
                                         headers.add("X-User-Email", claims.email());
+                                        headers.add(gatewaySecretHeader, gatewaySecretValue);
                                     }))
                                     .build();
 
@@ -87,6 +105,7 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
         };
     }
 
+    // метод для быстрой отправки ответа сервера в случае ошибки
     private Mono<Void> reject(ServerWebExchange exchange, HttpStatus status, String message) {
         exchange.getResponse().setStatusCode(status);
         exchange.getResponse().getHeaders().add(HttpHeaders.CONTENT_TYPE, "application/json");

@@ -24,15 +24,15 @@ public class TokenService {
                     .parseSignedClaims(token)
                     .getPayload();
 
-            String uid = claims.get("uid", String.class);
+            String userid = claims.getSubject();
             String role = claims.get("role", String.class);
             String email = claims.get("email", String.class);
 
-            if (uid == null || role == null) {
+            if (userid == null || role == null) {
                 throw new InvalidTokenException("Missing required claims");
             }
 
-            return new JwtClaims(Long.parseLong(uid), role, email);
+            return new JwtClaims(Long.parseLong(userid), role, email);
         } catch (JwtException e) {
             throw new InvalidTokenException("Invalid token", e);
         }

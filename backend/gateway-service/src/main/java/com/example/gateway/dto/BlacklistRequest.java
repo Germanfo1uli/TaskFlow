@@ -1,4 +1,6 @@
 package com.example.gateway.dto;
 
-public class BlaclistRequest {
-}
+public record BlacklistRequest(
+        String token,
+        long ttl
+) {}

@@ -7,6 +7,7 @@ import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -25,37 +26,36 @@ public class TokenRevocationFilter implements GlobalFilter, Ordered {
         String path = exchange.getRequest().getURI().getPath();
         String method = exchange.getRequest().getMethod().toString();
 
-        // Определяем, нужно ли ревокировать токен
         boolean shouldRevoke = isRevocationEndpoint(path, method);
 
         if (!shouldRevoke) {
             return chain.filter(exchange);
         }
 
-        // Сохраняем токен на будущее
         String token = extractToken(exchange);
         if (token != null) {
             exchange.getAttributes().put("token-to-revoke", token);
         }
 
-        // Выполняем запрос
         return chain.filter(exchange)
-                .then(Mono.fromRunnable(() -> {
-                    // ПОСЛЕ успеха ревокируем
-                    String tokenToRevoke = exchange.getAttribute("token-to-revoke");
-                    if (tokenToRevoke != null) {
-                        blacklistService.blacklist(tokenToRevoke, Duration.ofMinutes(15))
-                                .doOnSuccess(v -> log.debug("Token revoked: {}", tokenToRevoke.hashCode()))
-                                .doOnError(e -> log.error("Failed to revoke token", e))
-                                .subscribe(); // Асинхронно
+                .then(Mono.defer(() -> {
+                    if (exchange.getResponse().getStatusCode() == HttpStatus.OK) {
+                        if (token != null) {
+                            return blacklistService.blacklist(token, Duration.ofMinutes(15))
+                                    .doOnSuccess(v -> log.debug("Token revoked: {}", token.hashCode()))
+                                    .doOnError(e -> log.error("Failed to revoke token", e))
+                                    .then();
+                        }
                     }
+                    return Mono.empty();
                 }));
     }
 
     private boolean isRevocationEndpoint(String path, String method) {
-        return ("/api/auth/logout".equals(path) && "POST".equals(method)) ||
-                ("/api/auth/change-password".equals(path) && "PATCH".equals(method)) ||
-                ("/api/auth/change-email".equals(path) && "PATCH".equals(method));
+        return  ("/api/auth/change-password".equals(path) && "PATCH".equals(method)) ||
+                ("/api/auth/change-email".equals(path) && "PATCH".equals(method)) ||
+                ("/api/auth/logout".equals(path) && "POST".equals(method)) ||
+                ("/api/auth/account".equals(path) && "DELETE".equals(method));
     }
 
     private String extractToken(ServerWebExchange exchange) {
