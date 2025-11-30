@@ -7,18 +7,18 @@ import com.example.userservice.models.dto.response.MyProfileResponse;
 import com.example.userservice.models.dto.response.PublicProfileResponse;
 import com.example.userservice.models.entity.User;
 import com.example.userservice.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserService {
     private final UserRepository userRepository;
     private final SecureRandom random = new SecureRandom();
@@ -107,34 +107,48 @@ public class UserService {
             throw new InvalidQueryException("Query cannot be empty");
         }
 
-        String trimmed = query.trim().toLowerCase();
+        log.info("Query: {} was received. Search was started", query);
+
+        String trimmed = query.trim();
         final List<User> foundUsers;
 
-        // точный поиск username#tag
-        if (trimmed.contains("#")) {
+        log.info("Query: {} was trimmed: {}", query, trimmed);
+
+        // поиск по тегу (10 совпадений)
+        if (trimmed.startsWith("#")) {
+            String tag = trimmed.substring(1);
+
+            log.info("Started #tag search by: {}", tag);
+
+            if (!tag.matches("\\d{4}")) {
+                throw new InvalidQueryException("Tag must be exactly 4 digits");
+            }
+            foundUsers = userRepository
+                    .findTop10ByTagAndDeletedAtIsNullAndLockedAtIsNull(tag);
+        }
+        // поиск по юзернейм#тег (точное совпадение)
+        else if (trimmed.contains("#")) {
             String[] parts = trimmed.split("#", 2);
             String tag = parts[1];
 
+            log.info("Started username#tag search by: {}#{}", parts[0], tag);
+
             if (!tag.matches("\\d{4}")) {
                 throw new InvalidQueryException("Tag must be exactly 4 digits");
             }
 
-            // Для точного поиска достаточно findFirst
-            foundUsers = userRepository.findByUsernameAndTag(parts[0], tag)
+            foundUsers = userRepository
+                    .findByUsernameIgnoreCaseAndTagAndDeletedAtIsNullAndLockedAtIsNull(
+                            parts[0], tag)
                     .map(List::of)
                     .orElseGet(List::of);
         }
-        // поиск по тегу (до 10 записей бд)
-        else if (trimmed.startsWith("#")) {
-            String tag = trimmed.substring(1);
-            if (!tag.matches("\\d{4}")) {
-                throw new InvalidQueryException("Tag must be exactly 4 digits");
-            }
-            foundUsers = userRepository.findTop10ByTagAndDeletedAtIsNullAndLockedAtIsNull(tag);
-        }
-        // поиск по юзернейму (до 10 записей бд)
+        // поиск по юзернейму и его вхождениям
         else {
-            foundUsers = userRepository.findTop10ByUsernameAndDeletedAtIsNullAndLockedAtIsNull(trimmed);
+            log.info("Started username search by: {}", trimmed);
+
+            foundUsers = userRepository
+                    .findTop10ByUsernameContainingIgnoreCaseAndDeletedAtIsNullAndLockedAtIsNull(trimmed);
         }
 
         return foundUsers.stream()

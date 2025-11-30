@@ -24,21 +24,18 @@ public class AvatarService {
 
     @Transactional
     public void uploadAvatar(Long userId, MultipartFile file) {
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
-        avatarRepository.findByUserId(userId).ifPresent(avatarRepository::delete);
+        Avatar avatar = avatarRepository.findByUserId(userId)
+                .orElseGet(() -> Avatar.builder().user(user).build());
 
         String ext = getExtension(Objects.requireNonNull(file.getOriginalFilename()));
         String uniqueName = "avatar_" + userId + "_" + UUID.randomUUID() + "." + ext;
 
-        Avatar avatar = Avatar.builder()
-                .user(user)
-                .mimeType(file.getContentType())
-                .fileSize((int) file.getSize())
-                .filename(uniqueName)
-                .build();
+        avatar.setMimeType(file.getContentType());
+        avatar.setFileSize((int) file.getSize());
+        avatar.setFilename(uniqueName);
 
         try {
             avatar.setData(file.getBytes());
@@ -46,7 +43,7 @@ public class AvatarService {
             throw new InvalidFileException(e.getMessage());
         }
 
-        avatarRepository.save(avatar);
+        avatarRepository.save(avatar); // UPDATE если существует, INSERT если новый
     }
 
     private String getExtension(String originalName) {

@@ -15,7 +15,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u.lockedAt, u.deletedAt FROM User u WHERE u.id = :id")
     Optional<UserFlags> findFlagsById(@Param("id") Long id);
     boolean existsByUsernameAndTag(String username, String tag);
-    Optional<User> findByUsernameAndTag(String username, String tag);
+    Optional<User> findByUsernameIgnoreCaseAndTagAndDeletedAtIsNullAndLockedAtIsNull(
+            String username, String tag);
     List<User> findTop10ByTagAndDeletedAtIsNullAndLockedAtIsNull(String tag);
-    List<User> findTop10ByUsernameAndDeletedAtIsNullAndLockedAtIsNull(String username);
+    List<User> findTop10ByUsernameContainingIgnoreCaseAndDeletedAtIsNullAndLockedAtIsNull(
+            String username);
 }
