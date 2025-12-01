@@ -10,11 +10,16 @@ import {
     InputLabel,
     Select,
     Box,
-    Typography
+    Typography,
+    Chip
 } from '@mui/material';
-import { FaSave, FaUserEdit } from 'react-icons/fa';
+import { FaSave, FaUserEdit, FaTasks, FaCalendarTimes } from 'react-icons/fa';
 import { Developer, DeveloperRole } from '../types/developer.types';
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
 
 interface EditDeveloperDialogProps {
     open: boolean;
@@ -23,198 +28,437 @@ interface EditDeveloperDialogProps {
     onUpdate: (developer: Developer) => void;
 }
 
+const schema = yup.object({
+    name: yup.string().required('Имя обязательно').min(2, 'Минимум 2 символа'),
+    role: yup.string().oneOf(['executor', 'assistant', 'leader']).required('Роль обязательна')
+});
+
 export const EditDeveloperDialog = ({
                                         open,
                                         developer,
                                         onClose,
                                         onUpdate
                                     }: EditDeveloperDialogProps) => {
-    const [editedDeveloper, setEditedDeveloper] = useState<Developer | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const { control, handleSubmit, reset, formState: { errors, isValid } } = useForm({
+        resolver: yupResolver(schema),
+        mode: 'onChange'
+    });
 
     useEffect(() => {
         if (developer) {
-            setEditedDeveloper({ ...developer });
+            reset({
+                name: developer.name,
+                role: developer.role
+            });
         }
-    }, [developer]);
+    }, [developer, reset]);
 
-    const handleSubmit = () => {
-        if (editedDeveloper && editedDeveloper.name.trim()) {
-            onUpdate(editedDeveloper);
+    const onSubmit = async (data: any) => {
+        if (!developer) return;
+
+        setIsSubmitting(true);
+
+        try {
+            const updatedDeveloper: Developer = {
+                ...developer,
+                ...data
+            };
+
+            // Имитация API задержки
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            onUpdate(updatedDeveloper);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     const handleClose = () => {
+        reset();
         onClose();
     };
 
-    if (!editedDeveloper) return null;
+    if (!developer) return null;
 
     return (
-        <Dialog
-            open={open}
-            onClose={handleClose}
-            PaperProps={{
-                sx: {
-                    borderRadius: '16px',
-                    padding: '8px',
-                    background: 'rgba(255, 255, 255, 0.98)',
-                    backdropFilter: 'blur(20px)',
-                    minWidth: '450px'
-                }
-            }}
-        >
-            <DialogTitle
-                sx={{
-                    fontWeight: 700,
-                    color: '#1e293b',
-                    textAlign: 'center',
-                    background: 'linear-gradient(135deg, #8b5cf6, #a78bfa)',
-                    backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 1,
-                    padding: '24px 24px 16px'
-                }}
-            >
-                <FaUserEdit style={{ fontSize: '20px' }} />
-                Редактировать участника
-            </DialogTitle>
-
-            <DialogContent>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2, padding: '0 8px' }}>
-                    <Box>
-                        <Typography
-                            variant="body2"
+        <AnimatePresence>
+            {open && (
+                <Dialog
+                    open={open}
+                    onClose={handleClose}
+                    PaperComponent={motion.div}
+                    PaperProps={{
+                        initial: { opacity: 0, scale: 0.95, y: 20 },
+                        animate: { opacity: 1, scale: 1, y: 0 },
+                        exit: { opacity: 0, scale: 0.95, y: 20 },
+                        transition: { type: 'spring', damping: 25, stiffness: 300 }
+                    }}
+                    PaperProps={{
+                        sx: {
+                            borderRadius: '20px',
+                            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98))',
+                            backdropFilter: 'blur(20px)',
+                            border: '1px solid rgba(139, 92, 246, 0.1)',
+                            boxShadow: '0 20px 60px rgba(139, 92, 246, 0.15)',
+                            minWidth: '500px',
+                            maxWidth: '500px',
+                            overflow: 'hidden'
+                        }
+                    }}
+                >
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.1 }}
+                    >
+                        <Box
                             sx={{
-                                color: '#64748b',
-                                marginBottom: 1,
-                                fontSize: '0.9rem'
+                                background: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)',
+                                padding: '24px 32px 20px',
+                                position: 'relative',
+                                overflow: 'hidden'
                             }}
                         >
-                            Измените данные участника команды
-                        </Typography>
-                        <TextField
-                            label="Имя и фамилия участника"
-                            placeholder="например: Иван Иванов"
-                            value={editedDeveloper.name}
-                            onChange={(e) => setEditedDeveloper(prev => prev ? {...prev, name: e.target.value} : null)}
-                            fullWidth
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    borderRadius: '12px',
-                                    '&:hover fieldset': {
-                                        borderColor: '#8b5cf6'
-                                    },
-                                    '&.Mui-focused fieldset': {
-                                        borderColor: '#8b5cf6',
-                                        borderWidth: '2px'
-                                    }
-                                },
-                                '& .MuiInputLabel-root.Mui-focused': {
-                                    color: '#8b5cf6'
-                                }
-                            }}
-                        />
-                    </Box>
-
-                    <FormControl fullWidth>
-                        <InputLabel>Роль в проекте</InputLabel>
-                        <Select
-                            value={editedDeveloper.role}
-                            label="Роль в проекте"
-                            onChange={(e) => setEditedDeveloper(prev => prev ? {...prev, role: e.target.value as DeveloperRole} : null)}
-                            sx={{
-                                borderRadius: '12px',
-                                '& .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: 'rgba(0, 0, 0, 0.23)'
-                                },
-                                '&:hover .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: '#8b5cf6'
-                                },
-                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: '#8b5cf6'
-                                }
-                            }}
-                        >
-                            <MenuItem value="executor">Разработчик</MenuItem>
-                            <MenuItem value="assistant">Помощник разработчика</MenuItem>
-                            <MenuItem value="leader">Руководитель</MenuItem>
-                        </Select>
-                    </FormControl>
-
-                    <Box sx={{
-                        background: 'rgba(59, 130, 246, 0.05)',
-                        borderRadius: '12px',
-                        padding: '16px',
-                        border: '1px solid rgba(59, 130, 246, 0.1)'
-                    }}>
-                        <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
-                            Статистика участника:
-                        </Typography>
-                        <Box sx={{ display: 'flex', gap: 2 }}>
-                            <Typography variant="body2" sx={{ color: '#10b981', fontWeight: 600 }}>
-                                Выполнено: {editedDeveloper.completedTasks} задач
-                            </Typography>
-                            <Typography
-                                variant="body2"
+                            <Box
                                 sx={{
-                                    color: editedDeveloper.overdueTasks > 0 ? '#ef4444' : '#10b981',
-                                    fontWeight: 600
+                                    position: 'absolute',
+                                    top: -50,
+                                    right: -50,
+                                    width: 150,
+                                    height: 150,
+                                    borderRadius: '50%',
+                                    background: 'rgba(255, 255, 255, 0.1)'
+                                }}
+                            />
+                            <DialogTitle
+                                sx={{
+                                    fontWeight: 800,
+                                    color: 'white',
+                                    textAlign: 'left',
+                                    padding: 0,
+                                    marginBottom: 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 2,
+                                    fontSize: '1.5rem'
                                 }}
                             >
-                                Просрочено: {editedDeveloper.overdueTasks || 0} задач
+                                <Box
+                                    sx={{
+                                        background: 'rgba(255, 255, 255, 0.2)',
+                                        borderRadius: '12px',
+                                        padding: '8px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
+                                >
+                                    <FaUserEdit style={{ fontSize: '24px' }} />
+                                </Box>
+                                Редактировать участника
+                            </DialogTitle>
+                            <Typography
+                                sx={{
+                                    color: 'rgba(255, 255, 255, 0.9)',
+                                    fontSize: '0.9rem'
+                                }}
+                            >
+                                Обновите информацию о члене команды
                             </Typography>
                         </Box>
-                    </Box>
-                </Box>
-            </DialogContent>
 
-            <DialogActions sx={{ padding: '20px 24px', gap: 1 }}>
-                <Button
-                    onClick={handleClose}
-                    variant="outlined"
-                    sx={{
-                        borderRadius: '12px',
-                        textTransform: 'none',
-                        fontWeight: 600,
-                        color: '#64748b',
-                        borderColor: 'rgba(100, 116, 139, 0.3)',
-                        padding: '8px 20px',
-                        '&:hover': {
-                            borderColor: '#64748b',
-                            background: 'rgba(100, 116, 139, 0.04)'
-                        }
-                    }}
-                >
-                    Отмена
-                </Button>
-                <Button
-                    onClick={handleSubmit}
-                    variant="contained"
-                    startIcon={<FaSave />}
-                    disabled={!editedDeveloper.name.trim()}
-                    sx={{
-                        background: 'linear-gradient(135deg, #8b5cf6, #a78bfa)',
-                        borderRadius: '12px',
-                        textTransform: 'none',
-                        fontWeight: 600,
-                        padding: '8px 24px',
-                        '&:hover': {
-                            background: 'linear-gradient(135deg, #7c3aed, #8b5cf6)',
-                            boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)'
-                        },
-                        '&:disabled': {
-                            background: 'rgba(100, 116, 139, 0.2)',
-                            color: 'rgba(100, 116, 139, 0.5)'
-                        }
-                    }}
-                >
-                    Сохранить изменения
-                </Button>
-            </DialogActions>
-        </Dialog>
+                        <DialogContent sx={{ padding: '32px' }}>
+                            <Box
+                                component="form"
+                                onSubmit={handleSubmit(onSubmit)}
+                                sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
+                            >
+                                <motion.div
+                                    initial={{ x: -20, opacity: 0 }}
+                                    animate={{ x: 0, opacity: 1 }}
+                                    transition={{ delay: 0.2 }}
+                                >
+                                    <Controller
+                                        name="name"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <TextField
+                                                {...field}
+                                                label="Имя и фамилия"
+                                                placeholder="Иван Иванов"
+                                                fullWidth
+                                                error={!!errors.name}
+                                                helperText={errors.name?.message}
+                                                sx={{
+                                                    '& .MuiOutlinedInput-root': {
+                                                        borderRadius: '12px',
+                                                        background: 'rgba(248, 250, 252, 0.8)',
+                                                        '&:hover fieldset': {
+                                                            borderColor: '#8b5cf6',
+                                                            borderWidth: '2px'
+                                                        },
+                                                        '&.Mui-focused fieldset': {
+                                                            borderColor: '#8b5cf6',
+                                                            borderWidth: '2px'
+                                                        }
+                                                    },
+                                                    '& .MuiInputLabel-root': {
+                                                        fontWeight: 600
+                                                    }
+                                                }}
+                                            />
+                                        )}
+                                    />
+                                </motion.div>
+
+                                <motion.div
+                                    initial={{ x: -20, opacity: 0 }}
+                                    animate={{ x: 0, opacity: 1 }}
+                                    transition={{ delay: 0.3 }}
+                                >
+                                    <Controller
+                                        name="role"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <FormControl fullWidth error={!!errors.role}>
+                                                <InputLabel>Роль в проекте</InputLabel>
+                                                <Select
+                                                    {...field}
+                                                    label="Роль в проекте"
+                                                    sx={{
+                                                        borderRadius: '12px',
+                                                        background: 'rgba(248, 250, 252, 0.8)',
+                                                        '& .MuiOutlinedInput-notchedOutline': {
+                                                            borderColor: 'rgba(139, 92, 246, 0.2)'
+                                                        },
+                                                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                                                            borderColor: '#8b5cf6'
+                                                        }
+                                                    }}
+                                                >
+                                                    <MenuItem value="executor">
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                            <Box sx={{
+                                                                width: 8,
+                                                                height: 8,
+                                                                borderRadius: '50%',
+                                                                background: '#3b82f6'
+                                                            }} />
+                                                            Разработчик
+                                                        </Box>
+                                                    </MenuItem>
+                                                    <MenuItem value="assistant">
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                            <Box sx={{
+                                                                width: 8,
+                                                                height: 8,
+                                                                borderRadius: '50%',
+                                                                background: '#10b981'
+                                                            }} />
+                                                            Помощник разработчика
+                                                        </Box>
+                                                    </MenuItem>
+                                                    <MenuItem value="leader">
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                            <Box sx={{
+                                                                width: 8,
+                                                                height: 8,
+                                                                borderRadius: '50%',
+                                                                background: '#ef4444'
+                                                            }} />
+                                                            Руководитель
+                                                        </Box>
+                                                    </MenuItem>
+                                                </Select>
+                                            </FormControl>
+                                        )}
+                                    />
+                                </motion.div>
+
+                                <motion.div
+                                    initial={{ y: 20, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.4 }}
+                                >
+                                    <Box
+                                        sx={{
+                                            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(167, 139, 250, 0.05))',
+                                            borderRadius: '16px',
+                                            padding: '20px',
+                                            border: '1px solid rgba(139, 92, 246, 0.1)'
+                                        }}
+                                    >
+                                        <Typography
+                                            variant="subtitle2"
+                                            sx={{
+                                                color: '#64748b',
+                                                fontWeight: 600,
+                                                marginBottom: 2,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 1
+                                            }}
+                                        >
+                                            Статистика участника
+                                        </Typography>
+                                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                                            <Box
+                                                sx={{
+                                                    background: 'white',
+                                                    borderRadius: '12px',
+                                                    padding: '16px',
+                                                    border: '1px solid rgba(16, 185, 129, 0.1)',
+                                                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.05)'
+                                                }}
+                                            >
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 1 }}>
+                                                    <Box sx={{
+                                                        background: 'rgba(16, 185, 129, 0.1)',
+                                                        borderRadius: '10px',
+                                                        padding: '6px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center'
+                                                    }}>
+                                                        <FaTasks style={{ color: '#10b981', fontSize: '14px' }} />
+                                                    </Box>
+                                                    <Typography sx={{ color: '#64748b', fontSize: '0.85rem' }}>
+                                                        Выполнено
+                                                    </Typography>
+                                                </Box>
+                                                <Typography sx={{ color: '#1e293b', fontWeight: 700, fontSize: '1.5rem' }}>
+                                                    {developer.completedTasks}
+                                                    <Typography component="span" sx={{ color: '#64748b', fontSize: '0.9rem', marginLeft: 0.5 }}>
+                                                        задач
+                                                    </Typography>
+                                                </Typography>
+                                            </Box>
+
+                                            <Box
+                                                sx={{
+                                                    background: 'white',
+                                                    borderRadius: '12px',
+                                                    padding: '16px',
+                                                    border: developer.overdueTasks > 0
+                                                        ? '1px solid rgba(239, 68, 68, 0.1)'
+                                                        : '1px solid rgba(16, 185, 129, 0.1)',
+                                                    boxShadow: developer.overdueTasks > 0
+                                                        ? '0 4px 12px rgba(239, 68, 68, 0.05)'
+                                                        : '0 4px 12px rgba(16, 185, 129, 0.05)'
+                                                }}
+                                            >
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 1 }}>
+                                                    <Box sx={{
+                                                        background: developer.overdueTasks > 0
+                                                            ? 'rgba(239, 68, 68, 0.1)'
+                                                            : 'rgba(16, 185, 129, 0.1)',
+                                                        borderRadius: '10px',
+                                                        padding: '6px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center'
+                                                    }}>
+                                                        <FaCalendarTimes style={{
+                                                            color: developer.overdueTasks > 0 ? '#ef4444' : '#10b981',
+                                                            fontSize: '14px'
+                                                        }} />
+                                                    </Box>
+                                                    <Typography sx={{ color: '#64748b', fontSize: '0.85rem' }}>
+                                                        Просрочено
+                                                    </Typography>
+                                                </Box>
+                                                <Typography sx={{
+                                                    color: developer.overdueTasks > 0 ? '#ef4444' : '#1e293b',
+                                                    fontWeight: 700,
+                                                    fontSize: '1.5rem'
+                                                }}>
+                                                    {developer.overdueTasks || 0}
+                                                    <Typography component="span" sx={{
+                                                        color: developer.overdueTasks > 0 ? '#ef4444' : '#64748b',
+                                                        fontSize: '0.9rem',
+                                                        marginLeft: 0.5
+                                                    }}>
+                                                        задач
+                                                    </Typography>
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    </Box>
+                                </motion.div>
+                            </Box>
+                        </DialogContent>
+
+                        <DialogActions sx={{ padding: '24px 32px', gap: 2, borderTop: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                            <Button
+                                onClick={handleClose}
+                                variant="outlined"
+                                disabled={isSubmitting}
+                                sx={{
+                                    borderRadius: '12px',
+                                    textTransform: 'none',
+                                    fontWeight: 600,
+                                    color: '#64748b',
+                                    borderColor: 'rgba(100, 116, 139, 0.2)',
+                                    padding: '10px 24px',
+                                    '&:hover': {
+                                        borderColor: '#8b5cf6',
+                                        background: 'rgba(139, 92, 246, 0.04)',
+                                        transform: 'translateY(-1px)',
+                                        boxShadow: '0 4px 12px rgba(139, 92, 246, 0.1)'
+                                    },
+                                    transition: 'all 0.3s ease'
+                                }}
+                            >
+                                Отмена
+                            </Button>
+                            <Button
+                                onClick={handleSubmit(onSubmit)}
+                                variant="contained"
+                                startIcon={<FaSave />}
+                                disabled={!isValid || isSubmitting}
+                                sx={{
+                                    background: 'linear-gradient(135deg, #8b5cf6, #a78bfa)',
+                                    borderRadius: '12px',
+                                    textTransform: 'none',
+                                    fontWeight: 600,
+                                    padding: '10px 28px',
+                                    boxShadow: '0 8px 20px rgba(139, 92, 246, 0.3)',
+                                    '&:hover': {
+                                        background: 'linear-gradient(135deg, #7c3aed, #8b5cf6)',
+                                        transform: 'translateY(-2px)',
+                                        boxShadow: '0 12px 24px rgba(139, 92, 246, 0.4)'
+                                    },
+                                    '&:disabled': {
+                                        background: 'rgba(100, 116, 139, 0.1)',
+                                        color: 'rgba(100, 116, 139, 0.3)',
+                                        transform: 'none',
+                                        boxShadow: 'none'
+                                    },
+                                    transition: 'all 0.3s ease',
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                }}
+                            >
+                                {isSubmitting ? (
+                                    <>
+                                        <motion.span
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            style={{ marginLeft: '8px' }}
+                                        >
+                                            Сохранение...
+                                        </motion.span>
+                                    </>
+                                ) : (
+                                    'Сохранить изменения'
+                                )}
+                            </Button>
+                        </DialogActions>
+                    </motion.div>
+                </Dialog>
+            )}
+        </AnimatePresence>
     );
 };
