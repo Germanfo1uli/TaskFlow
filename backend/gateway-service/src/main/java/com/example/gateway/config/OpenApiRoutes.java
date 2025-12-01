@@ -20,9 +20,18 @@ public class OpenApiRoutes {
                         .filters(f -> f.rewritePath("/api/swagger-ui/(?<path>.*)", "/swagger-ui/${path}"))
                         .uri("lb://user-service")
                 )
-                .route("user-service-docs", r -> r
+                .route("user-service-docs-with-prefix", r -> r
                         .path("/api/v3/api-docs/**")
-                        .filters(f -> f.rewritePath("/api/v3/api-docs/(?<path>.*)", "/v3/api-docs/${path}"))
+                        .filters(f -> f.stripPrefix(1))
+                        .uri("lb://user-service")
+                )
+                .route("user-service-docs-root", r -> r
+                        .path("/v3/api-docs", "/v3/api-docs/**")
+                        .uri("lb://user-service")
+                )
+                .route("user-service-swagger-resources", r -> r
+                        .path("/api/webjars/**", "/api/swagger-resources/**")
+                        .filters(f -> f.stripPrefix(1))
                         .uri("lb://user-service")
                 )
                 .build();
