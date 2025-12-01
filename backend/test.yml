@@ -1,0 +1,7 @@
+services:
+  eureka:
+    image: springcloud/eureka-server
+    ports: ["8761:8761"]
+  gateway:
+    image: eclipse-temurin:25-jdk-alpine
+    command: sh -c "wget -O- http://eureka:8761/eureka/apps"

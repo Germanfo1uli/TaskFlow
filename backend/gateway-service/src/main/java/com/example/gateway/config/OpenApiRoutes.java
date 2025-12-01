@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiRoutes {
 
-    @Value("${user.service.url:http://localhost:8080}")
+    @Value("${user.service.url:http://localhost:8081}")
     private String userServiceUrl;
 
     @Bean
@@ -17,22 +17,13 @@ public class OpenApiRoutes {
         return builder.routes()
                 .route("user-service-swagger-ui", r -> r
                         .path("/api/swagger-ui/**")
-                        .filters(f -> f.stripPrefix(1))
-                        .uri(userServiceUrl)
+                        .filters(f -> f.rewritePath("/api/swagger-ui/(?<path>.*)", "/swagger-ui/${path}"))
+                        .uri("lb://user-service")
                 )
-                .route("user-service-docs-with-prefix", r -> r
+                .route("user-service-docs", r -> r
                         .path("/api/v3/api-docs/**")
-                        .filters(f -> f.stripPrefix(1))
-                        .uri(userServiceUrl)
-                )
-                .route("user-service-docs-root", r -> r
-                        .path("/v3/api-docs", "/v3/api-docs/**")
-                        .uri(userServiceUrl)
-                )
-                .route("user-service-swagger-resources", r -> r
-                        .path("/api/webjars/**", "/api/swagger-resources/**")
-                        .filters(f -> f.stripPrefix(1))
-                        .uri(userServiceUrl)
+                        .filters(f -> f.rewritePath("/api/v3/api-docs/(?<path>.*)", "/v3/api-docs/${path}"))
+                        .uri("lb://user-service")
                 )
                 .build();
     }

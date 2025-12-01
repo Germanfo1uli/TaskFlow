@@ -1,7 +1,7 @@
-# User Service
+# Eureka server
 FROM eclipse-temurin:25-jdk-alpine
 WORKDIR /app
-RUN apk add --no-cache curl wget
+RUN apk add --no-cache curl
 
 COPY mvnw pom.xml ./
 COPY .mvn ./.mvn
@@ -11,6 +11,6 @@ RUN ./mvnw dependency:go-offline -B --no-transfer-progress
 
 COPY src ./src
 
-EXPOSE 8081
+EXPOSE 8761
 
 CMD ["./mvnw", "spring-boot:run", "-Dspring-boot.run.profiles=dev"]
