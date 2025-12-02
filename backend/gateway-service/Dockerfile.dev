@@ -1,6 +1,7 @@
 # Gateway
 FROM eclipse-temurin:25-jdk-alpine
 WORKDIR /app
+RUN apk add --no-cache curl wget
 
 COPY mvnw pom.xml ./
 COPY .mvn ./.mvn
