@@ -22,13 +22,13 @@ public class ProjectRole {
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
             name = "role_permissions",
-            joinColumns = @JoinColumn(name = "role_id"),
-            inverseJoinColumns = @JoinColumn(name = "permission_id")
+            schema = "board_service_schema",
+            joinColumns = @JoinColumn(name = "role_id")
     )
-    private Set<ProjectPermission> permissions = new HashSet<>();
+    private Set<PermissionEntry> permissions = new HashSet<>();
 
     @Column(name = "name", nullable = false)
     private String name;
