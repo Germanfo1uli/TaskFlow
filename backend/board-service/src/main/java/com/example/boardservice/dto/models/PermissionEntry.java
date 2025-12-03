@@ -14,7 +14,10 @@ import lombok.Setter;
 import java.io.Serializable;
 
 @Embeddable
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class PermissionEntry implements Serializable {
     @Enumerated(EnumType.STRING)
     @Column(name = "entity_type", nullable = false)
