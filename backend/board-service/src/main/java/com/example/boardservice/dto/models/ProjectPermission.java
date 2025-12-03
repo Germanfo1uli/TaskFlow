@@ -1,5 +1,7 @@
 package com.example.boardservice.dto.models;
 
+import com.example.boardservice.dto.models.enums.ActionType;
+import com.example.boardservice.dto.models.enums.EntityType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

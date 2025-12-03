@@ -1,4 +1,4 @@
-package com.example.boardservice.dto.models;
+package com.example.boardservice.dto.models.enums;
 
 public enum ActionType {
     VIEW, CREATE, EDIT, DELETE, ASSIGN,
