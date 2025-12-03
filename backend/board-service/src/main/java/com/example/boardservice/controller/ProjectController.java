@@ -30,7 +30,7 @@ public class ProjectController {
             summary = "Создание проекта",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @PostMapping("/")
+    @PostMapping
     public ResponseEntity<CreateProjectResponse> createProject(
             @Valid @RequestBody CreateProjectRequest request,
             @AuthenticationPrincipal JwtUser principal) {
