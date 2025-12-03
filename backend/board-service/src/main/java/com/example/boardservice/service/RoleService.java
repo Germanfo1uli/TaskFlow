@@ -1,15 +1,16 @@
 package com.example.boardservice.service;
 
 import com.example.boardservice.config.PermissionMatrixProperties;
-import com.example.boardservice.dto.models.PermissionEntry;
+import com.example.boardservice.dto.models.RolePermission;
 import com.example.boardservice.dto.models.Project;
 import com.example.boardservice.dto.models.ProjectRole;
 import com.example.boardservice.dto.models.enums.ActionType;
 import com.example.boardservice.dto.models.enums.EntityType;
 import com.example.boardservice.repository.ProjectRoleRepository;
-import jakarta.transaction.Transactional;
+import com.example.boardservice.repository.RolePermissionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
@@ -20,48 +21,67 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RoleService {
     private final ProjectRoleRepository roleRepository;
+    private final RolePermissionRepository permissionRepository;
     private final PermissionMatrixProperties matrixProps;
 
-    @Transactional // создание ролей по умолчанию (owner - все права, и user - имеет только view)
+    @Transactional
     public void createDefaultRoles(Long projectId) {
-        Project project = Project.builder().id(projectId).build();
-
-        Set<PermissionEntry> ownerPerms = Arrays.stream(EntityType.values())
-                .flatMap(e -> matrixProps.getAllowedActions(e).stream()
-                        .map(a -> new PermissionEntry(e, a)))
-                .collect(Collectors.toSet());
-
         ProjectRole owner = ProjectRole.builder()
-                .project(project)
+                .project(Project.builder().id(projectId).build())
                 .name("Owner")
                 .isOwner(true)
                 .isDefault(false)
-                .permissions(ownerPerms)
                 .build();
 
-        Set<PermissionEntry> userPerms = Arrays.stream(EntityType.values())
-                .map(e -> new PermissionEntry(e, ActionType.VIEW))
-                .collect(Collectors.toSet());
-
         ProjectRole user = ProjectRole.builder()
-                .project(project)
+                .project(Project.builder().id(projectId).build())
                 .name("User")
                 .isOwner(false)
                 .isDefault(true)
-                .permissions(userPerms)
                 .build();
 
         roleRepository.saveAll(List.of(owner, user));
+
+        Set<RolePermission> ownerPerms = Arrays.stream(EntityType.values())
+                .flatMap(entity -> matrixProps.getAllowedActions(entity).stream()
+                        .map(action -> RolePermission.builder()
+                                .role(owner)
+                                .entity(entity)
+                                .action(action)
+                                .build()))
+                .collect(Collectors.toSet());
+
+        Set<RolePermission> userPerms = Arrays.stream(EntityType.values())
+                .map(entity -> RolePermission.builder()
+                        .role(user)
+                        .entity(entity)
+                        .action(ActionType.VIEW)
+                        .build())
+                .collect(Collectors.toSet());
+
+        permissionRepository.saveAll(ownerPerms);
+        permissionRepository.saveAll(userPerms);
+
+        owner.setPermissions(ownerPerms);
+        user.setPermissions(userPerms);
     }
 
     @Transactional
     public void addPermission(Long roleId, EntityType entity, ActionType action) {
-        ProjectRole role = roleRepository.findById(roleId).orElseThrow();
+        ProjectRole role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new IllegalArgumentException("Role not found"));
 
         if (!matrixProps.isAllowed(entity, action)) {
             throw new IllegalArgumentException("Invalid permission: " + entity + "+" + action);
         }
 
-        role.getPermissions().add(new PermissionEntry(entity, action));
+        RolePermission permission = RolePermission.builder()
+                .role(role)
+                .entity(entity)
+                .action(action)
+                .build();
+
+        permissionRepository.save(permission);
+        role.getPermissions().add(permission);
     }
 }

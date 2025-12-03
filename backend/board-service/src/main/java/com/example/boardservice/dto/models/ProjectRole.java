@@ -1,10 +1,8 @@
 package com.example.boardservice.dto.models;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.hibernate.annotations.BatchSize;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -12,28 +10,25 @@ import java.util.Set;
 @Entity
 @Table(name = "project_roles", schema = "board_service_schema")
 @Data
-@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder(toBuilder = true)
 public class ProjectRole {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "role_seq")
+    @SequenceGenerator(name = "role_seq", sequenceName = "project_roles_id_seq", allocationSize = 1)
     private Long id;
 
     @ManyToOne
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
 
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(
-            name = "role_permissions",
-            schema = "board_service_schema",
-            joinColumns = @JoinColumn(name = "role_id")
-    )
-    private Set<PermissionEntry> permissions = new HashSet<>();
-
     @Column(name = "name", nullable = false)
     private String name;
+
+    @OneToMany(mappedBy = "role", fetch = FetchType.LAZY)
+    @BatchSize(size = 50)
+    private Set<RolePermission> permissions = new HashSet<>();
 
     @Column(name = "is_default")
     private Boolean isDefault = false;
