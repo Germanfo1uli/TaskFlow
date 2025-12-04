@@ -1,0 +1,6 @@
+# Все текстовые файлы → LF в репозитории, но CRLF на Windows
+* text=auto
+
+# mvnw и другие скрипты всегда с LF (даже на Windows)
+mvnw text eol=lf
+*.sh text eol=lf
