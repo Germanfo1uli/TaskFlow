@@ -16,7 +16,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("api/projects")
+@RequestMapping("api")
 @RequiredArgsConstructor
 @Validated
 @SecurityRequirement(name = "bearerAuth")
@@ -28,7 +28,7 @@ public class ProjectController {
             summary = "Создание проекта",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @PostMapping
+    @PostMapping("/projects")
     public ResponseEntity<CreateProjectResponse> createProject(
             @Valid @RequestBody CreateProjectRequest request,
             @AuthenticationPrincipal JwtUser principal) {
@@ -42,7 +42,7 @@ public class ProjectController {
             summary = "Создание проекта",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @GetMapping("/{projectId}")
+    @GetMapping("/projects/{projectId}")
     public ResponseEntity<GetProjectResponse> getProjectById(
             @PathVariable Long projectId,
             @AuthenticationPrincipal JwtUser principal) {

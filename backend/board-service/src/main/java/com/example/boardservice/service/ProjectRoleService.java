@@ -7,6 +7,7 @@ import com.example.boardservice.dto.models.Project;
 import com.example.boardservice.dto.models.ProjectRole;
 import com.example.boardservice.dto.models.enums.ActionType;
 import com.example.boardservice.dto.models.enums.EntityType;
+import com.example.boardservice.dto.response.RoleResponse;
 import com.example.boardservice.exception.RoleNotFoundException;
 import com.example.boardservice.repository.ProjectRoleRepository;
 import com.example.boardservice.repository.RolePermissionRepository;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -71,7 +73,7 @@ public class ProjectRoleService {
     }
 
     @Transactional
-    public ProjectRole createRole(Long projectId, boolean isDefault, String roleName, Set<PermissionEntry> request) {
+    public RoleResponse createRole(Long userId, Long projectId, boolean isDefault, String roleName, Set<PermissionEntry> request) {
         if (roleName == null || roleName.isBlank()) {
             throw new IllegalArgumentException("Role name is required");
         }
@@ -91,14 +93,23 @@ public class ProjectRoleService {
 
         role.setPermissions(permissions);
 
-        return role;
+        return new RoleResponse(
+                role.getId(),
+                role.getName(),
+                role.getIsDefault(),
+                request
+        );
     }
 
     @Transactional
-    public ProjectRole updateRole(Long roleId, Long projectId, boolean isDefault, String roleName, Set<PermissionEntry> request) {
+    public RoleResponse updateRole(Long userId, Long roleId, Long projectId, boolean isDefault, String roleName, Set<PermissionEntry> request) {
 
         ProjectRole role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new RoleNotFoundException("Role with ID: " + roleId + "not found"));
+
+        if(!Objects.equals(role.getProject().getId(), projectId)) {
+            throw new RoleNotFoundException("Role with ID: " + roleId + " not found in project ID: " + projectId);
+        }
 
         if (roleName != null && !roleName.isBlank()) {
             role.setName(roleName);
@@ -113,7 +124,12 @@ public class ProjectRoleService {
 
         role.setPermissions(permissions);
 
-        return role;
+        return new RoleResponse(
+                role.getId(),
+                role.getName(),
+                role.getIsDefault(),
+                request
+        );
     }
 
     @Transactional(readOnly = true)
