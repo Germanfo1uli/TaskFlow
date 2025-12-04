@@ -4,7 +4,7 @@ import com.example.boardservice.dto.models.Project;
 import com.example.boardservice.dto.models.ProjectMember;
 import com.example.boardservice.dto.models.ProjectRole;
 import com.example.boardservice.exception.InvalidInviteException;
-import com.example.boardservice.exception.NoDefaultRoleException;
+import com.example.boardservice.exception.RoleNotFoundException;
 import com.example.boardservice.exception.ProjectNotFoundException;
 import com.example.boardservice.repository.ProjectMemberRepository;
 import com.example.boardservice.repository.ProjectRepository;
@@ -23,6 +23,7 @@ public class ProjectInviteService {
     private final ProjectRepository projectRepository;
     private final ProjectRoleRepository roleRepository;
     private final ProjectMemberRepository memberRepository;
+    private final ProjectMemberService memberService;
 
     @Value("${app.frontend.url}")
     private String frontendUrl;
@@ -53,7 +54,7 @@ public class ProjectInviteService {
         }
 
         ProjectRole defaultRole = roleRepository.findByProject_IdAndIsDefaultTrue(project.getId())
-                .orElseThrow(() -> new NoDefaultRoleException("Project do not have a default role"));
+                .orElseThrow(() -> new RoleNotFoundException("Project do not have a default role"));
 
         ProjectMember member = ProjectMember.builder()
                 .project(project)

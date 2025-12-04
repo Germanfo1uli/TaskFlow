@@ -1,7 +1,7 @@
 package com.example.boardservice.exception;
 
-public class NoDefaultRoleException extends RuntimeException {
-    public NoDefaultRoleException(String message) {
+public class RoleNotFoundException extends RuntimeException {
+    public RoleNotFoundException(String message) {
         super(message);
     }
 }

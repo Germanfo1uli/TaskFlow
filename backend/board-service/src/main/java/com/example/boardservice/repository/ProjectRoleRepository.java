@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface ProjectRoleRepository extends JpaRepository<ProjectRole, Long> {
     Optional<ProjectRole> findByProject_IdAndIsDefaultTrue(Long projectId);
+    Optional<ProjectRole> findByIdAndProject_Id(Long roleId, Long projectId);
 }
