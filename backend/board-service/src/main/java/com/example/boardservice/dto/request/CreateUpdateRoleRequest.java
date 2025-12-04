@@ -12,6 +12,9 @@ public record CreateUpdateRoleRequest (
         @Schema(description = "Название роли", example = "User")
         String name,
 
+        @Schema(description = "Является ли роль базовой", example = "false")
+        boolean isDefault,
+
         @Schema(description = "Права роли", example = "ISSUE.VIEW")
         @NotNull
         @Size(min = 1, message = "Role must have at least one permission")
