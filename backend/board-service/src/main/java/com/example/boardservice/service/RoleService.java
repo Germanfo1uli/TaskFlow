@@ -25,7 +25,7 @@ public class RoleService {
     private final PermissionMatrixProperties matrixProps;
 
     @Transactional
-    public void createDefaultRoles(Long projectId) {
+    public ProjectRole createDefaultRoles(Long projectId) {
         ProjectRole owner = ProjectRole.builder()
                 .project(Project.builder().id(projectId).build())
                 .name("Owner")
@@ -64,6 +64,8 @@ public class RoleService {
 
         owner.setPermissions(ownerPerms);
         user.setPermissions(userPerms);
+
+        return owner;
     }
 
     @Transactional

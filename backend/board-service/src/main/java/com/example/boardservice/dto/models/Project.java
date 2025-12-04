@@ -22,4 +22,7 @@ public class Project {
 
     @Column(name = "key", nullable = false)
     private String key;
+
+    @Column(name = "invite_token", unique = true)
+    private String inviteToken;
 }
