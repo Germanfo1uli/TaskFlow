@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class RoleService {
+public class ProjectRoleService {
     private final ProjectRoleRepository roleRepository;
     private final RolePermissionRepository permissionRepository;
     private final PermissionMatrixProperties matrixProps;

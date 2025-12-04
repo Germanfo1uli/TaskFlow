@@ -15,7 +15,7 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final ProjectInviteService inviteService;
     private final ProjectMemberService memberService;
-    private final RoleService roleService;
+    private final ProjectRoleService roleService;
 
     @Transactional
     public CreateProjectResponse createProject(Long ownerId, String name, String key) {
