@@ -38,7 +38,7 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASS}
-    ports: 
+    ports:
       - "5050:80"
     depends_on:
       postgres:
@@ -48,7 +48,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    ports: 
+    ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
@@ -59,16 +59,36 @@ services:
       timeout: 3s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    hostname: rabbitmq-node
+    ports:
+      - "5672:5672"   # AMQP протокол
+      - "15672:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-secret}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-/}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   gateway-service:
     build:
       context: ./gateway-service
       dockerfile: Dockerfile.dev
-    ports: 
+    ports:
       - "8000:8080"
     depends_on:
       eureka-server:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
@@ -79,6 +99,10 @@ services:
     environment:
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-admin}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASS:-secret}
     volumes:
       - ./gateway-service/src:/app/src:ro
       - maven-cache:/root/.m2
@@ -87,7 +111,7 @@ services:
     build:
       context: ./user-service
       dockerfile: Dockerfile.dev
-    ports: 
+    ports:
       - "8081:8081"
     depends_on:
       eureka-server:
@@ -95,6 +119,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:8081/actuator/health"]
@@ -109,6 +135,10 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-admin}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASS:-secret}
     volumes:
       - ./user-service/src:/app/src:ro
       - maven-cache:/root/.m2
@@ -116,4 +146,5 @@ services:
 volumes:
   pg_data:
   redis_data:
+  rabbitmq_data:
   maven-cache:
