@@ -1,7 +1,10 @@
 # User Service
-FROM eclipse-temurin:25-jdk-alpine
+FROM eclipse-temurin:25-jdk-jammy
 WORKDIR /app
-RUN apk add --no-cache curl wget
+RUN apt-get update && \
+    apt-get install -y curl wget && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY mvnw pom.xml ./
 COPY .mvn ./.mvn
