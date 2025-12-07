@@ -1,15 +1,15 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine
+FROM mcr.microsoft.com/dotnet/sdk:8.0-jammy
 
 WORKDIR /src
 
-# Копируем весь бэкенд, чтобы сохранить структуру
 COPY . .
 
-# Восстанавливаем зависимости, как в sprints-service
-# Обратите внимание, мы восстанавливаем .csproj, а не .sln - это надежнее
 RUN dotnet restore ./dashboard-service/Backend.Dashboards.Api/Backend.Dashboards.Api.csproj
 
-RUN apk add --no-cache curl
+RUN apt-get update && \
+    apt-get install -y curl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 EXPOSE 8085
 
