@@ -2,14 +2,16 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine
 
 WORKDIR /src
 
-COPY . .
+ENV NUGET_PACKAGES=/root/.nuget/packages
 
-RUN dotnet restore ./sprints-service/Backend.Sprints.Api/Backend.Sprints.Api.csproj
+COPY . .
 
 RUN apk add --no-cache curl
 
-EXPOSE 8084
-
 WORKDIR /src/sprints-service/Backend.Sprints.Api
 
-CMD ["dotnet", "run"]
+CMD ["sh", "-c", "\
+    rm -rf /src/shared-libs/Backend.Shared/obj /src/shared-libs/Backend.Shared/bin && \
+    rm -rf obj bin && \
+    dotnet restore --force && \
+    dotnet run --urls http://*:8084"]
