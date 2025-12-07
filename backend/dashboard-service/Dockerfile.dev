@@ -2,18 +2,10 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine
 
 WORKDIR /src
 
-# Копируем весь бэкенд, чтобы сохранить структуру
 COPY . .
-
-# Восстанавливаем зависимости, как в sprints-service
-# Обратите внимание, мы восстанавливаем .csproj, а не .sln - это надежнее
-RUN dotnet restore ./dashboard-service/Backend.Dashboards.Api/Backend.Dashboards.Api.csproj
 
 RUN apk add --no-cache curl
 
-EXPOSE 8085
-
-# Переходим в папку с проектом для запуска
 WORKDIR /src/dashboard-service/Backend.Dashboards.Api
 
-CMD ["dotnet", "run"]
+CMD ["sh", "-c", "dotnet restore --no-cache=false && dotnet run --urls http://*:8085"]

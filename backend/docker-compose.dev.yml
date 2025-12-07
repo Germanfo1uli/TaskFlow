@@ -184,8 +184,9 @@ services:
       DOTNET_URLS: http://localhost:8084
 
     volumes:
-      - ./sprints-service:/src/sprint-service
+      - ./sprints-service:/src/sprints-service
       - ./shared-libs:/src/shared-libs
+      - nuget-cache:/root/.nuget/packages
 
   dashboard-service:
     build:
@@ -230,9 +231,11 @@ services:
     volumes:
       - ./dashboard-service:/src/dashboard-service
       - ./shared-libs:/src/shared-libs
+      - nuget-cache:/root/.nuget/packages
 
 volumes:
   pg_data:
   redis_data:
   rabbitmq_data:
   maven-cache:
+  nuget-cache:
