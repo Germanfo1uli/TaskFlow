@@ -8,4 +8,6 @@ RUN apk add --no-cache curl
 
 WORKDIR /src/dashboard-service/Backend.Dashboards.Api
 
-CMD ["sh", "-c", "dotnet restore --no-cache=false && dotnet run --urls http://*:8085"]
+CMD ["sh", "-c", "rm -rf /src/shared-libs/Backend.Shared/obj /src/shared-libs/Backend.Shared/bin && \
+    dotnet restore --no-cache=false && \
+    dotnet run --urls http://*:8085"]

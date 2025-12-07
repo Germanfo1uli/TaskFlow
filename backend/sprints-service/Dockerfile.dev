@@ -8,4 +8,6 @@ RUN apk add --no-cache curl
 
 WORKDIR /src/sprints-service/Backend.Sprints.Api
 
-CMD ["sh", "-c", "dotnet restore --no-cache=false && dotnet run --urls http://*:8084"]
+CMD ["sh", "-c", "rm -rf /src/shared-libs/Backend.Shared/obj /src/shared-libs/Backend.Shared/bin && \
+    dotnet restore --no-cache=false && \
+    dotnet run --urls http://*:8084"]
