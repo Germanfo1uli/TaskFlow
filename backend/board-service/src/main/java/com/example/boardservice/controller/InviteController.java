@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("api/invites")
+@RequestMapping("api/invite")
 @RequiredArgsConstructor
 @Validated
 @SecurityRequirement(name = "bearerAuth")
@@ -31,5 +31,15 @@ public class InviteController {
                 "success", true,
                 "projectId", projectId
         ));
+    }
+
+    @PostMapping("/project/{projectId}/user/{userId}")
+    public ResponseEntity<String> invite(
+            @PathVariable Long projectId,
+            @PathVariable Long userId,
+            @AuthenticationPrincipal JwtUser principal) {
+
+        inviteService.inviteUser(principal.userId(), projectId, userId);
+        return ResponseEntity.ok("Success");
     }
 }

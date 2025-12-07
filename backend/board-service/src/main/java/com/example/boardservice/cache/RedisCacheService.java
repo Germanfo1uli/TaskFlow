@@ -80,4 +80,20 @@ public class RedisCacheService {
         redisTemplate.delete(key);
         log.debug("Invalidated permissions cache for role {}", roleId);
     }
+
+    public void cacheRoleIsOwner(Long roleId, boolean isOwner) {
+        String key = String.format(RedisConstants.ROLE_IS_OWNER_KEY, roleId);
+        redisTemplate.opsForValue().set(key, String.valueOf(isOwner), RedisConstants.ROLE_IS_OWNER_TTL);
+    }
+
+    public Boolean getRoleIsOwnerFromCache(Long roleId) {
+        String key = String.format(RedisConstants.ROLE_IS_OWNER_KEY, roleId);
+        String value = redisTemplate.opsForValue().get(key);
+        return value != null ? Boolean.parseBoolean(value) : null;
+    }
+
+    public void invalidateRoleIsOwner(Long roleId) {
+        String key = String.format(RedisConstants.ROLE_IS_OWNER_KEY, roleId);
+        redisTemplate.delete(key);
+    }
 }

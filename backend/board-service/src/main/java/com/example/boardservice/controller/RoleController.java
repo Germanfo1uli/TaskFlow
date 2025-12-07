@@ -55,4 +55,18 @@ public class RoleController {
                 request.isDefault(), request.name(), request.permissions());
         return ResponseEntity.ok(response);
     }
+
+    @Operation(
+            summary = "Удаление роли",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @DeleteMapping("/{projectId}/roles/{roleId}")
+    public ResponseEntity<RoleResponse> deleteRole(
+            @PathVariable Long projectId,
+            @PathVariable Long roleId,
+            @AuthenticationPrincipal JwtUser principal) {
+
+        roleService.deleteRole(principal.userId(), roleId, projectId);
+        return ResponseEntity.noContent().build();
+    }
 }

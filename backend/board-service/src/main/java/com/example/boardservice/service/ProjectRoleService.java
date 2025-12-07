@@ -75,8 +75,8 @@ public class ProjectRoleService {
         permissionRepository.saveAll(ownerPerms);
         permissionRepository.saveAll(userPerms);
 
-        cachePermissions(owner.getId(), ownerPerms);
-        cachePermissions(user.getId(), userPerms);
+        cachePermissions(owner.getId(), ownerPerms, owner.getIsOwner());
+        cachePermissions(user.getId(), userPerms, user.getIsOwner());
 
         log.info("Created default roles for project {}: Owner(ID:{}) and User(ID:{})",
                 projectId, owner.getId(), user.getId());
@@ -86,7 +86,8 @@ public class ProjectRoleService {
 
     @Transactional
     public RoleResponse createRole(Long userId, Long projectId, boolean isDefault, String roleName, Set<PermissionEntry> request) {
-        authService.checkPermission(userId, projectId, EntityType.PROJECT, ActionType.MANAGE);
+
+        authService.checkOwnerOnly(userId, projectId);
 
         if (roleName == null || roleName.isBlank()) {
             throw new IllegalArgumentException("Role name is required");
@@ -106,7 +107,7 @@ public class ProjectRoleService {
         Set<RolePermission> permissions = createPermissions(role, request);
         permissionRepository.saveAll(permissions);
 
-        cachePermissions(role.getId(), permissions);
+        cachePermissions(role.getId(), permissions, role.getIsOwner());
 
         log.info("User {} created role '{}' (ID:{}) in project {}", userId, roleName, role.getId(), projectId);
 
@@ -121,7 +122,7 @@ public class ProjectRoleService {
     @Transactional
     public RoleResponse updateRole(Long userId, Long roleId, Long projectId, boolean isDefault, String roleName, Set<PermissionEntry> request) {
 
-        authService.checkPermission(userId, projectId, EntityType.PROJECT, ActionType.MANAGE);
+        authService.checkOwnerOnly(userId, projectId);
 
         ProjectRole role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new RoleNotFoundException("Role ID: " + roleId + " not found"));
@@ -146,7 +147,7 @@ public class ProjectRoleService {
 
         invalidateUserCaches(roleId);
 
-        cachePermissions(role.getId(), permissions);
+        cachePermissions(role.getId(), permissions, role.getIsOwner());
 
         log.info("User {} updated role '{}' (ID:{}) in project {}", userId, role.getName(), roleId, projectId);
 
@@ -161,7 +162,7 @@ public class ProjectRoleService {
     @Transactional
     public void deleteRole(Long userId, Long roleId, Long projectId) {
 
-        authService.checkPermission(userId, projectId, EntityType.PROJECT, ActionType.MANAGE);
+        authService.checkOwnerOnly(userId, projectId);
 
         ProjectRole role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new RoleNotFoundException("Role ID: " + roleId + " not found"));
@@ -216,9 +217,10 @@ public class ProjectRoleService {
                 .collect(Collectors.toSet());
     }
 
-    private void cachePermissions(Long roleId, Set<RolePermission> permissions) {
+    private void cachePermissions(Long roleId, Set<RolePermission> permissions, boolean isOwner) {
         Set<String> permStrings = permissionMatrixService.toCacheFormat(permissions);
         redisCacheService.cacheRolePermissions(roleId, permStrings);
+        redisCacheService.cacheRoleIsOwner(roleId, isOwner);
     }
 
     private void invalidateUserCaches(Long roleId) {

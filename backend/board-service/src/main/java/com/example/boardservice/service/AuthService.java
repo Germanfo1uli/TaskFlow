@@ -1,10 +1,12 @@
 package com.example.boardservice.service;
 
 import com.example.boardservice.cache.RedisCacheService;
+import com.example.boardservice.dto.models.ProjectRole;
 import com.example.boardservice.dto.models.enums.ActionType;
 import com.example.boardservice.dto.models.enums.EntityType;
 import com.example.boardservice.exception.AccessDeniedException;
 import com.example.boardservice.repository.ProjectMemberRepository;
+import com.example.boardservice.repository.ProjectRoleRepository;
 import com.example.boardservice.repository.RolePermissionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,7 @@ public class AuthService {
     private final RedisCacheService redisCacheService;
     private final RolePermissionRepository permissionRepository;
     private final ProjectMemberRepository memberRepository;
+    private final ProjectRoleRepository roleRepository;
 
     public void checkPermission(Long userId, Long projectId, EntityType entity, ActionType action) {
         Long roleId = redisCacheService.getUserRoleFromCache(userId, projectId);
@@ -50,6 +53,35 @@ public class AuthService {
 
         log.debug("Access granted: user {} has {} on {} in project {}",
                 userId, action, entity, projectId);
+    }
+
+    public void checkOwnerOnly(Long userId, Long projectId) {
+        if (!isOwner(userId, projectId)) {
+            throw new AccessDeniedException("Only project owner can perform this action. User: " + userId);
+        }
+    }
+
+    private boolean isOwner(Long userId, Long projectId) {
+        Long roleId = redisCacheService.getUserRoleFromCache(userId, projectId);
+
+        if (roleId == null) {
+            roleId = memberRepository.findRole_IdByUserIdAndProject_Id(userId, projectId)
+                    .orElse(null);
+            if (roleId != null) {
+                redisCacheService.cacheUserRole(userId, projectId, roleId);
+            } else {
+                return false;
+            }
+        }
+
+        Boolean isOwner = redisCacheService.getRoleIsOwnerFromCache(roleId);
+        if (isOwner != null) {
+            return isOwner;
+        }
+
+        isOwner = roleRepository.isOwnerRole(roleId);
+        redisCacheService.cacheRoleIsOwner(roleId, isOwner);
+        return isOwner;
     }
 
     public boolean hasPermission(Long userId, Long projectId, EntityType entity, ActionType action) {

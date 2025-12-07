@@ -15,8 +15,8 @@ public final class RedisConstants {
     public static final String INVITE_TOKEN_KEY = "invite:token:%s";
     public static final Duration INVITE_TOKEN_TTL = Duration.ofDays(1);
 
-    public static final String PERMISSION_MATRIX_KEY = "permissions:matrix";
-    public static final Duration MATRIX_TTL = Duration.ofHours(24);
+    public static final String ROLE_IS_OWNER_KEY = "role:%d:isOwner";
+    public static final Duration ROLE_IS_OWNER_TTL = Duration.ofMinutes(10);
 
     private RedisConstants() {}
 }
