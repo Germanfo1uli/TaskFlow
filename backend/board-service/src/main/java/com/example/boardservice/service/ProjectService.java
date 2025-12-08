@@ -2,8 +2,11 @@ package com.example.boardservice.service;
 
 import com.example.boardservice.dto.models.Project;
 import com.example.boardservice.dto.models.ProjectRole;
+import com.example.boardservice.dto.models.enums.ActionType;
+import com.example.boardservice.dto.models.enums.EntityType;
 import com.example.boardservice.dto.response.CreateProjectResponse;
 import com.example.boardservice.dto.response.GetProjectResponse;
+import com.example.boardservice.exception.ProjectNotFoundException;
 import com.example.boardservice.repository.ProjectRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,6 +19,7 @@ public class ProjectService {
     private final ProjectInviteService inviteService;
     private final ProjectMemberService memberService;
     private final ProjectRoleService roleService;
+    private final AuthService authService;
 
     @Transactional
     public CreateProjectResponse createProject(Long ownerId, String name, String key) {
@@ -35,7 +39,19 @@ public class ProjectService {
     }
 
     @Transactional
-    public GetProjectResponse getProjectById(Long projectId) {
-        return new GetProjectResponse();
+    public GetProjectResponse getProjectById(Long userId, Long projectId) {
+
+        authService.checkPermission(userId, projectId, EntityType.PROJECT, ActionType.VIEW);
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
+
+        return new GetProjectResponse(
+                project.getId(),
+                project.getOwnerId(),
+                project.getName(),
+                project.getKey(),
+                project.getCreatedAt()
+        );
     }
 }

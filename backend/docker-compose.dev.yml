@@ -143,6 +143,42 @@ services:
       - ./user-service/src:/app/src:ro
       - maven-cache:/root/.m2
 
+  board-service:
+    build:
+      context: ./board-service
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8082:8082"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    environment:
+      SERVER_PORT: 8081
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=board_service_schema
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-admin}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASS:-secret}
+    volumes:
+      - ./board-service/src:/app/src:ro
+      - maven-cache:/root/.m2
+
   sprints-service:
     build:
       context: .
@@ -186,6 +222,7 @@ services:
     volumes:
       - ./sprints-service:/src/sprints-service
       - ./shared-libs:/src/shared-libs
+      - sprints-nuget-cache:/root/.nuget/packages
 
   dashboard-service:
     build:
@@ -230,9 +267,12 @@ services:
     volumes:
       - ./dashboard-service:/src/dashboard-service
       - ./shared-libs:/src/shared-libs
+      - dashboard-nuget-cache:/root/.nuget/packages
 
 volumes:
   pg_data:
   redis_data:
   rabbitmq_data:
   maven-cache:
+  dashboard-nuget-cache:
+  sprints-nuget-cache:

@@ -39,7 +39,7 @@ public class ProjectController {
     }
 
     @Operation(
-            summary = "Создание проекта",
+            summary = "Получение информации о проекте",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @GetMapping("/projects/{projectId}")
@@ -47,7 +47,7 @@ public class ProjectController {
             @PathVariable Long projectId,
             @AuthenticationPrincipal JwtUser principal) {
 
-        GetProjectResponse response = projectService.getProjectById(projectId);
+        GetProjectResponse response = projectService.getProjectById(principal.userId(), projectId);
         return ResponseEntity.ok(response);
     }
 }

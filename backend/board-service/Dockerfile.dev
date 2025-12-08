@@ -1,0 +1,18 @@
+# User Service
+FROM eclipse-temurin:25-jdk-alpine
+WORKDIR /app
+RUN apk add --no-cache curl wget
+
+COPY mvnw pom.xml ./
+COPY .mvn ./.mvn
+RUN chmod +x mvnw
+
+RUN sed -i 's/\r$//' mvnw && chmod +x mvnw
+
+RUN ./mvnw dependency:go-offline -B
+
+COPY src ./src
+
+EXPOSE 8082
+
+CMD ["./mvnw", "spring-boot:run", "-Dspring-boot.run.profiles=dev"]

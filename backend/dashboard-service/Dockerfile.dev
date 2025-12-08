@@ -2,8 +2,6 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine
 
 WORKDIR /src
 
-ENV NUGET_PACKAGES=/root/.nuget/packages
-
 COPY . .
 
 RUN apk add --no-cache curl
@@ -11,7 +9,6 @@ RUN apk add --no-cache curl
 WORKDIR /src/dashboard-service/Backend.Dashboards.Api
 
 CMD ["sh", "-c", "\
-    rm -rf /src/shared-libs/Backend.Shared/obj /src/shared-libs/Backend.Shared/bin && \
-    rm -rf obj bin && \
+    sleep 5 && \
     dotnet restore --force && \
     dotnet run --urls http://*:8085"]

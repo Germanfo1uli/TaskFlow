@@ -1,6 +1,8 @@
 package com.example.boardservice.controller;
 
 import com.example.boardservice.dto.request.CreateUpdateRoleRequest;
+import com.example.boardservice.dto.request.RoleAssignRequest;
+import com.example.boardservice.dto.response.GetRolesResponse;
 import com.example.boardservice.dto.response.RoleResponse;
 import com.example.boardservice.security.JwtUser;
 import com.example.boardservice.service.ProjectRoleService;
@@ -54,5 +56,46 @@ public class RoleController {
                 principal.userId(), roleId, projectId,
                 request.isDefault(), request.name(), request.permissions());
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "Удаление роли",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @DeleteMapping("/{projectId}/roles/{roleId}")
+    public ResponseEntity<RoleResponse> deleteRole(
+            @PathVariable Long projectId,
+            @PathVariable Long roleId,
+            @AuthenticationPrincipal JwtUser principal) {
+
+        roleService.deleteRole(principal.userId(), roleId, projectId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+            summary = "Получение ролей проекта",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @GetMapping("/{projectId}/roles")
+    public ResponseEntity<GetRolesResponse> getRoles(
+            @PathVariable Long projectId,
+            @AuthenticationPrincipal JwtUser principal) {
+
+        GetRolesResponse response = roleService.getRolesByProjectId(principal.userId(), projectId);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "Назначение роли",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PatchMapping("/{projectId}/users/{userId}")
+    public ResponseEntity<?> assignRole(
+            @PathVariable Long projectId,
+            @Valid @RequestBody RoleAssignRequest request,
+            @AuthenticationPrincipal JwtUser principal) {
+
+        roleService.assignRole(principal.userId(), projectId, request.userId(), request.roleId());
+        return ResponseEntity.ok().build();
     }
 }
