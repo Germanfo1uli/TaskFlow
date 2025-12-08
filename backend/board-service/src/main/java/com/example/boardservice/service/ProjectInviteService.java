@@ -66,7 +66,7 @@ public class ProjectInviteService {
             throw new InvalidInviteException("Project does not exists");
         }
 
-        if (memberRepository.existsByProject_IdAndUserId(projectId, userId)) {
+        if (memberRepository.existsByProject_IdAndUserId(projectId, invitedUser)) {
             throw new InvalidInviteException("User are already a project member");
         }
 

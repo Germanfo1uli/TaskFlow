@@ -70,24 +70,33 @@ public class AuthService {
     }
 
     private boolean isOwner(Long userId, Long projectId) {
+        log.info("=== DEBUG isOwner for userId: {}, projectId: {}", userId, projectId);
+
         Long roleId = redisCacheService.getUserRoleFromCache(userId, projectId);
+        log.info("RoleId from cache: {}", roleId);
 
         if (roleId == null) {
-            roleId = memberRepository.findRoleIdByUserIdAndProjectId(userId, projectId)
-                    .orElse(null);
+            roleId = memberRepository.findRoleIdByUserIdAndProjectId(userId, projectId).orElse(null);
+            log.info("RoleId from DB: {}", roleId);
+
             if (roleId != null) {
                 redisCacheService.cacheUserRole(userId, projectId, roleId);
             } else {
+                log.warn("No role found in DB for userId: {}, projectId: {}", userId, projectId);
                 return false;
             }
         }
 
         Boolean isOwner = redisCacheService.getRoleIsOwnerFromCache(roleId);
+        log.info("isOwner from cache for roleId {}: {}", roleId, isOwner);
+
         if (isOwner != null) {
             return isOwner;
         }
 
         isOwner = roleRepository.isOwnerRole(roleId);
+        log.info("isOwner from DB for roleId {}: {}", roleId, isOwner);
+
         redisCacheService.cacheRoleIsOwner(roleId, isOwner);
         return isOwner;
     }

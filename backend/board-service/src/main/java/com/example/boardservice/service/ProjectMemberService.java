@@ -39,6 +39,7 @@ public class ProjectMemberService {
 
     @Transactional
     public ProjectMember addMember(Long userId, Long projectId, Long roleId) {
+
         if (memberRepository.existsByProject_IdAndUserId(projectId, userId)) {
             throw new AlreadyMemberException("You are already a project member");
         }
@@ -46,6 +47,10 @@ public class ProjectMemberService {
         Project project = Project.builder().id(projectId).build();
         ProjectRole role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new RoleNotFoundException("Role with ID: " + roleId + "not found"));
+
+        if(!Objects.equals(role.getProject().getId(), projectId)) {
+            throw new IllegalArgumentException("Role with ID: " + roleId + " not found in project ID: " + projectId);
+        }
 
         ProjectMember member = ProjectMember.builder()
                 .project(project)
