@@ -12,7 +12,10 @@ public final class SecurityWhiteList {
             "/swagger-ui.html",
             "/v3/api-docs/**",
             "/swagger-resources/**",
-            "/webjars/**"
+            "/webjars/**",
+            "/actuator/health",
+            "/actuator/info",
+            "/v3/api-docs"
     );
 
     private SecurityWhiteList() {}

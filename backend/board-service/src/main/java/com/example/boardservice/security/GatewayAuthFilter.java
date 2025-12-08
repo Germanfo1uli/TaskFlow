@@ -36,47 +36,65 @@ public class GatewayAuthFilter extends OncePerRequestFilter {
                                     FilterChain chain) throws IOException, ServletException {
 
         String path = request.getServletPath();
+        String method = request.getMethod();
+        String clientIp = request.getRemoteAddr();
+
         String gatewaySource = request.getHeader(gatewaySecretHeader);
         String userId = request.getHeader("X-User-Id");
         String role = request.getHeader("X-User-Role");
         String email = request.getHeader("X-User-Email");
+        String sourceService = request.getHeader("X-Source-Service");
 
-        log.info("Received headers: {}, {}, {}, {}", gatewaySource, userId, role, email);
+        String requestSource = sourceService != null ? sourceService :
+                (gatewaySource != null ? "gateway" : "direct-call");
 
-        // скип публичных эндпоинтов
+        log.info("Incoming {} {} from IP: {}, Source: {}", method, path, clientIp, requestSource);
+
+        // пропуск публичных эндпоинтов
         if (isPublicEndpoint(path)) {
             log.debug("Public endpoint accessed: {}", path);
             chain.doFilter(request, response);
             return;
         }
 
-        // проверка, откуда идет запрос
-        if (expectedSecret.equals(gatewaySource) && userId != null && role != null) {
-            try {
-                JwtUser principal = new JwtUser(Long.parseLong(userId), role, email);
-
-                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                        principal,
-                        null,
-                        principal.getAuthorities()
-                );
-
-                // если все проверки прошли, аутентификация проходит
-                SecurityContextHolder.getContext().setAuthentication(auth);
-                log.debug("Authenticated via gateway: userId={}, role={}", userId, role);
-
-            } catch (NumberFormatException e) {
-                log.error("Invalid userId format: {}", userId);
-                sendUnauthorized(response, "Invalid user ID format");
-                return;
-            }
-        } else if (!isPublicEndpoint(request.getServletPath())) {
-            log.warn("Unauthorized direct access attempt: {}, headers: {}", request.getServletPath(), gatewaySource);
-            sendUnauthorized(response, "Invalid user ID format");
+        // проверка secret header
+        if (!expectedSecret.equals(gatewaySource)) {
+            log.warn("UNAUTHORIZED: Invalid secret for {} {} from IP: {}", method, path, clientIp);
+            sendUnauthorized(response, "Invalid gateway secret");
             return;
         }
 
+        // определение Gateway/Internal запроса
+        if (userId != null && role != null && !userId.isBlank() && !role.isBlank()) {
+            // Gateway запрос (JwtUser сущность)
+            try {
+                JwtUser principal = new JwtUser(Long.parseLong(userId), role, email);
+                setAuthentication(principal);
+                log.debug("Authenticated USER: {} ({}), path: {}", userId, role, path);
+            } catch (NumberFormatException e) {
+                log.error("Invalid format: userId='{}' for {} {}", userId, method, path);
+                sendUnauthorized(response, "Invalid user ID format");
+                return;
+            }
+        } else {
+            // Internal запрос (SystemPrincipal сущность)
+            String serviceName = sourceService != null ? sourceService : "unknown-service";
+            SystemPrincipal principal = new SystemPrincipal(serviceName);
+            setAuthentication(principal);
+            log.debug("Authenticated SERVICE: {}, path: {}", serviceName, path);
+        }
+
         chain.doFilter(request, response);
+    }
+
+    private void setAuthentication(Object principal) {
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                principal, null,
+                principal instanceof JwtUser ?
+                        ((JwtUser) principal).getAuthorities() :
+                        ((SystemPrincipal) principal).getAuthorities()
+        );
+        SecurityContextHolder.getContext().setAuthentication(auth);
     }
 
     // метод для быстрой отправки ответа 401
