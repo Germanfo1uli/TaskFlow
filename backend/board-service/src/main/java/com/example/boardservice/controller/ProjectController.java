@@ -15,6 +15,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("api")
 @RequiredArgsConstructor
@@ -38,16 +40,15 @@ public class ProjectController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(
-            summary = "Получение информации о проекте",
-            security = @SecurityRequirement(name = "bearerAuth")
-    )
-    @GetMapping("/projects/{projectId}")
-    public ResponseEntity<GetProjectResponse> getProjectById(
-            @PathVariable Long projectId,
-            @AuthenticationPrincipal JwtUser principal) {
-
-        GetProjectResponse response = projectService.getProjectById(principal.userId(), projectId);
-        return ResponseEntity.ok(response);
-    }
+//    @Operation(summary = "Получение участников проекта по списку userId")
+//    @GetMapping("/users/batch")
+//    public ResponseEntity<List<PublicProfileResponse>> getProfilesByIds(
+//            @AuthenticationPrincipal SystemPrincipal principal,
+//            @RequestBody @Validated IdListRequest request) {
+//
+//        log.info("Service {} requested {} profiles", principal.getUsername(), request.userIds().size());
+//
+//        List<PublicProfileResponse> responses = userService.getProfilesByIds(request.userIds());
+//        return ResponseEntity.ok(responses);
+//    }
 }
