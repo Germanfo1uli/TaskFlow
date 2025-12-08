@@ -1,6 +1,6 @@
-package repositories;
+package com.example.issueservice.repositories;
 
-import models.IssueComment;
+import com.example.issueservice.dto.models.IssueComment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;

@@ -1,6 +1,6 @@
-package dto.response;
+package com.example.issueservice.dto.response;
 
-import models.Issue;
+import com.example.issueservice.dto.models.Issue;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

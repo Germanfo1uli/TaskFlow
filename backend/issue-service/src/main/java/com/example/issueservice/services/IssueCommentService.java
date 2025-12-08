@@ -1,13 +1,13 @@
-package services;
+package com.example.issueservice.services;
 
-import dto.response.CommentDto;
-import dto.request.CreateCommentDto;
-import exception.CommentNotFoundException;
-import exception.IssueNotFoundException;
-import models.IssueComment;
-import models.Issue;
-import repositories.IssueCommentRepository;
-import repositories.IssueRepository;
+import com.example.issueservice.dto.response.CommentDto;
+import com.example.issueservice.dto.request.CreateCommentDto;
+import com.example.issueservice.exception.CommentNotFoundException;
+import com.example.issueservice.exception.IssueNotFoundException;
+import com.example.issueservice.dto.models.IssueComment;
+import com.example.issueservice.dto.models.Issue;
+import com.example.issueservice.repositories.IssueCommentRepository;
+import com.example.issueservice.repositories.IssueRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

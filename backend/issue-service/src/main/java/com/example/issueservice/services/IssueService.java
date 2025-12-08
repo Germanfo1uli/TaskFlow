@@ -1,13 +1,13 @@
-package services;
+package com.example.issueservice.services;
 
-import dto.request.CreateIssueDto;
-import dto.response.IssueDetailsDto;
-import dto.response.IssueSummaryDto;
-import exception.IssueNotFoundException;
-import models.Issue;
-import models.IssueAssignee;
-import repositories.IssueRepository;
-import repositories.IssueAssigneeRepository;
+import com.example.issueservice.dto.request.CreateIssueDto;
+import com.example.issueservice.dto.response.IssueDetailsDto;
+import com.example.issueservice.dto.response.IssueSummaryDto;
+import com.example.issueservice.exception.IssueNotFoundException;
+import com.example.issueservice.dto.models.Issue;
+import com.example.issueservice.dto.models.IssueAssignee;
+import com.example.issueservice.repositories.IssueRepository;
+import com.example.issueservice.repositories.IssueAssigneeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

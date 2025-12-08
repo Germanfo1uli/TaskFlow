@@ -1,13 +1,13 @@
-package services;
+package com.example.issueservice.services;
 
-import dto.response.AttachmentDto;
-import exception.IssueNotFoundException;
-import models.Attachment;
-import models.IssueComment;
-import models.Issue;
-import repositories.AttachmentRepository;
-import repositories.IssueCommentRepository;
-import repositories.IssueRepository;
+import com.example.issueservice.dto.response.AttachmentDto;
+import com.example.issueservice.exception.IssueNotFoundException;
+import com.example.issueservice.dto.models.Attachment;
+import com.example.issueservice.dto.models.IssueComment;
+import com.example.issueservice.dto.models.Issue;
+import com.example.issueservice.repositories.AttachmentRepository;
+import com.example.issueservice.repositories.IssueCommentRepository;
+import com.example.issueservice.repositories.IssueRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

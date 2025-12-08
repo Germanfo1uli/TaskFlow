@@ -1,6 +1,6 @@
-package dto.request;
+package com.example.issueservice.dto.request;
 
-import models.Issue;
+import com.example.issueservice.dto.models.Issue;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -1,14 +1,13 @@
-package services;
+package com.example.issueservice.services;
 
-import dto.request.AssignTagDto;
-import dto.request.CreateProjectTagDto;
-import dto.response.TagDto;
-import exception.IssueNotFoundException;
-import exception.ProjectTagNotFoundException;
-import models.Issue;
-import models.ProjectTag;
-import repositories.IssueRepository;
-import repositories.ProjectTagRepository;
+import com.example.issueservice.dto.request.AssignTagDto;
+import com.example.issueservice.dto.request.CreateProjectTagDto;
+import com.example.issueservice.dto.response.TagDto;
+import com.example.issueservice.exception.ProjectTagNotFoundException;
+import com.example.issueservice.dto.models.Issue;
+import com.example.issueservice.dto.models.ProjectTag;
+import com.example.issueservice.repositories.IssueRepository;
+import com.example.issueservice.repositories.ProjectTagRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

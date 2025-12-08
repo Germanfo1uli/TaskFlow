@@ -1,9 +1,8 @@
-package controllers;
+package com.example.issueservice.controllers;
 
-import dto.response.CommentDto;
-import dto.request.CreateCommentDto;
-import exception.CommentNotFoundException;
-import services.IssueCommentService;
+import com.example.issueservice.dto.response.CommentDto;
+import com.example.issueservice.dto.request.CreateCommentDto;
+import com.example.issueservice.services.IssueCommentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

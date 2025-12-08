@@ -1,4 +1,4 @@
-package models;
+package com.example.issueservice.dto.models;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

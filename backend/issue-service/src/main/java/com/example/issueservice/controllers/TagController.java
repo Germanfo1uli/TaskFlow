@@ -1,9 +1,9 @@
-package controllers;
+package com.example.issueservice.controllers;
 
-import dto.request.AssignTagDto;
-import dto.request.CreateProjectTagDto;
-import dto.response.TagDto;
-import services.TagService;
+import com.example.issueservice.dto.request.AssignTagDto;
+import com.example.issueservice.dto.request.CreateProjectTagDto;
+import com.example.issueservice.dto.response.TagDto;
+import com.example.issueservice.services.TagService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

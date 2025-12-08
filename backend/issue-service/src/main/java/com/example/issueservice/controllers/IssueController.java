@@ -1,8 +1,14 @@
-package controllers;
+package com.example.issueservice.controllers;
 
+import com.example.issueservice.dto.request.AssignTagDto;
+import com.example.issueservice.dto.request.AssignUserDto;
+import com.example.issueservice.dto.request.CreateIssueDto;
+import com.example.issueservice.dto.request.UpdateIssueDto;
+import com.example.issueservice.dto.response.IssueDetailsDto;
+import com.example.issueservice.dto.response.IssueSummaryDto;
 import dto.request.*;
 import dto.response.*;
-import services.IssueService;
+import com.example.issueservice.services.IssueService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

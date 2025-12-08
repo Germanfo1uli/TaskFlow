@@ -1,4 +1,4 @@
-package dto.request;
+package com.example.issueservice.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
