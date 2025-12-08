@@ -111,26 +111,6 @@
     position: relative;
 }
 
-.titleBadge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: linear-gradient(135deg, rgba(61, 107, 179, 0.1), rgba(79, 172, 254, 0.1));
-    border: 1px solid rgba(61, 107, 179, 0.2);
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #3d6bb3;
-    backdrop-filter: blur(10px);
-    align-self: center;
-}
-
-.badgeIcon {
-    font-size: 0.8rem;
-    animation: pulse 2s ease-in-out infinite;
-}
-
 .pageTitle {
     font-size: 3rem;
     font-weight: 900;
@@ -333,10 +313,10 @@
 
 .quickMetrics {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
     width: 100%;
-    max-width: 500px;
+    max-width: 400px;
     margin: 1rem 0;
 }
 
@@ -376,40 +356,6 @@
     font-weight: 500;
     display: block;
     margin-top: 0.2rem;
-}
-
-.featureHighlights {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin: 1rem 0;
-}
-
-.featureItem {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.8rem 1.2rem;
-    background: rgba(61, 107, 179, 0.05);
-    border-radius: 12px;
-    border: 1px solid rgba(61, 107, 179, 0.1);
-    color: #64748b;
-    font-weight: 600;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-    cursor: default;
-}
-
-.featureItem:hover {
-    background: rgba(61, 107, 179, 0.1);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(61, 107, 179, 0.1);
-}
-
-.featureIcon {
-    color: #3d6bb3;
-    font-size: 1rem;
 }
 
 .welcomeActions {
@@ -650,142 +596,6 @@
     line-height: 1.4;
 }
 
-.tipsSection {
-    margin-top: 3rem;
-    margin-bottom: 2rem;
-}
-
-.sectionHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-}
-
-.tipsTitle {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: #1e293b;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-}
-
-.titleIcon {
-    color: #3d6bb3;
-    font-size: 1.3rem;
-}
-
-.helpButton {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.6rem 1.2rem;
-    background: rgba(61, 107, 179, 0.05);
-    border: 1px solid rgba(61, 107, 179, 0.1);
-    border-radius: 12px;
-    color: #3d6bb3;
-    font-weight: 600;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.helpButton:hover {
-    background: rgba(61, 107, 179, 0.1);
-    transform: translateY(-2px);
-}
-
-.tipsGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
-}
-
-.tipCard {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(61, 107, 179, 0.1);
-    border-radius: 20px;
-    padding: 1.8rem;
-    box-shadow: 0 6px 18px rgba(61, 107, 179, 0.06);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
-}
-
-.tipCard:hover {
-    background: rgba(255, 255, 255, 0.95);
-}
-
-.tipIconWrapper {
-    position: relative;
-    width: 56px;
-    height: 56px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, #3d6bb3 0%, #4facfe 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    margin-bottom: 1.2rem;
-    font-size: 1.3rem;
-    box-shadow: 0 6px 20px rgba(61, 107, 179, 0.3);
-}
-
-.tipIconGlow {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%);
-    transform: translate(-50%, -50%);
-    border-radius: 14px;
-    opacity: 0.5;
-}
-
-.tipContent h4 {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #1e293b;
-    margin: 0 0 0.6rem 0;
-}
-
-.tipContent p {
-    font-size: 0.9rem;
-    color: #64748b;
-    margin: 0 0 1rem 0;
-    line-height: 1.5;
-}
-
-.progressBar {
-    width: 100%;
-    height: 6px;
-    background: rgba(61, 107, 179, 0.1);
-    border-radius: 3px;
-    overflow: hidden;
-    margin-bottom: 0.8rem;
-}
-
-.progressFill {
-    height: 100%;
-    background: linear-gradient(90deg, #3d6bb3, #4facfe);
-    border-radius: 3px;
-    transition: width 1s ease-in-out;
-}
-
-.tipBadge {
-    display: inline-block;
-    padding: 0.3rem 0.8rem;
-    background: rgba(61, 107, 179, 0.1);
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #3d6bb3;
-}
-
 .achievementsSection {
     margin-top: 3rem;
     padding: 2rem;
@@ -1002,7 +812,7 @@
     }
 
     .quickMetrics {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
         gap: 1rem;
     }
 }
@@ -1038,12 +848,6 @@
         gap: 0.8rem;
     }
 
-    .featureHighlights {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.8rem;
-    }
-
     .welcomeActions {
         flex-direction: column;
         gap: 0.8rem;
@@ -1053,10 +857,6 @@
     .secondaryActionBtn {
         width: 100%;
         justify-content: center;
-    }
-
-    .tipsGrid {
-        grid-template-columns: 1fr;
     }
 
     .achievementsGrid {
@@ -1110,13 +910,5 @@
     .actionIconWrapper {
         width: 40px;
         height: 40px;
-    }
-
-    .tipsSection {
-        padding: 1.5rem;
-    }
-
-    .tipCard {
-        padding: 1.5rem;
     }
 }

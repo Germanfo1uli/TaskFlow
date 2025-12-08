@@ -159,19 +159,6 @@ const ProjectContent = ({ project: initialProject, onBackToDashboard }: ProjectC
             >
                 <div className={styles.headerContent}>
                     <div className={styles.pageTitleSection}>
-                        <motion.div
-                            className={styles.titleBadge}
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{
-                                type: "spring",
-                                delay: 0.5
-                            }}
-                        >
-                            <FaRocket className={styles.badgeIcon} />
-                            <span>Активный проект</span>
-                        </motion.div>
-
                         <motion.h1
                             className={styles.pageTitle}
                             initial={{ opacity: 0, y: -20 }}
@@ -320,43 +307,6 @@ const ProjectContent = ({ project: initialProject, onBackToDashboard }: ProjectC
                                         <span className={styles.metricLabel}>Участников</span>
                                     </div>
                                 </div>
-                                <div className={styles.metric}>
-                                    <FaChartLine className={styles.metricIcon} />
-                                    <div>
-                                        <span className={styles.metricValue}>{project.progress || 0}%</span>
-                                        <span className={styles.metricLabel}>Прогресс</span>
-                                    </div>
-                                </div>
-                            </motion.div>
-
-                            <motion.div
-                                className={styles.featureHighlights}
-                                variants={containerVariants}
-                            >
-                                <motion.div
-                                    className={styles.featureItem}
-                                    variants={itemVariants}
-                                    whileHover={{ scale: 1.05 }}
-                                >
-                                    <FaCheckCircle className={styles.featureIcon} />
-                                    <span>Отслеживание задач</span>
-                                </motion.div>
-                                <motion.div
-                                    className={styles.featureItem}
-                                    variants={itemVariants}
-                                    whileHover={{ scale: 1.05 }}
-                                >
-                                    <FaUsers className={styles.featureIcon} />
-                                    <span>Командная работа</span>
-                                </motion.div>
-                                <motion.div
-                                    className={styles.featureItem}
-                                    variants={itemVariants}
-                                    whileHover={{ scale: 1.05 }}
-                                >
-                                    <FaChartLine className={styles.featureIcon} />
-                                    <span>Аналитика прогресса</span>
-                                </motion.div>
                             </motion.div>
 
                             <motion.div
@@ -467,87 +417,6 @@ const ProjectContent = ({ project: initialProject, onBackToDashboard }: ProjectC
                     </motion.div>
                 </motion.div>
 
-                <motion.div
-                    className={styles.tipsSection}
-                    variants={itemVariants}
-                >
-                    <div className={styles.sectionHeader}>
-                        <h3 className={styles.tipsTitle}>
-                            <FaBullseye className={styles.titleIcon} />
-                            Статистика проекта
-                        </h3>
-                        <button className={styles.helpButton}>
-                            <FaQuestionCircle />
-                            <span>Подробнее</span>
-                        </button>
-                    </div>
-
-                    <motion.div
-                        className={styles.tipsGrid}
-                        variants={containerVariants}
-                    >
-                        <motion.div
-                            className={styles.tipCard}
-                            variants={itemVariants}
-                            whileHover={{
-                                y: -5,
-                                boxShadow: "0 15px 30px rgba(61, 107, 179, 0.12)"
-                            }}
-                        >
-                            <div className={styles.tipIconWrapper}>
-                                <FaTrello />
-                                <div className={styles.tipIconGlow}></div>
-                            </div>
-                            <div className={styles.tipContent}>
-                                <h4>Общий прогресс</h4>
-                                <p>Выполнено {stats.completedTasks} из {stats.totalTasks} задач</p>
-                                <div className={styles.progressBar}>
-                                    <div className={styles.progressFill} style={{ width: `${project.progress || 0}%` }}></div>
-                                </div>
-                                <div className={styles.tipBadge}>{project.progress || 0}% выполнено</div>
-                            </div>
-                        </motion.div>
-
-                        <motion.div
-                            className={styles.tipCard}
-                            variants={itemVariants}
-                            whileHover={{
-                                y: -5,
-                                boxShadow: "0 15px 30px rgba(61, 107, 179, 0.12)"
-                            }}
-                        >
-                            <div className={styles.tipIconWrapper}>
-                                <FaUsers />
-                                <div className={styles.tipIconGlow}></div>
-                            </div>
-                            <div className={styles.tipContent}>
-                                <h4>Команда проекта</h4>
-                                <p>{project.members || 1} участников работают над проектом</p>
-                                <div className={styles.tipBadge}>Активно</div>
-                            </div>
-                        </motion.div>
-
-                        <motion.div
-                            className={styles.tipCard}
-                            variants={itemVariants}
-                            whileHover={{
-                                y: -5,
-                                boxShadow: "0 15px 30px rgba(61, 107, 179, 0.12)"
-                            }}
-                        >
-                            <div className={styles.tipIconWrapper}>
-                                <FaClock />
-                                <div className={styles.tipIconGlow}></div>
-                            </div>
-                            <div className={styles.tipContent}>
-                                <h4>Сроки выполнения</h4>
-                                <p>{stats.pendingTasks} задач в работе, {stats.overdueTasks} просрочено</p>
-                                <div className={styles.tipBadge}>Мониторинг</div>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                </motion.div>
-
                 {activities.length > 0 && (
                     <motion.div
                         className={styles.achievementsSection}
@@ -560,7 +429,7 @@ const ProjectContent = ({ project: initialProject, onBackToDashboard }: ProjectC
                             Последняя активность
                         </h3>
                         <div className={styles.achievementsGrid}>
-                            {activities.slice(0, 3).map((activity, index) => (
+                            {activities.slice(0, 3).map((activity) => (
                                 <div key={activity.id} className={styles.achievement}>
                                     <div className={styles.achievementIcon}>
                                         {activity.type === 'task_created' && <FaPlus />}

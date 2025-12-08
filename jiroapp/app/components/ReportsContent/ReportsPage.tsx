@@ -1,50 +1,19 @@
 'use client'
 
-import { memo } from 'react';
-import { Alert, Row, Col, Card, Spin, Empty } from 'antd';
-import { useReports } from './hooks/useReports';
-import { ReportsHeader } from './components/ReportsHeader/ReportsHeader';
-import { StatsCards } from './components/StatsCards/StatsCards';
-import { DevelopersStats } from './components/DevelopersStats/DevelopersStats';
-import {
-    TaskDistributionChart,
-    ProgressChart,
-    EfficiencyChart,
-    ProgressGauge
-} from './components/Charts';
-import styles from './ReportsPage.module.css';
+import { memo } from 'react'
+import { Alert, Row, Col, Card, Spin, Empty, ConfigProvider } from 'antd'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useReports } from './hooks/useReports'
+import { ReportsHeader } from './components/ReportsHeader/ReportsHeader'
+import { StatsCards } from './components/StatsCards/StatsCards'
+import { DevelopersStats } from './components/DevelopersStats/DevelopersStats'
+import { TaskDistributionChart, ProgressChart, EfficiencyChart, ProgressGauge } from './components/Charts'
+import styles from './ReportsPage.module.css'
 
-const MemoizedStatsCards = memo(StatsCards);
+const MemoizedStatsCards = memo(StatsCards)
+const MemoizedDevelopersStats = memo(DevelopersStats)
 
-const MemoizedDevelopersStats = memo(({ developerStats }: { developerStats: any[] }) =>
-    developerStats.length > 0 ?
-        <DevelopersStats developerStats={developerStats} /> :
-        <Empty description="Нет данных о разработчиках" />
-);
-
-const MemoizedTaskDistributionChart = memo(({ data }: { data: any[] }) =>
-    data.length > 0 ?
-        <TaskDistributionChart data={data} /> :
-        <Empty description="Нет данных для графика" />
-);
-
-const MemoizedProgressChart = memo(({ data }: { data: any[] }) =>
-    data.length > 0 ?
-        <ProgressChart data={data} /> :
-        <Empty description="Нет данных о прогрессе" />
-);
-
-const MemoizedEfficiencyChart = memo(({ data }: { data: any[] }) =>
-    data.length > 0 ?
-        <EfficiencyChart data={data} /> :
-        <Empty description="Нет данных об эффективности" />
-);
-
-const MemoizedProgressGauge = memo(({ completionRate }: { completionRate: number }) =>
-    <ProgressGauge completionRate={completionRate} />
-);
-
-const ReportsPage = () => {
+export default function ReportsPage() {
     const {
         stats,
         developerStats,
@@ -55,88 +24,77 @@ const ReportsPage = () => {
         dateRange,
         setDateRange,
         refreshData
-    } = useReports();
+    } = useReports()
 
-    if (isLoading && !stats.totalTasks) {
+    if (isLoading && stats.totalTasks === 0) {
         return (
             <div className={styles.reportsSection}>
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+                <div className={styles.loadingContainer}>
                     <Spin size="large" tip="Загрузка отчетов..." />
                 </div>
             </div>
-        );
+        )
     }
 
     return (
-        <div className={styles.reportsSection}>
-            <ReportsHeader
-                isLoading={isLoading}
-                dateRange={dateRange}
-                onDateRangeChange={setDateRange}
-                onRefresh={refreshData}
-            />
-
-            {stats.overdueTasks > 0 && (
-                <Alert
-                    message={`Внимание! У вас есть ${stats.overdueTasks} просроченных задач`}
-                    type="warning"
-                    showIcon
-                    closable
-                    className={styles.alert}
+        <ConfigProvider theme={{ token: { colorPrimary: '#3b82f6', borderRadius: 12 } }}>
+            <div className={styles.reportsSection}>
+                <ReportsHeader
+                    isLoading={isLoading}
+                    dateRange={dateRange}
+                    onDateRangeChange={setDateRange}
+                    onRefresh={refreshData}
                 />
-            )}
 
-            <MemoizedStatsCards stats={stats} />
+                <AnimatePresence>
+                    {stats.overdueTasks > 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ duration: 0.4, ease: 'easeOut' }}
+                        >
+                            <Alert
+                                message={`Внимание! У вас есть ${stats.overdueTasks} просроченных задач`}
+                                type="warning"
+                                showIcon
+                                closable
+                                className={styles.alert}
+                            />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
-            <Row gutter={[16, 16]} className={styles.chartsRow}>
-                <Col xs={24} lg={12}>
-                    <Card
-                        title="Распределение задач"
-                        variant="borderless"
-                        className={styles.chartCard}
-                        loading={isLoading}
-                    >
-                        <MemoizedTaskDistributionChart data={taskDistributionData} />
-                    </Card>
-                </Col>
-                <Col xs={24} lg={12}>
-                    <Card
-                        title="Прогресс выполнения"
-                        variant="borderless"
-                        className={styles.chartCard}
-                        loading={isLoading}
-                    >
-                        <MemoizedProgressChart data={progressData} />
-                    </Card>
-                </Col>
-            </Row>
+                <MemoizedStatsCards stats={stats} />
 
-            <Row gutter={[16, 16]} className={styles.chartsRow}>
-                <Col xs={24} lg={12}>
-                    <Card
-                        title="Эффективность разработчиков"
-                        variant="borderless"
-                        className={styles.chartCard}
-                        loading={isLoading}
-                    >
-                        <MemoizedEfficiencyChart data={efficiencyData} />
-                    </Card>
-                </Col>
-                <Col xs={24} lg={12}>
-                    <Card
-                        title="Общий прогресс проекта"
-                        variant="borderless"
-                        className={styles.chartCard}
-                        loading={isLoading}
-                    >
-                        <MemoizedProgressGauge completionRate={stats.completionRate} />
-                    </Card>
-                </Col>
-            </Row>
+                <Row gutter={[16, 16]} className={styles.chartsRow}>
+                    <Col xs={24} lg={12}>
+                        <Card title="Распределение задач" variant="borderless" className={styles.chartCard} loading={isLoading}>
+                            <TaskDistributionChart data={taskDistributionData} />
+                        </Card>
+                    </Col>
+                    <Col xs={24} lg={12}>
+                        <Card title="Прогресс выполнения" variant="borderless" className={styles.chartCard} loading={isLoading}>
+                            <ProgressChart data={progressData} />
+                        </Card>
+                    </Col>
+                </Row>
 
-            <MemoizedDevelopersStats developerStats={developerStats} />
-        </div>
-    );
-};
+                <Row gutter={[16, 16]} className={styles.chartsRow}>
+                    <Col xs={24} lg={12}>
+                        <Card title="Эффективность разработчиков" variant="borderless" className={styles.chartCard} loading={isLoading}>
+                            <EfficiencyChart data={efficiencyData} />
+                        </Card>
+                    </Col>
+                    <Col xs={24} lg={12}>
+                        <Card title="Общий прогресс проекта" variant="borderless" className={styles.chartCard} loading={isLoading}>
+                            <ProgressGauge completionRate={stats.completionRate} />
+                        </Card>
+                    </Col>
+                </Row>
 
-export default ReportsPage;
+                <MemoizedDevelopersStats developerStats={developerStats} />
+            </div>
+        </ConfigProvider>
+    )
+}

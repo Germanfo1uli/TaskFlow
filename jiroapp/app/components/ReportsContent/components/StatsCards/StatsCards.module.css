@@ -1,53 +1,57 @@
 .statsRow {
-    margin-bottom: 2rem;
+    margin-bottom: 2.5rem;
 }
 
 .statCard {
-    border-radius: 16px;
+    border-radius: 20px;
     background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(59, 130, 246, 0.15);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(59, 130, 246, 0.12);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.08);
+    transition: all 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
     height: 100%;
-    padding: 16px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
 }
 
-.statCard:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+.statCard::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--color);
+    opacity: 0.9;
 }
 
 .statIcon {
-    font-size: 1.5rem;
-    margin-right: 0.5rem;
+    font-size: 1.75rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
-.statisticContent {
-    font-size: 1.5rem;
-    font-weight: 700;
-}
-
-/* Стили для контента статистики */
-.statCard :global(.ant-statistic-content) {
-    font-size: 1.5rem;
-    font-weight: 700;
-}
-
-.statCard :global(.ant-statistic-title) {
+.statistic :global(.ant-statistic-title) {
     font-size: 0.875rem;
     color: #64748b;
-    font-weight: 500;
-    margin-bottom: 0.5rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    letter-spacing: 0.3px;
 }
 
-.statCard :global(.ant-statistic-content-value) {
-    font-size: 1.5rem;
-    font-weight: 700;
-}
-
-.statCard :global(.ant-statistic-content-prefix) {
+.statistic :global(.ant-statistic-content) {
+    font-size: 1.75rem;
+    font-weight: 800;
     display: flex;
     align-items: center;
-    margin-right: 0.5rem;
+    gap: 8px;
+}
+
+@media (max-width: 640px) {
+    .statCard {
+        padding: 16px;
+    }
+    .statistic :global(.ant-statistic-content) {
+        font-size: 1.5rem;
+    }
 }

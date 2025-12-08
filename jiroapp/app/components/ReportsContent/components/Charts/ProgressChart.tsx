@@ -1,59 +1,38 @@
-import { Line } from '@ant-design/charts';
-import { TaskProgressData } from '../../types/reports.types';
+import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts'
+import type { TaskProgressData } from '../../types/reports.types'
 
 interface ProgressChartProps {
-    data: TaskProgressData[];
+    data: TaskProgressData[]
 }
 
 export const ProgressChart = ({ data }: ProgressChartProps) => {
-    const chartData = data && data.length > 0 ? data : [
+    const chartData = data.length > 0 ? data : [
         { date: 'День 1', tasks: 0, cumulative: 0 },
         { date: 'День 2', tasks: 0, cumulative: 0 },
         { date: 'День 3', tasks: 0, cumulative: 0 }
-    ];
+    ]
 
-    const config = {
-        data: chartData,
-        padding: [40, 40, 60, 60],
-        xField: 'date',
-        yField: 'cumulative',
-        point: {
-            size: 5,
-            shape: 'diamond',
-            style: {
-                fill: '#8b5cf6',
-                stroke: '#fff',
-                lineWidth: 2,
-            },
-        },
-        animation: {
-            appear: {
-                animation: 'path-in',
-                duration: 1000,
-            },
-        },
-        interactions: [{ type: 'tooltip' }, { type: 'element-active' }],
-        color: '#8b5cf6',
-        smooth: true,
-        lineStyle: {
-            lineWidth: 3,
-        },
-        tooltip: {
-            showMarkers: true,
-            formatter: (datum: any) => {
-                return { name: 'Накопленные задачи', value: `${datum.cumulative}` };
-            },
-        },
-        state: {
-            active: {
-                style: {
-                    shadowBlur: 4,
-                    stroke: '#000',
-                    fill: 'red',
-                },
-            },
-        },
-    };
-
-    return <Line {...config} />;
-};
+    return (
+        <div style={{ width: '100%', height: 300 }}>
+            <ResponsiveContainer>
+                <LineChart data={chartData} margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(59, 130, 246, 0.1)" />
+                    <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip
+                        contentStyle={{ borderRadius: 12, border: '1px solid rgba(59, 130, 246, 0.2)' }}
+                        formatter={(value: number) => [`Накопленные задачи: ${value}`, '']}
+                    />
+                    <Line
+                        type="monotone"
+                        dataKey="cumulative"
+                        stroke="#8b5cf6"
+                        strokeWidth={4}
+                        dot={{ r: 6, stroke: '#fff', strokeWidth: 2, fill: '#8b5cf6' }}
+                        activeDot={{ r: 8 }}
+                    />
+                </LineChart>
+            </ResponsiveContainer>
+        </div>
+    )
+}

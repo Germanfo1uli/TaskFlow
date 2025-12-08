@@ -1,5 +1,5 @@
 .reportsHeader {
-    margin-bottom: 2rem;
+    margin-bottom: 2.5rem;
 }
 
 .headerTop {
@@ -7,7 +7,7 @@
     justify-content: space-between;
     align-items: flex-start;
     gap: 2rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
 }
 
 .titleSection {
@@ -17,57 +17,67 @@
 .titleRow {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 1.5rem;
     margin-bottom: 0.75rem;
     flex-wrap: wrap;
 }
 
 .pageTitle {
-    font-size: 2.5rem;
+    font-size: 2.75rem;
     font-weight: 800;
     color: #1e293b;
     margin: 0;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    background: linear-gradient(135deg, #1e293b 0%, #3b82f6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
+    letter-spacing: -0.5px;
 }
 
 .titleIcon {
-    color: #8b5cf6;
-    font-size: 2rem;
+    font-size: 2.25rem;
+    background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .pageSubtitle {
-    font-size: 1.1rem;
+    font-size: 1.125rem;
     color: #64748b;
     margin: 0;
     font-weight: 500;
-    line-height: 1.5;
+    line-height: 1.6;
 }
 
 .refreshButton {
-    background: linear-gradient(135deg, #3b82f6, #60a5fa);
-    color: white;
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
     border: none;
-    border-radius: 12px;
-    font-weight: 600;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-    transition: all 0.3s ease;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 1rem;
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.35);
+    transition: all 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+    height: auto;
+    padding: 12px 24px;
 }
 
 .refreshButton:hover {
-    background: linear-gradient(135deg, #2563eb, #3b82f6);
-    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-    transform: translateY(-1px);
+    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%) !important;
+    box-shadow: 0 8px 28px rgba(59, 130, 246, 0.45) !important;
+    transform: translateY(-2px) scale(1.02);
 }
 
 .filtersSection {
     background: rgba(255, 255, 255, 0.9);
-    padding: 1rem 1.5rem;
-    border-radius: 16px;
-    border: 1px solid rgba(59, 130, 246, 0.15);
-    backdrop-filter: blur(10px);
+    padding: 1.25rem 1.75rem;
+    border-radius: 18px;
+    border: 1px solid rgba(59, 130, 246, 0.12);
+    backdrop-filter: blur(16px);
+    display: inline-flex;
 }
 
 @media (max-width: 768px) {
@@ -77,7 +87,7 @@
     }
 
     .pageTitle {
-        font-size: 2rem;
+        font-size: 2.25rem;
     }
 
     .titleRow {
@@ -89,10 +99,12 @@
 
 @media (max-width: 480px) {
     .pageTitle {
-        font-size: 1.75rem;
+        font-size: 1.875rem;
     }
-
     .pageSubtitle {
         font-size: 1rem;
+    }
+    .refreshButton {
+        width: 100%;
     }
 }
