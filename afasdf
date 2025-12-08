@@ -1,0 +1,216 @@
+[33mcommit 5d686a9bb4a977fbd9aaf04bd6df57460dc596bf[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mFrontBranch[m[33m, [m[1;31morigin/FrontBranch[m[33m)[m
+Author: Пырцак Герман FO1ULI <rbebi96@mail.ru>
+Date:   Mon Dec 1 20:21:58 2025 +0700
+
+    Исправлено черпание данных юзера с бэка, mybad
+
+[33mcommit c8d26ad02fe913ae42df11b0751ff660bbb98644[m
+Author: Пырцак Герман FO1ULI <rbebi96@mail.ru>
+Date:   Mon Dec 1 20:06:28 2025 +0700
+
+    изменена основная страница и страница с авторизации в целях оптимизации
+
+[33mcommit 9da0c2a82dd27c31ccdba542e4f021481142ac68[m
+Author: Пырцак Герман FO1ULI <rbebi96@mail.ru>
+Date:   Sun Nov 30 18:19:30 2025 +0700
+
+    добавлена страница графов
+
+[33mcommit c5d582cacce68ea9f7d1b02aee8dd3b54032d784[m
+Author: Пырцак Герман FO1ULI <rbebi96@mail.ru>
+Date:   Sun Nov 30 17:25:15 2025 +0700
+
+    добавлена ротация токенов(в будущем доработать)
+
+[33mcommit c72ab06069adb34f4eb7910d4abb3d4075c052eb[m
+Author: Пырцак Герман FO1ULI <rbebi96@mail.ru>
+Date:   Sun Nov 30 14:29:28 2025 +0700
+
+    добавлена возможность отправлять аватар
+
+[33mcommit 5d2441c3d8c01022aec6df1ec038361cab89a9d5[m
+Merge: e38a341 fc1fb18
+Author: Пырцак Герман FO1ULI <rbebi96@mail.ru>
+Date:   Sun Nov 30 13:28:21 2025 +0700
+
+    Merge remote-tracking branch 'origin/backend-users' into FrontBranch
+
+[33mcommit fc1fb18ceb73e91c878ef592273e4ea77d866596[m[33m ([m[1;31morigin/backend-users[m[33m)[m
+Author: Krivenyshev Evgeniy <crive.ru@yandex.ru>
+Date:   Sun Nov 30 13:28:00 2025 +0700
+
+    userservice: fixed avatar update
+
+[33mcommit e38a3413acae9e4d9d44b13e66a6079fc6e5777e[m
+Author: Пырцак Герман FO1ULI <rbebi96@mail.ru>
+Date:   Sun Nov 30 13:27:45 2025 +0700
+
+    коммит для мёрджа
+
+[33mcommit b6a399662ce26e2de1c55afa63b9ddda889a3de3[m
+Author: Пырцак Герман FO1ULI <rbebi96@mail.ru>
+Date:   Sun Nov 30 12:34:49 2025 +0700
+
+    Изменено добавление карточки
+
+[33mcommit 7d17e82f505d98127314b6f87ecf7998e92ec060[m
+Author: Krivenyshev Evgeniy <crive.ru@yandex.ru>
+Date:   Sat Nov 29 17:23:47 2025 +0700
+
+    devops: create initial docker logic for postgres, pgadmin and userservice, scripts for containers fast start, readme file
+
+[33mcommit 76f3f6edb38cb470e5844ea46ccf9c77b687b14e[m
+Author: Пырцак Герман FO1ULI <rbebi96@mail.ru>
+Date:   Fri Nov 28 19:25:05 2025 +0700
+
+    Профиль теперь берёт данные с бэка
+
+[33mcommit 9a5add30ce5326c005d392d9996eb23c47fedbcf[m
+Author: Пырцак Герман FO1ULI <rbebi96@mail.ru>
+Date:   Wed Nov 26 22:50:22 2025 +0700
+
+    1)Доступна регистрация и логин 2)Защита от дебилов без логина 3)Добавлена кнопка выхода с последующим модальным окном подтверждения для выхода из профиля
+
+[33mcommit 994bcde3474433c0228b146e771e1b2b331e2c0f[m
+Author: Krivenyshev Evgeniy <crive.ru@yandex.ru>
+Date:   Wed Nov 26 20:08:15 2025 +0700
+
+    userservice: search method modified
+
+[33mcommit d64f6d52161cf8f7943a5154a1893bf343ba8a82[m
+Merge: 35fa140 1811ced
+Author: Пырцак Герман FO1ULI <rbebi96@mail.ru>
+Date:   Wed Nov 26 19:18:06 2025 +0700
+
+    Merge remote-tracking branch 'origin/backend-users' into FrontBranch
+
+[33mcommit 1811ced2e1515560d54adfbf138a5a7c478e2e68[m
+Author: Krivenyshev Evgeniy <crive.ru@yandex.ru>
+Date:   Wed Nov 26 19:16:56 2025 +0700
+
+    userservice: security options fixed
+
+[33mcommit 35fa140d602a6a469ee7a720ffa1ccd20e32fd59[m
+Merge: d81b0a1 ad6baa6
+Author: Пырцак Герман FO1ULI <rbebi96@mail.ru>
+Date:   Wed Nov 26 19:12:01 2025 +0700
+
+    Merge remote-tracking branch 'origin/backend-users' into FrontBranch
+
+[33mcommit d81b0a105c4138dd3f62b9bc9d808bdc24888ed1[m
+Author: Пырцак Герман FO1ULI <rbebi96@mail.ru>
+Date:   Wed Nov 26 19:10:44 2025 +0700
+
+    Попытка привязки
+
+[33mcommit ad6baa6b8e6ef411db2596322ff333c293cb357e[m
+Author: Krivenyshev Evgeniy <crive.ru@yandex.ru>
+Date:   Wed Nov 26 19:09:40 2025 +0700
+
+    userservice: create logic for user search, changed cors policy
+
+[33mcommit 928dc458fd13b217e6506646352bbcd64663fd5b[m
+Merge: b9f0530 8c3c7c5
+Author: Пырцак Герман FO1ULI <rbebi96@mail.ru>
+Date:   Wed Nov 26 16:06:28 2025 +0700
+
+    Merge remote-tracking branch 'origin/backend-users' into FrontBranch
+
+[33mcommit b9f05300b0c53cdf8e51544a831bb495362b5604[m
+Author: Пырцак Герман FO1ULI <rbebi96@mail.ru>
+Date:   Wed Nov 26 16:05:58 2025 +0700
+
+    Исправленны мелкие косяки
+
+[33mcommit 8c3c7c54e2408de3dd35399596f9ada6b86f6224[m
+Author: Krivenyshev Evgeniy <crive.ru@yandex.ru>
+Date:   Tue Nov 25 23:32:01 2025 +0700
+
+    userservice: fixed dto, create logic for user tags, create regexp validation for username/password
+
+[33mcommit 10cf5b7528a34a289fd47a29d9d7d488dfb47d5d[m
+Author: Krivenyshev Evgeniy <crive.ru@yandex.ru>
+Date:   Tue Nov 25 22:06:52 2025 +0700
+
+    userservice: big fix for all dto models
+
+[33mcommit e932d7dfa08437f53539d0779f762fdf7a195ab8[m
+Author: Пырцак Герман FO1ULI <rbebi96@mail.ru>
+Date:   Tue Nov 25 21:35:21 2025 +0700
+
+    Добавлено создание проекта
+
+[33mcommit 83a22babfdf6fe40fa53203bc28757832bee6a93[m
+Author: Пырцак Герман FO1ULI <rbebi96@mail.ru>
+Date:   Tue Nov 25 20:10:09 2025 +0700
+
+    Сделано выдвигающееся меню, немного проработана адаптация
+
+[33mcommit 64ef294ce37890cea709dbce84e950ba9ff8318c[m
+Author: Krivenyshev Evgeniy <crive.ru@yandex.ru>
+Date:   Tue Nov 25 20:06:14 2025 +0700
+
+    userservice: fixed revoke tokens of device mismatch
+
+[33mcommit 157bb708d886d6216ff5df8c6a4c19e935e89aea[m
+Author: Krivenyshev Evgeniy <crive.ru@yandex.ru>
+Date:   Tue Nov 25 19:07:37 2025 +0700
+
+    userservice: create logic for device mismatch
+
+[33mcommit f3f2be955d2289b359809ab346182152d97b8450[m
+Author: Krivenyshev Evgeniy <crive.ru@yandex.ru>
+Date:   Tue Nov 25 18:39:57 2025 +0700
+
+    docs: create init docs for service start
+
+[33mcommit 6594ba424309f4487d583b677819880ef50bb4e8[m
+Author: Krivenyshev Evgeniy <crive.ru@yandex.ru>
+Date:   Tue Nov 25 18:39:30 2025 +0700
+
+    userservice: fixed part of swagger docs, create init deviceinfo handling
+
+[33mcommit d722a3b279541c91c60e5cc9757536e6b5a93c1f[m
+Author: Krivenyshev Evgeniy <crive.ru@yandex.ru>
+Date:   Tue Nov 25 16:13:35 2025 +0700
+
+    userservice: fixed lombok initialization in mvn wrapper
+
+[33mcommit 746d9a3064507622d06dd540c3a6af8f69131eec[m
+Author: Krivenyshev Evgeniy <crive.ru@yandex.ru>
+Date:   Mon Nov 24 00:21:50 2025 +0700
+
+    userservice: create initial filtering locked/deleted users, fixed http messages from filter errors
+
+[33mcommit 95dc1b2766adbdde8ad0ca0179cee3b5411ed329[m
+Author: Krivenyshev Evgeniy <crive.ru@yandex.ru>
+Date:   Sun Nov 23 22:52:35 2025 +0700
+
+    userservice: user entity modified, system user role and configuration set up
+
+[33mcommit fded807e20c1145bb5f579a33398c4ebcac3d09c[m
+Author: Krivenyshev Evgeniy <crive.ru@yandex.ru>
+Date:   Sun Nov 23 22:00:25 2025 +0700
+
+    userservice: configs fixed
+
+[33mcommit b949bcfb4921a115ca3a5d3faf993a27f9a39738[m
+Author: Krivenyshev Evgeniy <crive.ru@yandex.ru>
+Date:   Sun Nov 23 21:34:25 2025 +0700
+
+    userservice: repositories fixed
+
+[33mcommit fe8f660007f0a3d9284f11330821fdbdde4da743[m
+Author: Krivenyshev Evgeniy <crive.ru@yandex.ru>
+Date:   Sun Nov 23 21:29:01 2025 +0700
+
+    fixed methods for auth controller
+
+[33mcommit f8196efa8d1fb530c2aa8a77eb9c3e496e1530b9[m
+Author: Krivenyshev Evgeniy <crive.ru@yandex.ru>
+Date:   Sun Nov 23 17:15:04 2025 +0700
+
+    userservice: create initial validator for files, fixed principal for avatar controller, fixed logic for avatar service
+
+[33mcommit 046f2d10653501c07be3109d10217f81c1703add[m
+Author: �

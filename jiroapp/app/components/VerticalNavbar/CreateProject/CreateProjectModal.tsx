@@ -12,6 +12,7 @@ import { CreateProjectModalProps, CropArea } from './types/types'
 import ImageCropper from './ImageCropper'
 import styles from './CreateProjectModal.module.css'
 
+// Убрали валидацию ключа
 const schema = z.object({
     name: z.string().min(1, 'Название обязательно').max(100, 'Слишком длинное название'),
     description: z.string().max(500, 'Описание слишком длинное').optional(),
@@ -50,8 +51,13 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
     } = useImageUpload()
 
     const { createProject, isLoading } = useCreateProject()
-
     const initializedRef = useRef(false)
+
+    const handleClose = useCallback(() => {
+        reset()
+        clearImage()
+        onClose()
+    }, [reset, clearImage, onClose])
 
     useEffect(() => {
         if (isOpen && !initializedRef.current) {
@@ -65,33 +71,25 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
 
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && isOpen) {
-                handleClose()
-            }
+            if (e.key === 'Escape' && isOpen) handleClose()
         }
         window.addEventListener('keydown', handleEsc)
         return () => window.removeEventListener('keydown', handleEsc)
-    }, [isOpen])
-
-    const handleClose = useCallback(() => {
-        reset()
-        clearImage()
-        onClose()
-    }, [reset, clearImage, onClose])
+    }, [isOpen, handleClose])
 
     const onSubmit = useCallback(
         async (data: FormData) => {
             try {
                 toast.loading('Создание проекта...', { id: 'create-project' })
 
-                const formData = {
+                const projectData = {
                     name: data.name.trim(),
                     description: data.description?.trim() || '',
                     image: selectedFile,
                     crop: cropArea || undefined,
                 }
 
-                const project = await createProject(formData)
+                const project = await createProject(projectData)
 
                 toast.success('Проект успешно создан!', {
                     id: 'create-project',
@@ -129,9 +127,7 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
     )
 
     const handleCropChange = useCallback(
-        (crop: CropArea) => {
-            setCrop(crop)
-        },
+        (crop: CropArea) => setCrop(crop),
         [setCrop]
     )
 
@@ -220,7 +216,7 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
                                             <Controller
                                                 name="image"
                                                 control={control}
-                                                render={({ field }) => (
+                                                render={() => (
                                                     <>
                                                         <input
                                                             type="file"
@@ -274,6 +270,7 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
                                         transition={{ delay: 0.4 }}
                                     >
                                         <h3 className={styles.sectionTitle}>Информация о проекте</h3>
+
                                         <div className={styles.formGroup}>
                                             <label htmlFor="project-name" className={styles.inputLabel}>
                                                 Название проекта *
@@ -298,6 +295,8 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
                                                 )}
                                             />
                                         </div>
+
+                                        {/* ✅ УБРАНО ПОЛЕ КЛЮЧА */}
 
                                         <div className={styles.formGroup}>
                                             <label htmlFor="project-description" className={styles.inputLabel}>
