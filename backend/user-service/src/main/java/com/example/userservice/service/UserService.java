@@ -79,14 +79,19 @@ public class UserService {
             return Collections.emptyList();
         }
 
-        // SELECT * FROM users WHERE id IN (1,2,3,...)
         List<User> users = userRepository.findAllById(userIds);
 
-        if (users.size() != userIds.size()) {
-            log.warn("Some users not found: requested={}, found={}", userIds.size(), users.size());
+        List<User> validUsers = users.stream()
+                .filter(user -> user.getDeletedAt() == null)
+                .filter(user -> user.getLockedAt() == null)
+                .toList();
+
+        int filteredOut = users.size() - validUsers.size();
+        if (filteredOut > 0) {
+            log.warn("Filtered out {} deleted/locked users from batch request", filteredOut);
         }
 
-        return users.stream()
+        return validUsers.stream()
                 .map(PublicProfileResponse::fromUser)
                 .collect(Collectors.toList());
     }
