@@ -45,4 +45,22 @@ public class InviteController {
         inviteService.inviteUser(principal.userId(), projectId, request.userId(), request.roleId());
         return ResponseEntity.ok("Success");
     }
+
+    @PostMapping("/{projectId}/invite/regenerate")
+    public ResponseEntity<String> regenerateInvite(
+            @PathVariable Long projectId,
+            @AuthenticationPrincipal JwtUser principal) {
+
+        String response = inviteService.regenerateInvite(principal.userId(), projectId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{projectId}/invite")
+    public ResponseEntity<String> getInviteLink(
+            @PathVariable Long projectId,
+            @AuthenticationPrincipal JwtUser principal) {
+
+        String response = inviteService.getInviteLink(principal.userId(), projectId);
+        return ResponseEntity.ok(response);
+    }
 }

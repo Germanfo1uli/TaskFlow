@@ -42,6 +42,16 @@ public class ProjectInviteService {
         return inviteLink;
     }
 
+    public String getInviteLink(Long projectId, Long userId) {
+
+        authService.checkOwnerOnly(userId, projectId);
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
+
+        return frontendUrl + "/join/" + project.getInviteToken();
+    }
+
     @Transactional
     public Long joinByInvite(String token, Long userId) {
 
