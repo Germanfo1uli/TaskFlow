@@ -1,5 +1,6 @@
 package com.example.boardservice.service;
 
+import com.example.boardservice.client.UserServiceClient;
 import com.example.boardservice.dto.models.Project;
 import com.example.boardservice.dto.models.enums.ActionType;
 import com.example.boardservice.dto.models.enums.EntityType;
@@ -22,6 +23,7 @@ public class ProjectInviteService {
     private final ProjectMemberRepository memberRepository;
     private final ProjectMemberService memberService;
     private final AuthService authService;
+    private final UserServiceClient userServiceClient;
 
     @Value("${app.frontend.url}")
     private String frontendUrl;
@@ -53,7 +55,13 @@ public class ProjectInviteService {
     }
 
     @Transactional
-    public Long joinByInvite(String token, Long userId) {
+    public Long joinByInvite(Long userId, String token) {
+
+        try {
+            userServiceClient.getProfileById(userId);
+        } catch (Exception e) {
+            throw new InvalidInviteException("User with ID " + userId + " does not exist");
+        }
 
         Project project = projectRepository.findByInviteToken(token)
                 .orElseThrow(() -> new InvalidInviteException("Project does not exists"));
@@ -71,6 +79,12 @@ public class ProjectInviteService {
     public void inviteUser(Long userId, Long projectId, Long invitedUser, Long roleId) {
 
         authService.checkOwnerOnly(userId, projectId);
+
+        try {
+            userServiceClient.getProfileById(invitedUser);
+        } catch (Exception e) {
+            throw new InvalidInviteException("User with ID " + invitedUser + " does not exist");
+        }
 
         if (!projectRepository.existsById(projectId)) {
             throw new InvalidInviteException("Project does not exists");

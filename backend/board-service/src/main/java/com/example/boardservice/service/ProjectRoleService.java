@@ -1,6 +1,7 @@
 package com.example.boardservice.service;
 
 import com.example.boardservice.cache.RedisCacheService;
+import com.example.boardservice.client.UserServiceClient;
 import com.example.boardservice.dto.data.PermissionEntry;
 import com.example.boardservice.dto.models.ProjectMember;
 import com.example.boardservice.dto.models.RolePermission;
@@ -37,6 +38,7 @@ public class ProjectRoleService {
     private final PermissionMatrixService permissionMatrixService;
     private final AuthService authService;
     private final RedisCacheService redisCacheService;
+    private final UserServiceClient userServiceClient;
 
     @Transactional
     public ProjectRole createDefaultRoles(Long projectId) {
@@ -210,6 +212,12 @@ public class ProjectRoleService {
     public void assignRole(Long userId, Long projectId, Long assignedId, Long roleId) {
 
         authService.checkOwnerOnly(userId, projectId);
+
+        try {
+            userServiceClient.getProfileById(assignedId);
+        } catch (Exception e) {
+            throw new UserNotFoundException("User with Id: " + assignedId + " does not exist");
+        }
 
         ProjectRole role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new RoleNotFoundException("Role ID: " + roleId + " not found"));

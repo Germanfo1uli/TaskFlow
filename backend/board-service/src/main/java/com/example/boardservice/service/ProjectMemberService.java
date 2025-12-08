@@ -11,6 +11,7 @@ import com.example.boardservice.dto.models.enums.EntityType;
 import com.example.boardservice.dto.response.ProjectMemberResponse;
 import com.example.boardservice.dto.response.PublicProfileResponse;
 import com.example.boardservice.exception.AlreadyMemberException;
+import com.example.boardservice.exception.InvalidInviteException;
 import com.example.boardservice.exception.RoleNotFoundException;
 import com.example.boardservice.exception.RoleNotInProjectException;
 import com.example.boardservice.repository.ProjectMemberRepository;
@@ -41,6 +42,12 @@ public class ProjectMemberService {
     @Transactional
     public ProjectMember addMember(Long userId, Long projectId, Long roleId) {
 
+        try {
+            userServiceClient.getProfileById(userId);
+        } catch (Exception e) {
+            throw new InvalidInviteException("User with ID " + userId + " does not exist");
+        }
+
         if (memberRepository.existsByProject_IdAndUserId(projectId, userId)) {
             throw new AlreadyMemberException("You are already a project member");
         }
@@ -66,6 +73,12 @@ public class ProjectMemberService {
     public ProjectMember addDefaultMember(Long userId, Long projectId) {
         if (memberRepository.existsByProject_IdAndUserId(projectId, userId)) {
             throw new AlreadyMemberException("You are already a project member");
+        }
+
+        try {
+            userServiceClient.getProfileById(userId);
+        } catch (Exception e) {
+            throw new InvalidInviteException("User with ID " + userId + " does not exist");
         }
 
         Project project = Project.builder().id(projectId).build();
@@ -132,6 +145,12 @@ public class ProjectMemberService {
 
     @Transactional
     public void kickProjectMember(Long userId, Long kickedId, Long projectId) {
+
+        try {
+            userServiceClient.getProfileById(kickedId);
+        } catch (Exception e) {
+            throw new InvalidInviteException("User with ID " + kickedId + " does not exist");
+        }
 
         if (!userId.equals(kickedId)) {
             authService.checkOwnerOnly(userId, projectId);

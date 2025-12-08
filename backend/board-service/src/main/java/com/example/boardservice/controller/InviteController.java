@@ -33,7 +33,7 @@ public class InviteController {
             @PathVariable String token,
             @AuthenticationPrincipal JwtUser principal) {
 
-        Long projectId = inviteService.joinByInvite(token, principal.userId());
+        Long projectId = inviteService.joinByInvite(principal.userId(), token);
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "projectId", projectId
