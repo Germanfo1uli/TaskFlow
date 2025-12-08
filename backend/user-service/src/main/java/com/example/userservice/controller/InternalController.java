@@ -32,7 +32,6 @@ public class InternalController {
 
     @Operation(summary = "Получение профиля пользователя по userId")
     @GetMapping("/users/{userId}")
-    @PreAuthorize("hasRole('SYSTEM')")
     public ResponseEntity<PublicProfileResponse> getProfileById(
             @AuthenticationPrincipal SystemPrincipal principal,
             @PathVariable Long userId) {
