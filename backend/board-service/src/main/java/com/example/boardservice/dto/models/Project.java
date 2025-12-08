@@ -40,4 +40,7 @@ public class Project {
 
     @Column(name = "invite_token", unique = true)
     private String inviteToken;
+
+    @OneToOne(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private ProjectAvatar avatar;
 }
