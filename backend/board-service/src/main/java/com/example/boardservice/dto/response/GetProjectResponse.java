@@ -19,5 +19,8 @@ public record GetProjectResponse (
         String key,
 
         @Schema(description = "Время создания проекта")
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+
+        @Schema(description = "Ваша роль в проекте")
+        String yourRole
 ) {}

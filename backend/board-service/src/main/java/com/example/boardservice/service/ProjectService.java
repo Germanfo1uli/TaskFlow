@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,8 +32,6 @@ public class ProjectService {
     private final ProjectMemberService memberService;
     private final ProjectMemberRepository memberRepository;
     private final ProjectRoleService roleService;
-    private final AuthService authService;
-    private final UserServiceClient userServiceClient;
 
     @Transactional
     public CreateProjectResponse createProject(Long ownerId, String name, String key) {
@@ -54,7 +53,6 @@ public class ProjectService {
     public List<ProjectListItem> getUserProjects(Long userId) {
         List<ProjectMember> memberships = memberRepository.findByUserId(userId);
 
-        // 2. Для каждого проекта считаем участников (отдельным запросом или подзапросом)
         return memberships.stream()
                 .map(m -> new ProjectListItem(
                         m.getProject().getId(),
@@ -64,5 +62,22 @@ public class ProjectService {
                         memberRepository.countByProjectId(m.getProject().getId())
                 ))
                 .collect(Collectors.toList());
+    }
+
+    public GetProjectResponse getProjectDetail(Long userId, Long projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
+
+        ProjectMember user = memberRepository.findByUserIdAndProject_Id(userId, projectId)
+                .orElseThrow(() -> new UserNotFoundException("User with ID: " + userId + " not found in project ID: " + projectId));
+
+        return new GetProjectResponse(
+                projectId,
+                project.getOwnerId(),
+                project.getName(),
+                project.getKey(),
+                project.getCreatedAt(),
+                user.getRole().getName()
+        );
     }
 }
