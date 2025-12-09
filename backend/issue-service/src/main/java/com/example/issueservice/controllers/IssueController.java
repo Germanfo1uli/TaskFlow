@@ -5,7 +5,7 @@ import com.example.issueservice.dto.request.AssignUserDto;
 import com.example.issueservice.dto.request.CreateIssueRequest;
 import com.example.issueservice.dto.request.UpdateIssueDto;
 import com.example.issueservice.dto.response.CreateIssueResponse;
-import com.example.issueservice.dto.response.IssueSummaryResponse;
+import com.example.issueservice.dto.response.IssueDetailResponse;
 import com.example.issueservice.security.JwtUser;
 import dto.request.*;
 import dto.response.*;
@@ -39,13 +39,13 @@ public class IssueController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @PostMapping("/{projectId}/issues")
-    public ResponseEntity<CreateIssueResponse> createIssue(
+    public ResponseEntity<IssueDetailResponse> createIssue(
             @Valid @RequestBody CreateIssueRequest request,
             @AuthenticationPrincipal JwtUser principal,
             @PathVariable Long projectId) {
 
         log.info("Request to create issue: {}", request.title());
-        CreateIssueResponse response = issueService.createIssue(
+        IssueDetailResponse response = issueService.createIssue(
                 principal.userId(), projectId, request.parentId(),
                 request.title(), request.description(),
                 request.type(), request.priority(), request.deadline());
@@ -57,23 +57,23 @@ public class IssueController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @GetMapping("/{projectId}/issues/{issueId}")
-    public ResponseEntity<CreateIssueResponse> getIssueById(
+    public ResponseEntity<IssueDetailResponse> getIssueById(
             @AuthenticationPrincipal JwtUser principal,
             @PathVariable Long projectId,
             @PathVariable Long issueId) {
 
         log.info("Request to get issue by id: {}", issueId);
-        CreateIssueResponse response = issueService.getIssueById(
+        IssueDetailResponse response = issueService.getIssueById(
                 principal.userId(), projectId, issueId);
         return ResponseEntity.ok(response);
     }
 
     // --- Получение всех задач проекта ---
     @GetMapping
-    public ResponseEntity<List<IssueSummaryResponse>> getIssuesByProject(@RequestParam Long projectId) {
+    public ResponseEntity<List<IssueDetailResponse>> getIssuesByProject(@RequestParam Long projectId) {
         log.info("Request to get all issues for project: {}", projectId);
 
-        List<IssueSummaryResponse> issueSummaries = issueService.getIssueSummariesByProject(projectId);
+        List<IssueDetailResponse> issueSummaries = issueService.getIssueSummariesByProject(projectId);
 
         return ResponseEntity.ok(issueSummaries);
     }

@@ -2,20 +2,25 @@ package com.example.issueservice.services;
 
 import com.example.issueservice.client.BoardServiceClient;
 import com.example.issueservice.client.UserServiceClient;
+import com.example.issueservice.dto.data.UserBatchRequest;
 import com.example.issueservice.dto.models.enums.*;
 import com.example.issueservice.dto.response.CreateIssueResponse;
-import com.example.issueservice.dto.response.IssueSummaryResponse;
+import com.example.issueservice.dto.response.IssueDetailResponse;
+import com.example.issueservice.dto.response.PublicProfileResponse;
 import com.example.issueservice.exception.IssueNotFoundException;
 import com.example.issueservice.dto.models.Issue;
 import com.example.issueservice.repositories.IssueRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 @Slf4j
@@ -26,11 +31,11 @@ public class IssueService {
     private final IssueRepository issueRepository;
     private final IssueHierarchyValidator hierarchyValidator;
     private final AuthService authService;
-    private final BoardServiceClient boardClient;
     private final UserServiceClient userClient;
+    private final UserCacheService userCacheService;
 
     @Transactional
-    public CreateIssueResponse createIssue(
+    public IssueDetailResponse createIssue(
             Long userId, Long projectId, Long parentId, String title, String description,
             IssueType type, Priority priority, LocalDateTime deadline) {
 
@@ -64,21 +69,38 @@ public class IssueService {
         log.info("Successfully created issue with id: {}, level: {}",
                 savedIssue.getId(), savedIssue.getLevel());
 
-        return CreateIssueResponse.from(savedIssue);
+        return IssueDetailResponse.fromIssue(savedIssue);
     }
 
-    public CreateIssueResponse getIssueById(
-            Long userId, Long projectId, Long id) {
+    @Transactional(readOnly = true)
+    public IssueDetailResponse getIssueById(Long userId, Long projectId, Long issueId) {
+        authService.hasPermission(userId, projectId, EntityType.ISSUE, ActionType.VIEW);
 
-        authService.hasPermission(userId, projectId, EntityType.ISSUE, ActionType.CREATE);
+        Issue issue = issueRepository.findById(issueId)
+                .orElseThrow(() -> new IssueNotFoundException("Issue with id " + issueId + " not found"));
 
-        log.info("Fetching issue by id: {}", id);
+        if (!issue.getProjectId().equals(projectId)) {
+            throw new IssueNotFoundException("Issue not found in project " + projectId);
+        }
 
-        Issue issue = issueRepository.findById(id)
-                .orElseThrow(() -> new IssueNotFoundException("Issue with id " + id + " not found"));
+        Set<Long> userIds = Stream.of(
+                        issue.getCreatorId(),
+                        issue.getAssigneeId(),
+                        issue.getCodeReviewerId(),
+                        issue.getQaEngineerId()
+                )
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
 
-        log.info("Found issue: '{}'. Enriching with data from other services...", issue.getTitle());
-        return enrichIssueWithDetails(issue);
+        var userProfiles = userCacheService.getUserProfilesBatch(userIds);
+
+        return IssueDetailResponse.withUsers(
+                issue,
+                userProfiles.get(issue.getCreatorId()),
+                userProfiles.get(issue.getAssigneeId()),
+                userProfiles.get(issue.getCodeReviewerId()),
+                userProfiles.get(issue.getQaEngineerId())
+        );
     }
 
     public List<CreateIssueResponse> getIssuesByProject(Long projectId) {
@@ -89,7 +111,7 @@ public class IssueService {
                 .collect(Collectors.toList());
     }
 
-    public List<IssueSummaryResponse> getIssueSummariesByProject(Long projectId) {
+    public List<IssueDetailResponse> getIssueSummariesByProject(Long projectId) {
         log.info("Fetching all issue SUMMARIES for project: {}", projectId);
         List<Issue> issues = issueRepository.findByProjectId(projectId);
 
@@ -119,37 +141,34 @@ public class IssueService {
         log.info("Successfully removed assignee.");
     }
 
-    private CreateIssueResponse enrichIssueWithDetails(Issue issue) {
+    @Cacheable(value = "user-profiles-batch", key = "#userIds.toString()")
+    public Map<Long, PublicProfileResponse> getUserProfilesBatch(Set<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Set<Long> validUserIds = userIds.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (validUserIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
 
         try {
-            // TODO: здесь будут полноценные DTO, а не строки
-            String projectName = restTemplate.getForObject(projectUrl, String.class);
-            String creatorName = restTemplate.getForObject(userUrl, String.class);
+            UserBatchRequest request = new UserBatchRequest(new ArrayList<>(validUserIds));
+            List<PublicProfileResponse> profiles = userClient.getProfilesByIds(request);
 
-            // TODO: Сделать один вызов в user-service с пачкой ID
-
-            return CreateIssueResponse.builder()
-                    .id(issue.getId())
-                    .title(issue.getTitle())
-                    .description(issue.getDescription())
-                    .status(issue.getStatus())
-                    .type(issue.getType())
-                    .priority(issue.getPriority())
-                    .deadline(issue.getDeadline())
-                    .createdAt(issue.getCreatedAt())
-                    .updatedAt(issue.getUpdatedAt())
-                    .creatorName(creatorName)
-                    .assigneeNames(List.of("User1", "User2"))
-                    .build();
-
+            return profiles.stream()
+                    .collect(Collectors.toMap(PublicProfileResponse::id, p -> p));
         } catch (Exception e) {
-            log.error("Error while enriching issue {}. Returning partial data.", issue.getId(), e);
-            return CreateIssueResponse.from(issue);
+            log.error("Failed to fetch profiles for users: {}", validUserIds, e);
+            return Collections.emptyMap();
         }
     }
 
-    private IssueSummaryResponse convertToSummaryDto(Issue issue) {
-        return IssueSummaryResponse.builder()
+    private IssueDetailResponse convertToSummaryDto(Issue issue) {
+        return IssueDetailResponse.builder()
                 .id(issue.getId())
                 .title(issue.getTitle())
                 .status(issue.getStatus())
