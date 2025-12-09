@@ -1,5 +1,6 @@
 package com.example.issueservice.dto.response;
 
+import com.example.issueservice.dto.models.Issue;
 import com.example.issueservice.dto.models.enums.IssueStatus;
 import com.example.issueservice.dto.models.enums.IssueType;
 import com.example.issueservice.dto.models.enums.Priority;
@@ -44,6 +45,26 @@ public record CreateIssueResponse (
         LocalDateTime deadline,
 
         @Schema(description = "Дата создания", example = "времяяяя")
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
 
-) {}
+        @Schema(description = "Дата обновления", example = "времяяяя")
+        LocalDateTime updatedAt
+) {
+        public static CreateIssueResponse from(Issue issue) {
+                return new CreateIssueResponse(
+                        issue.getId(),
+                        issue.getProjectId(),
+                        issue.getCreatorId(),
+                        issue.getParentIssue().getId(),
+                        issue.getLevel(),
+                        issue.getTitle(),
+                        issue.getDescription(),
+                        issue.getStatus(),
+                        issue.getType(),
+                        issue.getPriority(),
+                        issue.getDeadline(),
+                        issue.getCreatedAt(),
+                        issue.getUpdatedAt()
+                );
+        }
+}

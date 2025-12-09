@@ -1,6 +1,10 @@
 package com.example.issueservice.services;
 
+import com.example.issueservice.dto.models.enums.IssueStatus;
+import com.example.issueservice.dto.models.enums.IssueType;
+import com.example.issueservice.dto.models.enums.Priority;
 import com.example.issueservice.dto.request.CreateIssueRequest;
+import com.example.issueservice.dto.response.CreateIssueResponse;
 import com.example.issueservice.dto.response.IssueSummaryDto;
 import com.example.issueservice.exception.IssueNotFoundException;
 import com.example.issueservice.dto.models.Issue;
@@ -10,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,32 +27,36 @@ public class IssueService {
     private final IssueRepository issueRepository;
 
     @Transactional
-    public com.example.issueservice.dto.response.CreateIssueResponse createIssue(CreateIssueRequest dto) {
-        log.info("Creating new issue for project: {}", dto.getProjectId());
+    public com.example.issueservice.dto.response.CreateIssueResponse createIssue(
+            Long userId, Long projectId, Long parentId, Integer level, String title,
+            String description, IssueType type, Priority priority, LocalDateTime deadline) {
+
+        log.info("Creating new issue for project: {}", projectId);
 
         Issue parentIssue = null;
-        if (dto.getParentIssueId() != null) {
-            parentIssue = issueRepository.findById(dto.getParentIssueId())
-                    .orElseThrow(() -> new IllegalArgumentException("Parent issue with id " + dto.getParentIssueId() + " not found"));
+        if (parentId != null) {
+            parentIssue = issueRepository.findById(parentId)
+                    .orElseThrow(() -> new IllegalArgumentException("Parent issue with id " + parentId + " not found"));
             log.info("Found parent issue: {}", parentIssue.getTitle());
-
         }
+
         Issue newIssue = Issue.builder()
-                .projectId(dto.getProjectId())
+                .projectId(projectId)
                 .parentIssue(parentIssue)
-                .creatorId(1L) // TODO: Взять ID из контекста безопасности (JWT)
-                .title(dto.getTitle())
-                .description(dto.getDescription())
-                .type(dto.getType())
-                .priority(dto.getPriority())
-                .deadline(dto.getDeadline())
-                .status(Issue.IssueStatus.TO_DO)
+                .creatorId(userId)
+                .level(level)
+                .title(title)
+                .description(description)
+                .type(type)
+                .priority(priority)
+                .deadline(deadline)
+                .status(IssueStatus.TO_DO)
                 .build();
 
         Issue savedIssue = issueRepository.save(newIssue);
         log.info("Successfully created issue with id: {}", savedIssue.getId());
 
-        return convertToDto(savedIssue);
+        return CreateIssueResponse.from(savedIssue);
     }
 
     public com.example.issueservice.dto.response.CreateIssueResponse getIssueById(Long id) {

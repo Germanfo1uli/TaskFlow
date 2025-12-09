@@ -19,9 +19,9 @@ import java.util.Set;
 @Entity
 @Table(name = "issues", schema = "issue_service_schema")
 @Data
+@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Issue {
 
     @Id

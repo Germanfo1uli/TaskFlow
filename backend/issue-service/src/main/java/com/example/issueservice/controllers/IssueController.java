@@ -41,10 +41,14 @@ public class IssueController {
     @PostMapping("/{projectId}")
     public ResponseEntity<CreateIssueResponse> createIssue(
             @Valid @RequestBody CreateIssueRequest request,
-            @AuthenticationPrincipal JwtUser principal) {
+            @AuthenticationPrincipal JwtUser principal,
+            @PathVariable Long projectId) {
 
         log.info("Request to create issue: {}", request.title());
-        CreateIssueResponse response = issueService.createIssue(request);
+        CreateIssueResponse response = issueService.createIssue(
+                principal.userId(), projectId, request.parentId(),
+                request.level(), request.title(), request.description(),
+                request.type(), request.priority(), request.deadline());
         return ResponseEntity.ok(response);
     }
 
