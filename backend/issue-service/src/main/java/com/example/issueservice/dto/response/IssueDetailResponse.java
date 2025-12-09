@@ -79,6 +79,29 @@ public record IssueDetailResponse(
                 );
         }
 
+        public static IssueDetailResponse withAssignee(
+                Issue issue,
+                PublicProfileResponse assignee) {
+                return new IssueDetailResponse(
+                        issue.getId(),
+                        issue.getProjectId(),
+                        issue.getParentIssue() != null ? issue.getParentIssue().getId() : null,
+                        issue.getLevel(),
+                        issue.getTitle(),
+                        issue.getDescription(),
+                        issue.getStatus(),
+                        issue.getType(),
+                        issue.getPriority(),
+                        issue.getDeadline(),
+                        issue.getCreatedAt(),
+                        issue.getUpdatedAt(),
+                        null,
+                        assignee,
+                        null,
+                        null
+                );
+        }
+
         public static IssueDetailResponse withUsers(
                 Issue issue,
                 PublicProfileResponse creator,

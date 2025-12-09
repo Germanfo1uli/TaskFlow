@@ -1,14 +1,9 @@
 package com.example.issueservice.controllers;
 
 import com.example.issueservice.dto.request.AssignTagDto;
-import com.example.issueservice.dto.request.AssignUserDto;
 import com.example.issueservice.dto.request.CreateIssueRequest;
-import com.example.issueservice.dto.request.UpdateIssueDto;
-import com.example.issueservice.dto.response.CreateIssueResponse;
 import com.example.issueservice.dto.response.IssueDetailResponse;
 import com.example.issueservice.security.JwtUser;
-import dto.request.*;
-import dto.response.*;
 import com.example.issueservice.services.IssueService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -68,24 +63,19 @@ public class IssueController {
         return ResponseEntity.ok(response);
     }
 
-    // --- Получение всех задач проекта ---
-    @GetMapping
-    public ResponseEntity<List<IssueDetailResponse>> getIssuesByProject(@RequestParam Long projectId) {
+    @Operation(
+            summary = "Получение всех задач проекта",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @GetMapping("/{projectId}/issues")
+    public ResponseEntity<List<IssueDetailResponse>> getIssuesByProject(
+            @AuthenticationPrincipal JwtUser principal,
+            @PathVariable Long projectId) {
+
         log.info("Request to get all issues for project: {}", projectId);
-
-        List<IssueDetailResponse> issueSummaries = issueService.getIssueSummariesByProject(projectId);
-
-        return ResponseEntity.ok(issueSummaries);
-    }
-
-    // --- Обновление задачи ---
-    @PutMapping("/{id}")
-    public ResponseEntity<com.example.issueservice.dto.response.CreateIssueResponse> updateIssue(@PathVariable Long id, @Valid @RequestBody UpdateIssueDto dto) {
-        log.info("Request to update issue with id: {}", id);
-        // TODO: В сервисе нужно реализовать метод updateIssue(id, dto)
-        // IssueDetailsDto updatedIssue = issueService.updateIssue(id, dto);
-        // return ResponseEntity.ok(updatedIssue);
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        List<IssueDetailResponse> response = issueService.getIssuesByProject(
+                principal.userId(), projectId);
+        return ResponseEntity.ok(response);
     }
 
     // --- Удаление задачи ---
@@ -98,19 +88,35 @@ public class IssueController {
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
     }
 
-    // --- Управление исполнителями ---
-    @PostMapping("/{issueId}/assignees")
-    public ResponseEntity<Void> addAssignee(@PathVariable Long issueId, @Valid @RequestBody AssignUserDto dto) {
-        log.info("Request to assign user {} to issue {}", dto.getUserId(), issueId);
-        issueService.addAssignee(issueId, dto.getUserId());
+    @Operation(
+            summary = "Назначение исполнителя на задачу",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PostMapping("/{projectId}/issues/{issueId}/assignees")
+    public ResponseEntity<Void> addAssignee(
+            @AuthenticationPrincipal JwtUser principal,
+            @PathVariable Long projectId,
+            @PathVariable Long issueId,
+            @Valid @RequestBody Long assigneeId) {
+
+        log.info("Request to assign user {} to issue {}", assigneeId, issueId);
+        issueService.addAssignee(principal.userId(), projectId, issueId, assigneeId);
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{issueId}/assignees/{userId}")
-    public ResponseEntity<Void> removeAssignee(@PathVariable Long issueId, @PathVariable Long userId) {
-        log.info("Request to remove user {} from issue {}", userId, issueId);
-        issueService.removeAssignee(issueId, userId);
-        return ResponseEntity.noContent().build(); // 204 No Content
+    @Operation(
+            summary = "Удаление исполнителя с задачи",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @DeleteMapping("/{projectId}/issues/{issueId}/assignees")
+    public ResponseEntity<Void> removeAssignee(
+            @AuthenticationPrincipal JwtUser principal,
+            @PathVariable Long projectId,
+            @PathVariable Long issueId) {
+
+        log.info("Request to remove assignee from issue {}", issueId);
+        issueService.removeAssignee(principal.userId(), projectId, issueId);
+        return ResponseEntity.noContent().build();
     }
 
     // --- Управление тегами (будет использовать TagService) ---

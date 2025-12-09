@@ -10,6 +10,7 @@ import com.example.issueservice.dto.response.PublicProfileResponse;
 import com.example.issueservice.exception.IssueNotFoundException;
 import com.example.issueservice.dto.models.Issue;
 import com.example.issueservice.exception.ServiceUnavailableException;
+import com.example.issueservice.exception.UserNotFoundException;
 import com.example.issueservice.repositories.IssueRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +32,6 @@ public class IssueService {
     private final IssueHierarchyValidator hierarchyValidator;
     private final AuthService authService;
     private final UserServiceClient userClient;
-    private final UserCacheService userCacheService;
 
     @Transactional
     public IssueDetailResponse createIssue(
@@ -73,6 +73,7 @@ public class IssueService {
 
     @Transactional(readOnly = true)
     public IssueDetailResponse getIssueById(Long userId, Long projectId, Long issueId) {
+
         authService.hasPermission(userId, projectId, EntityType.ISSUE, ActionType.VIEW);
 
         Issue issue = issueRepository.findById(issueId)
@@ -102,7 +103,30 @@ public class IssueService {
         );
     }
 
-    public Map<Long, PublicProfileResponse> getUserProfilesBatch(Set<Long> userIds) {
+    @Transactional(readOnly = true)
+    public List<IssueDetailResponse> getIssuesByProject(Long userId, Long projectId) {
+
+        authService.hasPermission(userId, projectId, EntityType.ISSUE, ActionType.VIEW);
+
+        List<Issue> issues = issueRepository.findByProjectId(projectId);
+
+        Set<Long> assigneeIds = issues.stream()
+                .map(Issue::getAssigneeId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Map<Long, PublicProfileResponse> assigneeProfiles = getUserProfilesBatch(assigneeIds);
+
+        return issues.stream()
+                .map(issue -> IssueDetailResponse.withAssignee(
+                        issue,
+                        assigneeProfiles.get(issue.getAssigneeId())
+                ))
+                .collect(Collectors.toList());
+    }
+
+    private Map<Long, PublicProfileResponse> getUserProfilesBatch(Set<Long> userIds) {
+
         if (userIds == null || userIds.isEmpty()) {
             return Collections.emptyMap();
         }
@@ -121,56 +145,49 @@ public class IssueService {
         }
     }
 
-    public List<CreateIssueResponse> getIssuesByProject(Long projectId) {
-        log.info("Fetching all issues for project: {}", projectId);
-        List<Issue> issues = issueRepository.findByProjectId(projectId);
-        return issues.stream()
-                .map(this::enrichIssueWithDetails)
-                .collect(Collectors.toList());
-    }
-
-    public List<IssueDetailResponse> getIssueSummariesByProject(Long projectId) {
-        log.info("Fetching all issue SUMMARIES for project: {}", projectId);
-        List<Issue> issues = issueRepository.findByProjectId(projectId);
-
-        return issues.stream()
-                .map(this::convertToSummaryDto)
-                .collect(Collectors.toList());
-    }
     @Transactional
-    public void addAssignee(Long issueId, Long userId) {
-        log.info("Adding user {} as assignee to issue {}", userId, issueId);
-        if (issueAssigneeRepository.existsByIssueIdAndUserId(issueId, userId)) {
-            log.warn("User {} is already an assignee for issue {}", userId, issueId);
-            return;
+    public void addAssignee(Long userId, Long projectId, Long issueId, Long assigneeId) {
+
+        authService.hasPermission(userId, projectId, EntityType.ISSUE, ActionType.ASSIGN);
+
+        log.info("Adding user {} to assignee of issue {}", assigneeId, issueId);
+
+        if(!issueRepository.existsByIdAndProjectId(projectId, issueId)) {
+            throw new IssueNotFoundException("Issue not found in project: " + projectId);
         }
-        IssueAssignee newAssignee = IssueAssignee.builder()
-                .issue(Issue.builder().id(issueId).build())
-                .userId(userId)
-                .build();
-        issueAssigneeRepository.save(newAssignee);
+
+        try {
+            userClient.getProfileById(assigneeId);
+        } catch (Exception e) {
+            throw new UserNotFoundException("User with ID " + assigneeId + " does not exist");
+        }
+
+        Issue issue = issueRepository.findById(issueId)
+                .orElseThrow(() -> new IssueNotFoundException("Issue with ID: " + issueId + " not found"));
+
+        issue.setAssigneeId(assigneeId);
+
+        issueRepository.save(issue);
         log.info("Successfully added assignee.");
     }
 
     @Transactional
-    public void removeAssignee(Long issueId, Long userId) {
-        log.info("Removing user {} from assignees of issue {}", userId, issueId);
-        issueAssigneeRepository.deleteByIssueIdAndUserId(issueId, userId);
+    public void removeAssignee(Long userId, Long projectId, Long issueId) {
+
+        authService.hasPermission(userId, projectId, EntityType.ISSUE, ActionType.ASSIGN);
+
+        log.info("Removing from assignees of issue {}", issueId);
+
+        if(!issueRepository.existsByIdAndProjectId(projectId, issueId)) {
+            throw new IssueNotFoundException("Issue not found in project: " + projectId);
+        }
+
+        Issue issue = issueRepository.findById(issueId)
+                .orElseThrow(() -> new IssueNotFoundException("Issue with ID: " + issueId + " not found"));
+
+        issue.setAssigneeId(null);
+
         log.info("Successfully removed assignee.");
-    }
-
-
-    private IssueDetailResponse convertToSummaryDto(Issue issue) {
-        return IssueDetailResponse.builder()
-                .id(issue.getId())
-                .title(issue.getTitle())
-                .status(issue.getStatus())
-                .type(issue.getType())
-                .priority(issue.getPriority())
-                .deadline(issue.getDeadline())
-                .createdAt(issue.getCreatedAt())
-                // TODO: Когда будет RabbitMQ, здесь можно будет добавлять projectName, creatorName и т.д.
-                .build();
     }
 }
 

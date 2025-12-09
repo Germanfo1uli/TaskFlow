@@ -19,4 +19,6 @@ public interface IssueRepository extends JpaRepository<Issue, Long> {
 
     // Найти все задачи с определенным статусом в проекте
     List<Issue> findByProjectIdAndStatus(Long projectId, Issue.IssueStatus status);
+
+    boolean existsByIdAndProjectId(Long issueId, Long projectId);
 }
