@@ -1,8 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Project, ProjectStats, ProjectActivity } from '../types/types';
+import { ProjectData, ProjectStats, ProjectActivity } from '../types/types';
+import { api } from '@/app/auth/hooks/useTokenRefresh';
+
+interface ApiProjectResponse {
+    projectId: number;
+    ownerId: number;
+    name: string;
+    description: string;
+    createdAt: string;
+    yourRole: string;
+}
 
 export const useProjectData = (projectId?: string) => {
-    const [project, setProject] = useState<Project | null>(null);
+    const [project, setProject] = useState<ProjectData | null>(null);
     const [stats, setStats] = useState<ProjectStats>({
         totalTasks: 0,
         completedTasks: 0,
@@ -13,16 +23,15 @@ export const useProjectData = (projectId?: string) => {
     const [activities, setActivities] = useState<ProjectActivity[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchProjectData = useCallback(async (projectData: Project) => {
+    const fetchProjectData = useCallback(async (projectData: ProjectData) => {
         setIsLoading(true);
         try {
-            // Используем данные из проекта
             const projectStats: ProjectStats = {
                 totalTasks: projectData.tasks || 0,
                 completedTasks: Math.floor((projectData.tasks || 0) * (projectData.progress || 0) / 100),
                 pendingTasks: Math.floor((projectData.tasks || 0) * (100 - (projectData.progress || 0)) / 100),
                 members: projectData.members || 1,
-                overdueTasks: Math.floor((projectData.tasks || 0) * 0.1) // 10% просроченных
+                overdueTasks: Math.floor((projectData.tasks || 0) * 0.1)
             };
 
             const mockActivities: ProjectActivity[] = [
@@ -35,7 +44,6 @@ export const useProjectData = (projectId?: string) => {
                 }
             ];
 
-            // Если есть дополнительные данные, можно добавить больше активности
             if (projectData.tasks && projectData.tasks > 0) {
                 mockActivities.push({
                     id: '2',
@@ -56,6 +64,36 @@ export const useProjectData = (projectId?: string) => {
         }
     }, []);
 
+    const fetchProjectFromApi = useCallback(async (id: string) => {
+        setIsLoading(true);
+        try {
+            const response = await api.get<ApiProjectResponse>(`/api/projects/${id}`);
+            const apiProject = response.data;
+
+            const projectData: ProjectData = {
+                id: apiProject.projectId.toString(),
+                name: apiProject.name,
+                description: apiProject.description,
+                createdAt: apiProject.createdAt,
+                members: 1,
+                tasks: 0,
+                progress: 0,
+                tags: ['Новый проект'],
+                owner: {
+                    id: apiProject.ownerId.toString(),
+                    name: 'Владелец'
+                },
+                yourRole: apiProject.yourRole
+            };
+
+            await fetchProjectData(projectData);
+        } catch (error) {
+            console.error('Ошибка загрузки проекта с API:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [fetchProjectData]);
+
     const refreshProject = useCallback(async () => {
         if (project) {
             await fetchProjectData(project);
@@ -64,42 +102,16 @@ export const useProjectData = (projectId?: string) => {
 
     useEffect(() => {
         if (projectId) {
-            // Если передали только ID, загружаем данные с сервера
-            const fetchFromServer = async () => {
-                try {
-                    // Здесь будет реальный API запрос
-                    // Временно создаем mock проект
-                    const mockProject: Project = {
-                        id: projectId,
-                        name: 'Мой проект',
-                        description: 'Описание проекта для демонстрации возможностей TaskFlow',
-                        image: 'https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-                        createdAt: new Date(),
-                        members: 3,
-                        tasks: 12,
-                        progress: 65,
-                        tags: ['Дизайн', 'Разработка', 'Планирование'],
-                        owner: {
-                            id: '1',
-                            name: 'Иван Иванов',
-                            avatar: 'https://ui-avatars.com/api/?name=Иван+Иванов'
-                        }
-                    };
-                    await fetchProjectData(mockProject);
-                } catch (error) {
-                    console.error('Ошибка загрузки с сервера:', error);
-                }
-            };
-            fetchFromServer();
+            fetchProjectFromApi(projectId);
         }
-    }, [projectId, fetchProjectData]);
+    }, [projectId, fetchProjectFromApi]);
 
     return {
         project,
         stats,
         activities,
         isLoading,
-        setProject: fetchProjectData, // Изменяем setProject чтобы он принимал проект
+        setProject: fetchProjectData,
         refreshProject
     };
 };

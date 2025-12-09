@@ -13,6 +13,8 @@ export interface ProjectData {
         name: string;
         avatar?: string;
     };
+    key?: string;
+    yourRole?: string;
 }
 
 export interface ProjectStats {
@@ -49,6 +51,6 @@ export interface ProjectContextType {
 }
 
 export interface ProjectContentProps {
-    project: Project;
+    project: ProjectData;
     onBackToDashboard: () => void;
 }

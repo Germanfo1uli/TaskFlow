@@ -16,7 +16,7 @@ import styles from './CreateProjectModal.module.css'
 
 const schema = z.object({
     name: z.string().min(1, 'Название обязательно').max(100, 'Слишком длинное название'),
-    description: z.string().max(500, 'Описание слишком длинное').optional(),
+    description: z.string().max(200, 'Описание слишком длинное (максимум 200 символов)').optional(),
     image: z.any().optional(),
 })
 
@@ -137,6 +137,9 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
         (crop: CropArea) => setCrop(crop),
         [setCrop]
     )
+
+    const description = watch('description') || ''
+    const descriptionLength = description.length
 
     if (!isOpen) return null
 
@@ -324,13 +327,25 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
                                                     name="description"
                                                     control={control}
                                                     render={({ field }) => (
-                                                        <textarea
-                                                            {...field}
-                                                            id="project-description"
-                                                            className={styles.textarea}
-                                                            placeholder="Опишите ваш проект..."
-                                                            rows={4}
-                                                        />
+                                                        <>
+                                                            <textarea
+                                                                {...field}
+                                                                id="project-description"
+                                                                className={`${styles.textarea} ${errors.description ? styles.error : ''}`}
+                                                                placeholder="Опишите ваш проект..."
+                                                                rows={4}
+                                                                maxLength={200}
+                                                            />
+                                                            <div className={styles.charCounter}>
+                                                                <span className={descriptionLength > 180 ? styles.warning : ''}>
+                                                                    {descriptionLength}
+                                                                </span>
+                                                                / 200 символов
+                                                            </div>
+                                                            {errors.description && (
+                                                                <span className={styles.errorText}>{errors.description.message}</span>
+                                                            )}
+                                                        </>
                                                     )}
                                                 />
                                             </div>

@@ -27,9 +27,19 @@ import {
     FaShare
 } from 'react-icons/fa'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ProjectContentProps } from './types/types'
+import {ProjectContentProps, ProjectData} from './types/types'
 import styles from './ProjectContent.module.css'
 import confetti from 'canvas-confetti'
+import { api } from '@/app/auth/hooks/useTokenRefresh'
+
+interface ApiProjectResponse {
+    projectId: number;
+    ownerId: number;
+    name: string;
+    description: string;
+    createdAt: string;
+    yourRole: string;
+}
 
 const ProjectContent = ({ project: initialProject, onBackToDashboard }: ProjectContentProps) => {
     const [project, setProject] = useState(initialProject)
@@ -38,8 +48,31 @@ const ProjectContent = ({ project: initialProject, onBackToDashboard }: ProjectC
     const [showConfetti, setShowConfetti] = useState(false)
 
     useEffect(() => {
-        setProject(initialProject)
-        setIsLoading(false)
+        const fetchProjectData = async () => {
+            setIsLoading(true)
+            try {
+                const response = await api.get<ApiProjectResponse>(`/projects/${initialProject.id}`)
+                const apiProject = response.data
+
+                const updatedProject: ProjectData = {
+                    ...initialProject,
+                    name: apiProject.name,
+                    description: apiProject.description,
+                    createdAt: apiProject.createdAt,
+                    yourRole: apiProject.yourRole
+                }
+
+                setProject(updatedProject)
+            } catch (error) {
+                console.error('Ошибка загрузки проекта:', error)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        if (initialProject?.id) {
+            fetchProjectData()
+        }
     }, [initialProject])
 
     useEffect(() => {
@@ -111,7 +144,8 @@ const ProjectContent = ({ project: initialProject, onBackToDashboard }: ProjectC
         }
     }
 
-    const formatDate = (date: Date) => {
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString)
         return date.toLocaleDateString('ru-RU', {
             day: 'numeric',
             month: 'long',
@@ -192,6 +226,12 @@ const ProjectContent = ({ project: initialProject, onBackToDashboard }: ProjectC
                                 <span className={styles.metaItem}>
                                     <FaUserCircle className={styles.metaIcon} />
                                     Владелец: {project.owner.name}
+                                </span>
+                            )}
+                            {project.yourRole && (
+                                <span className={styles.metaItem}>
+                                    <FaUserCircle className={styles.metaIcon} />
+                                    Ваша роль: {project.yourRole}
                                 </span>
                             )}
                         </motion.div>
