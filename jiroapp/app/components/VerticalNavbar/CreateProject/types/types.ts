@@ -7,7 +7,6 @@ export interface CropArea {
 
 export interface CreateProjectFormData {
     name: string;
-    key: string; // Скрытое поле, генерируется автоматически
     description?: string;
     image?: File;
     crop?: CropArea;
@@ -33,13 +32,13 @@ export interface Project {
 
 export interface CreateProjectApiRequest {
     name: string;
-    key: string;
+    description?: string;
 }
 
 export interface CreateProjectApiResponse {
     id: number;
     name: string;
-    key: string;
+    description?: string;
 }
 
 export interface CreateProjectModalProps {

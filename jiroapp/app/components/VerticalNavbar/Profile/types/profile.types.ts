@@ -28,3 +28,20 @@ export interface UpdateProfileResponse {
     tag: string;
     bio: string;
 }
+
+export interface ChangeEmailRequest {
+    newEmail: string;
+    password: string;
+    refreshToken: string;
+}
+
+export interface ChangeEmailResponse {
+    userId: number;
+    changedAt: string;
+    message: string;
+    newEmail: string;
+    pair: {
+        accessToken: string;
+        refreshToken: string;
+    };
+}

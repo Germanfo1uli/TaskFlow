@@ -10,7 +10,12 @@
     --color-border-hover: #3d6bb3;
     --color-danger: #ef4444;
     --color-focus: rgba(61, 107, 179, 0.1);
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
     --transition-fast: 0.2s ease;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .profileFormContainer {
@@ -225,4 +230,265 @@
         width: 100%;
         justify-content: center;
     }
+}
+
+.emailHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.35rem;
+}
+
+.changeEmailButton {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--color-primary);
+    font-size: 0.7rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.changeEmailButton:hover {
+    background: rgba(61, 107, 179, 0.05);
+    border-color: var(--color-border-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.emailIcon {
+    font-size: 0.65rem;
+}
+
+.emailChangeForm {
+    margin-top: 1.25rem;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, rgba(61, 107, 179, 0.03) 0%, rgba(61, 107, 179, 0.01) 100%);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.emailChangeForm::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-primary-hover));
+    opacity: 0.7;
+}
+
+.emailChangeHeader {
+    margin-bottom: 1rem;
+}
+
+.emailChangeHeader h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0 0 0.25rem 0;
+}
+
+.emailChangeDescription {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.emailChangeFields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.inputLabel {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-light);
+}
+
+.emailInput,
+.passwordInput {
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    transition: var(--transition-fast);
+    background: white;
+    color: var(--color-text);
+    font-family: inherit;
+}
+
+.emailInput:focus,
+.passwordInput:focus {
+    outline: none;
+    border-color: var(--color-border-hover);
+    box-shadow: 0 0 0 3px var(--color-focus);
+    transform: translateY(-1px);
+}
+
+.emailInput::placeholder,
+.passwordInput::placeholder {
+    color: var(--color-text-muted);
+    opacity: 0.7;
+}
+
+.securityNotice {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem;
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 6px;
+    font-size: 0.7rem;
+    color: var(--color-warning);
+    font-weight: 500;
+}
+
+.securityIcon {
+    font-size: 0.8rem;
+    color: var(--color-warning);
+}
+
+.emailChangeActions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 0.75rem;
+}
+
+.cancelEmailButton {
+    padding: 0.5rem 0.875rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: white;
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    min-width: 6rem;
+}
+
+.cancelEmailButton:hover:not(:disabled) {
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.confirmEmailButton {
+    padding: 0.5rem 0.875rem;
+    border: none;
+    border-radius: 6px;
+    background: var(--color-primary);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    min-width: 10rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.confirmEmailButton:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.confirmEmailButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.loadingSpinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 768px) {
+    .profileFormContainer {
+        padding: 1rem;
+    }
+
+    .formHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .formActions {
+        flex-direction: column;
+    }
+
+    .cancelButton,
+    .saveButton {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .emailChangeActions {
+        flex-direction: column;
+    }
+
+    .cancelEmailButton,
+    .confirmEmailButton {
+        width: 100%;
+    }
+}
+
+
+.inputError {
+    border-color: var(--color-danger) !important;
+    background: rgba(239, 68, 68, 0.05) !important;
+}
+
+.inputError:focus {
+    border-color: var(--color-danger) !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+.fieldError {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--color-danger);
+    font-size: 0.75rem;
+    margin-top: 0.3rem;
+    font-weight: 500;
+    animation: slideDown var(--transition-fast);
+}
+
+.errorIcon {
+    font-size: 0.7rem;
+    color: var(--color-danger);
 }

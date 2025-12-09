@@ -2,29 +2,14 @@ import { useState } from 'react';
 import { api } from '@/app/auth/hooks/useTokenRefresh';
 import { CreateProjectFormData, Project, CropArea } from '../types/types';
 
-// Генерация ключа из названия
-const generateProjectKey = (name: string): string => {
-    if (!name) return 'PRJ';
-
-    const key = name
-        .toUpperCase()
-        .split(/\s+/)
-        .map(word => word.charAt(0))
-        .join('')
-        .replace(/[^A-Z0-9]/g, '')
-        .slice(0, 10);
-
-    return key || 'PRJ';
-};
-
 export const useCreateProject = () => {
     const [isLoading, setIsLoading] = useState(false);
 
-    const uploadProjectImage = async (
+    const uploadProjectAvatar = async (
         projectId: string,
         imageFile: File,
         crop?: CropArea
-    ): Promise<string | null> => {
+    ): Promise<boolean> => {
         try {
             let fileToUpload = imageFile;
 
@@ -33,17 +18,16 @@ export const useCreateProject = () => {
             }
 
             const formData = new FormData();
-            formData.append('image', fileToUpload);
+            formData.append('file', fileToUpload);
 
-            // ИСПРАВЛЕНО: убран лишний /api
-            const response = await api.post(`/projects/${projectId}/image`, formData, {
+            await api.post(`/projects/${projectId}/avatar`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 
-            return response.data.imageUrl || null;
+            return true;
         } catch (error) {
-            console.error('Failed to upload project image:', error);
-            return null;
+            console.error('Failed to upload project avatar:', error);
+            return false;
         }
     };
 
@@ -127,38 +111,42 @@ export const useCreateProject = () => {
         setIsLoading(true);
 
         try {
-            // Генерируем ключ автоматически
-            const projectKey = generateProjectKey(formData.name);
-
             const projectPayload = {
                 name: formData.name,
-                key: projectKey,
+                description: formData.description || '',
             };
 
-            // ИСПРАВЛЕНО: убран лишний /api
             const response = await api.post('/projects', projectPayload);
             const backendProject = response.data;
 
             let imageUrl: string | null = null;
             if (formData.image) {
-                imageUrl = await uploadProjectImage(
+                const uploadSuccess = await uploadProjectAvatar(
                     backendProject.id.toString(),
                     formData.image,
                     formData.crop
                 );
 
-                if (!imageUrl) {
-                    imageUrl = formData.crop
-                        ? await cropImage(formData.image, formData.crop)
-                        : URL.createObjectURL(formData.image);
+                if (uploadSuccess && formData.crop) {
+                    imageUrl = await cropImage(formData.image, formData.crop);
+                } else if (formData.image) {
+                    imageUrl = URL.createObjectURL(formData.image);
                 }
             }
+
+            const projectKey = formData.name
+                .toUpperCase()
+                .split(/\s+/)
+                .map(word => word.charAt(0))
+                .join('')
+                .replace(/[^A-Z0-9]/g, '')
+                .slice(0, 10) || 'PRJ';
 
             const project: Project = {
                 id: backendProject.id.toString(),
                 name: backendProject.name,
-                key: backendProject.key,
-                description: formData.description || '',
+                key: projectKey,
+                description: backendProject.description || '',
                 image: imageUrl,
                 createdAt: new Date(),
                 members: 1,

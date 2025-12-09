@@ -105,7 +105,6 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
 
                 dismiss(toastId)
 
-
                 showProjectCreatedToast(project.name)
                 onProjectCreated(project)
                 handleClose()
@@ -197,7 +196,7 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
                                         animate={{ opacity: 1 }}
                                         transition={{ delay: 0.25 }}
                                     >
-                                        {isCropping ? 'Выберите область для обложки проекта' : 'Начните новый творческий проект'}
+                                        {isCropping ? 'Выберите область для аватарки проекта' : 'Начните новый творческий проект'}
                                     </motion.p>
                                 </div>
                                 <motion.button
@@ -232,7 +231,7 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: 0.3 }}
                                         >
-                                            <h3 className={styles.sectionTitle}>Обложка проекта</h3>
+                                            <h3 className={styles.sectionTitle}>Аватар проекта</h3>
                                             <div className={styles.imageUpload}>
                                                 <Controller
                                                     name="image"
@@ -261,7 +260,7 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
                                                                         <div className={styles.imageOverlay}>
                                                                             <div className={styles.overlayContent}>
                                                                                 <FaCrop className={styles.uploadIcon} />
-                                                                                <span>Изменить обложку</span>
+                                                                                <span>Изменить аватар</span>
                                                                             </div>
                                                                         </div>
                                                                         <div className={styles.cropBadge}>
@@ -272,7 +271,7 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
                                                                     <div className={styles.uploadPlaceholder}>
                                                                         <FaImage className={styles.placeholderIcon} />
                                                                         <div className={styles.placeholderText}>
-                                                                            <span className={styles.placeholderTitle}>Добавить обложку</span>
+                                                                            <span className={styles.placeholderTitle}>Добавить аватар</span>
                                                                             <span className={styles.placeholderSubtitle}>PNG, JPG до 5MB</span>
                                                                         </div>
                                                                     </div>

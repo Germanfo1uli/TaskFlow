@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { FaTasks, FaSearch, FaPlus, FaQuestion, FaUserCircle, FaBell, FaBars, FaTimes } from 'react-icons/fa'
 import NotificationModal from './Notification/NotificationModal'
 import SearchPanel from './Search/SearchPanel'
@@ -8,6 +8,7 @@ import HelpModal from './Help/HelpModal'
 import { ProfileModal } from '../VerticalNavbar/Profile/ProfileModal'
 import CreateProjectModal from './CreateProject/CreateProjectModal'
 import { Project } from './CreateProject/types/types'
+import { useProjectData } from './CreateProject/hooks/useProjectData'
 import styles from './VerticalNavbar.module.css'
 
 interface VerticalNavbarProps {
@@ -26,7 +27,8 @@ const VerticalNavbar = ({
     const [isHelpOpen, setIsHelpOpen] = useState(false)
     const [isProfileOpen, setIsProfileOpen] = useState(false)
     const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false)
-    const [projects, setProjects] = useState<Project[]>([])
+
+    const { projects, loading, addProject, updateProjectAvatar } = useProjectData()
 
     const handleNotificationClick = () => {
         setIsNotificationOpen(!isNotificationOpen)
@@ -80,8 +82,11 @@ const VerticalNavbar = ({
         }
     }
 
-    const handleProjectCreated = (project: Project) => {
-        setProjects(prev => [project, ...prev])
+    const handleProjectCreated = async (project: Project) => {
+        addProject(project)
+        setTimeout(() => {
+            updateProjectAvatar(project.id)
+        }, 1000)
     }
 
     const closeNotification = () => setIsNotificationOpen(false)
@@ -130,9 +135,18 @@ const VerticalNavbar = ({
                         </button>
                     </div>
 
-                    {projects.length > 0 && (
-                        <div className={styles.projectsList}>
-                            {projects.map(project => (
+                    <div className={styles.projectsList}>
+                        {loading ? (
+                            [...Array(3)].map((_, index) => (
+                                <div
+                                    key={`skeleton-${index}`}
+                                    className={styles.projectButton}
+                                >
+                                    <div className={styles.projectSkeleton} />
+                                </div>
+                            ))
+                        ) : (
+                            projects.map(project => (
                                 <button
                                     key={project.id}
                                     className={styles.projectButton}
@@ -152,9 +166,9 @@ const VerticalNavbar = ({
                                     )}
                                     <span className={styles.projectTooltip}>{project.name}</span>
                                 </button>
-                            ))}
-                        </div>
-                    )}
+                            ))
+                        )}
+                    </div>
                 </div>
 
                 <div className={styles.navBottom}>

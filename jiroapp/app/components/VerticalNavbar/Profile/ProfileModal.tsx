@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useNotification } from '@/app/auth/hooks/useNotification';
 import type { ProfileFormData } from './types/profile.types';
+import { api } from '@/app/auth/hooks/useTokenRefresh';
 
 interface ProfileModalProps {
     isOpen: boolean;
@@ -19,8 +20,8 @@ interface ProfileModalProps {
 }
 
 export const ProfileModal = memo(({ isOpen, onClose }: ProfileModalProps) => {
-    const { profile, isLoading, updateProfile, updateAvatar, deleteAvatar } = useProfile();
-    const { logoutUser, getCurrentUser } = useAuth();
+    const { profile, isLoading, updateProfile, updateAvatar, deleteAvatar, loadUserProfile } = useProfile();
+    const { logoutUser, getCurrentUser, updateUserData } = useAuth();
     const { showSuccess, showError } = useNotification();
     const router = useRouter();
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -46,6 +47,44 @@ export const ProfileModal = memo(({ isOpen, onClose }: ProfileModalProps) => {
             showError(message);
         }
     }, [updateProfile, showSuccess, showError]);
+
+    const handleEmailChange = useCallback(async (newEmail: string, password: string) => {
+        try {
+            const refreshToken = localStorage.getItem('refreshToken');
+            if (!refreshToken) {
+                throw new Error('Refresh token не найден');
+            }
+
+            const response = await api.patch('/auth/change-email', {
+                newEmail,
+                password,
+                refreshToken
+            });
+
+            const { pair, message, newEmail: updatedEmail } = response.data;
+
+            if (pair.accessToken && pair.refreshToken) {
+                localStorage.setItem('token', pair.accessToken);
+                localStorage.setItem('refreshToken', pair.refreshToken);
+                api.defaults.headers.common['Authorization'] = `Bearer ${pair.accessToken}`;
+
+                updateUserData({ email: updatedEmail });
+
+                showSuccess(message || 'Email успешно изменен!');
+
+                await loadUserProfile();
+            }
+        } catch (error: any) {
+            let errorMessage = 'Ошибка при смене email';
+            if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            showError(errorMessage);
+            throw error;
+        }
+    }, [updateUserData, showSuccess, showError, loadUserProfile]);
 
     const handleAvatarChange = useCallback(async (file: File) => {
         try {
@@ -81,14 +120,7 @@ export const ProfileModal = memo(({ isOpen, onClose }: ProfileModalProps) => {
             const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
             if (refreshToken && token) {
-                await fetch('http://localhost:8080/api/auth/logout', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ refreshToken }),
-                });
+                await api.patch('/auth/logout', { refreshToken });
             }
 
             logoutUser(router.push);
@@ -199,13 +231,13 @@ export const ProfileModal = memo(({ isOpen, onClose }: ProfileModalProps) => {
                                                 {profile.name || currentUser?.username || 'Пользователь'}
                                             </h2>
                                             <div className={styles.profileTags}>
-                                                <span className={styles.profileEmail}>
-                                                    {profile.email || currentUser?.email}
-                                                </span>
+                        <span className={styles.profileEmail}>
+                          {profile.email || currentUser?.email}
+                        </span>
                                                 <div className={styles.tagContainer}>
-                                                    <span className={styles.profileTag}>
-                                                        #{profile.tag || currentUser?.tag}
-                                                    </span>
+                          <span className={styles.profileTag}>
+                            #{profile.tag || currentUser?.tag}
+                          </span>
                                                     <motion.button
                                                         className={styles.copyButton}
                                                         onClick={handleCopyTag}
@@ -258,6 +290,7 @@ export const ProfileModal = memo(({ isOpen, onClose }: ProfileModalProps) => {
                                                     bio: profile.bio || currentUser?.bio || '',
                                                 }}
                                                 onSubmit={handleProfileSubmit}
+                                                onChangeEmail={handleEmailChange}
                                                 isLoading={isLoading}
                                             />
                                         </div>
