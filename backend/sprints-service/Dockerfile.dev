@@ -1,23 +1,14 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine
+
 WORKDIR /src
 
-COPY ./sprints-service/Backend.Sprints.Api/Backend.Sprints.Api.csproj ./sprints-service/Backend.Sprints.Api/
-COPY ./shared-libs/Backend.Shared/Backend.Shared.csproj ./shared-libs/Backend.Shared/
-
-RUN dotnet restore ./sprints-service/Backend.Sprints.Api/Backend.Sprints.Api.csproj
-
-COPY ./sprints-service/. ./sprints-service/
-COPY ./shared-libs/. ./shared-libs/
-
-RUN dotnet publish ./sprints-service/Backend.Sprints.Api/Backend.Sprints.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
-
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS final
-WORKDIR /app
-
-COPY --from=build /app/publish .
+COPY . .
 
 RUN apk add --no-cache curl
 
-EXPOSE 8084
+WORKDIR /src/sprints-service/Backend.Sprints.Api
 
-CMD ["dotnet", "Backend.Sprints.Api.dll"]
+CMD ["sh", "-c", "\
+    sleep 5 && \
+    dotnet restore --force && \
+    dotnet run --urls http://*:8084"]

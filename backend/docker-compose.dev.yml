@@ -165,7 +165,7 @@ services:
       retries: 5
       start_period: 60s
     environment:
-      SERVER_PORT: 8081
+      SERVER_PORT: 8082
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=board_service_schema
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}

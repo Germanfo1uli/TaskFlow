@@ -1,7 +1,11 @@
+using Backend.Dashboard.Api.Clients;
+using Backend.Dashboard.Api.Configuration;
 using Backend.Dashboard.Api.Data;
 using Backend.Dashboard.Api.Data.Repositories;
+using Backend.Dashboard.Api.Handlers;
 using Backend.Dashboard.Api.Services;
 using Microsoft.EntityFrameworkCore;
+using Refit;
 using Steeltoe.Discovery.Eureka;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +22,15 @@ builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 builder.Services.AddHealthChecks();
 
 builder.Services.AddEurekaDiscoveryClient();
+
+builder.Services.Configure<ServiceAuthSettings>(builder.Configuration.GetSection(ServiceAuthSettings.SectionName));
+builder.Services.AddTransient<InternalAuthHandler>();
+builder.Services.AddRefitClient<IProjectClient>()
+    .ConfigureHttpClient(client =>
+    {
+        client.BaseAddress = new Uri("http://localhost:8082");
+    })
+    .AddHttpMessageHandler<InternalAuthHandler>();
 
 builder.Services.AddDbContext<DashboardDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default"),

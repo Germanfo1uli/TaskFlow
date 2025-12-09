@@ -1,23 +1,14 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine
+
 WORKDIR /src
 
-COPY ./dashboard-service/Backend.Dashboards.Api/Backend.Dashboards.Api.csproj ./dashboard-service/Backend.Dashboards.Api/
-COPY ./shared-libs/Backend.Shared/Backend.Shared.csproj ./shared-libs/Backend.Shared/
-
-RUN dotnet restore ./dashboard-service/Backend.Dashboards.Api/Backend.Dashboards.Api.csproj
-
-COPY ./dashboard-service/. ./dashboard-service/
-COPY ./shared-libs/. ./shared-libs/
-
-RUN dotnet publish ./dashboard-service/Backend.Dashboards.Api/Backend.Dashboards.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
-
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS final
-WORKDIR /app
-
-COPY --from=build /app/publish .
+COPY . .
 
 RUN apk add --no-cache curl
 
-EXPOSE 8085
+WORKDIR /src/dashboard-service/Backend.Dashboards.Api
 
-CMD ["dotnet", "Backend.Dashboards.Api.dll"]
+CMD ["sh", "-c", "\
+    sleep 5 && \
+    dotnet restore --force && \
+    dotnet run --urls http://*:8085"]
