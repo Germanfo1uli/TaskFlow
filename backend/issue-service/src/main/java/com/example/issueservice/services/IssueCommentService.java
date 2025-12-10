@@ -24,7 +24,6 @@ public class IssueCommentService {
 
     private final IssueCommentRepository commentRepository;
     private final IssueRepository issueRepository;
-    private final RestTemplate restTemplate;
 
     @Transactional
     public CommentDto createComment(Long issueId, CreateCommentDto dto, Long authorId) {

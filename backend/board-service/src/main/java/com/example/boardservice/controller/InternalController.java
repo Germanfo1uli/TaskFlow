@@ -1,7 +1,9 @@
 package com.example.boardservice.controller;
 
 import com.example.boardservice.dto.response.InternalProjectResponse;
+import com.example.boardservice.dto.response.UserPermissionsResponse;
 import com.example.boardservice.security.SystemPrincipal;
+import com.example.boardservice.service.AuthService;
 import com.example.boardservice.service.ProjectService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
@@ -12,10 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("api/internal")
@@ -27,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class InternalController {
 
     private final ProjectService projectService;
+    private final AuthService authService;
 
     @Operation(summary = "Получение информации о проекте по projectId")
     @GetMapping("/projects/{projectId}")
@@ -40,6 +40,24 @@ public class InternalController {
 
         log.info("Service {} requested info for project {}", principal.getUsername(), projectId);
         InternalProjectResponse response = projectService.getProjectInternal(projectId);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Получение всех прав пользователя в проекте")
+    @GetMapping("/permissions")
+    public ResponseEntity<UserPermissionsResponse> getUserPermissions(
+            @AuthenticationPrincipal SystemPrincipal principal,
+            @RequestParam Long userId,
+            @RequestParam Long projectId) {
+
+        if (principal == null) {
+            throw new AccessDeniedException("Missing service authentication");
+        }
+
+        log.info("Service {} requested permissions for user {} in project {}",
+                principal.getUsername(), userId, projectId);
+
+        UserPermissionsResponse response = authService.getUserPermissions(userId, projectId);
         return ResponseEntity.ok(response);
     }
 }

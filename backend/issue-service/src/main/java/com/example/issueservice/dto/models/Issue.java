@@ -1,5 +1,8 @@
 package com.example.issueservice.dto.models;
 
+import com.example.issueservice.dto.models.enums.IssueStatus;
+import com.example.issueservice.dto.models.enums.IssueType;
+import com.example.issueservice.dto.models.enums.Priority;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,56 +17,52 @@ import java.util.List;
 import java.util.Set;
 
 @Entity
-@Table(name = "issues", schema = "issues-service-schema")
+@Table(name = "issues", schema = "issue_service_schema")
 @Data
+@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Issue {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // --- Связи с ВНЕШНИМИ сервисами (оставляем как ID) ---
     @Column(name = "project_id", nullable = false)
     private Long projectId;
 
     @Column(name = "creator_id", nullable = false)
     private Long creatorId;
 
-    // --- ВНУТРЕННИЕ связи сервиса ---
-
-    // Самосвязь: родительская задача
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_issue_id")
     private Issue parentIssue;
 
-    // Самосвязь: дочерние задачи
     @OneToMany(mappedBy = "parentIssue", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Issue> childIssues = new ArrayList<>();
 
-    // Связь с комментариями
+    @Column(name = "level", nullable = false)
+    private Integer level;
+
     @OneToMany(mappedBy = "issue", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<IssueComment> comments = new ArrayList<>();
 
-    // Связь с вложениями
-    @OneToMany(mappedBy = "issue", cascade = CascadeType.ALL, orphanRemoval = true
-    )
+    @OneToMany(mappedBy = "issue", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Attachment> attachments = new ArrayList<>();
 
-    // Связь с исполнителями (многие-ко-многим)
-    @ManyToMany
-    @JoinTable(
-            name = "issue_assignees",
-            joinColumns = @JoinColumn(name = "issue_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_id")
-    )
-    private Set<IssueAssignee> assignees = new HashSet<>();
+    @Column(name = "assignee_id")
+    private Long assigneeId;
+
+    @Column(name = "code_reviewer_id")
+    private Long codeReviewerId;
+
+    @Column(name = "qa_engineer_id")
+    private Long qaEngineerId;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "issue_tags",
+            schema = "issue_service_schema",
             joinColumns = @JoinColumn(name = "issue_id"),
             inverseJoinColumns = @JoinColumn(name = "tag_id")
     )
@@ -76,33 +75,25 @@ public class Issue {
     private String description;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
     private IssueStatus status;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false)
     private IssueType type;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "priority", nullable = false)
     private Priority priority;
 
+    @Column(name = "deadline")
     private LocalDateTime deadline;
 
-    @CreationTimestamp // Автоматически ставится при создании
+    @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp // Автоматически обновляется при каждом изменении сущности
+    @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
-    public enum IssueStatus {
-        TO_DO, SELECTED_FOR_DEVELOPMENT, IN_PROGRESS, CODE_REVIEW, QA, STAGING, DONE
-    }
-
-    public enum IssueType {
-        TASK, BUG, STORY, EPIC
-    }
-
-    public enum Priority {
-        DEFERRED, LOW, MEDIUM, HIGH, MAJOR, CRITICAL
-    }
 }

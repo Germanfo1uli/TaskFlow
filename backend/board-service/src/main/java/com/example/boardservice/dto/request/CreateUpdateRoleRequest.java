@@ -13,9 +13,6 @@ public record CreateUpdateRoleRequest (
         @Schema(description = "Название роли", example = "User")
         String name,
 
-        @Schema(description = "Является ли роль базовой", example = "false")
-        boolean isDefault,
-
         @ArraySchema(
                 schema = @Schema(description = "Набор прав роли", implementation = PermissionEntry.class),
                 minItems = 1
