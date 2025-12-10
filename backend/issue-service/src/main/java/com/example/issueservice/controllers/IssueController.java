@@ -20,7 +20,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/projects")
+@RequestMapping("/api/issues")
 @RequiredArgsConstructor
 @Validated
 @SecurityRequirement(name = "bearerAuth")
@@ -33,15 +33,14 @@ public class IssueController {
             summary = "Создание задачи",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @PostMapping("/{projectId}/issues")
+    @PostMapping
     public ResponseEntity<IssueDetailResponse> createIssue(
             @Valid @RequestBody CreateIssueRequest request,
-            @AuthenticationPrincipal JwtUser principal,
-            @PathVariable Long projectId) {
+            @AuthenticationPrincipal JwtUser principal) {
 
         log.info("Request to create issue: {}", request.title());
         IssueDetailResponse response = issueService.createIssue(
-                principal.userId(), projectId, request.parentId(),
+                principal.userId(), request.projectId(), request.parentId(),
                 request.title(), request.description(),
                 request.type(), request.priority(), request.deadline());
         return ResponseEntity.ok(response);
@@ -51,15 +50,14 @@ public class IssueController {
             summary = "Получение одной задачи",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @GetMapping("/{projectId}/issues/{issueId}")
+    @GetMapping("/{issueId}")
     public ResponseEntity<IssueDetailResponse> getIssueById(
             @AuthenticationPrincipal JwtUser principal,
-            @PathVariable Long projectId,
             @PathVariable Long issueId) {
 
         log.info("Request to get issue by id: {}", issueId);
         IssueDetailResponse response = issueService.getIssueById(
-                principal.userId(), projectId, issueId);
+                principal.userId(), issueId);
         return ResponseEntity.ok(response);
     }
 
@@ -67,10 +65,10 @@ public class IssueController {
             summary = "Получение всех задач проекта",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @GetMapping("/{projectId}/issues")
+    @GetMapping
     public ResponseEntity<List<IssueDetailResponse>> getIssuesByProject(
             @AuthenticationPrincipal JwtUser principal,
-            @PathVariable Long projectId) {
+            @Valid @RequestParam Long projectId) {
 
         log.info("Request to get all issues for project: {}", projectId);
         List<IssueDetailResponse> response = issueService.getIssuesByProject(
@@ -92,15 +90,14 @@ public class IssueController {
             summary = "Назначение исполнителя на задачу",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @PostMapping("/{projectId}/issues/{issueId}/assignees")
+    @PostMapping("/{issueId}/assignees")
     public ResponseEntity<Void> addAssignee(
             @AuthenticationPrincipal JwtUser principal,
-            @PathVariable Long projectId,
             @PathVariable Long issueId,
             @Valid @RequestBody Long assigneeId) {
 
         log.info("Request to assign user {} to issue {}", assigneeId, issueId);
-        issueService.addAssignee(principal.userId(), projectId, issueId, assigneeId);
+        issueService.addAssignee(principal.userId(), issueId, assigneeId);
         return ResponseEntity.ok().build();
     }
 
@@ -108,14 +105,13 @@ public class IssueController {
             summary = "Удаление исполнителя с задачи",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @DeleteMapping("/{projectId}/issues/{issueId}/assignees")
+    @DeleteMapping("/{issueId}/assignees")
     public ResponseEntity<Void> removeAssignee(
             @AuthenticationPrincipal JwtUser principal,
-            @PathVariable Long projectId,
             @PathVariable Long issueId) {
 
         log.info("Request to remove assignee from issue {}", issueId);
-        issueService.removeAssignee(principal.userId(), projectId, issueId);
+        issueService.removeAssignee(principal.userId(), issueId);
         return ResponseEntity.noContent().build();
     }
 

@@ -19,9 +19,6 @@ public record IssueDetailResponse(
         @Schema(description = "ID родительской задачи", example = "123")
         Long parentId,
 
-        @Schema(description = "Уровень задачи в иерархии", example = "1")
-        Integer level,
-
         @Schema(description = "Название задачи", example = "Сделать микросервисы")
         String title,
 
@@ -63,7 +60,6 @@ public record IssueDetailResponse(
                         issue.getId(),
                         issue.getProjectId(),
                         issue.getParentIssue() != null ? issue.getParentIssue().getId() : null,
-                        issue.getLevel(),
                         issue.getTitle(),
                         issue.getDescription(),
                         issue.getStatus(),
@@ -86,7 +82,6 @@ public record IssueDetailResponse(
                         issue.getId(),
                         issue.getProjectId(),
                         issue.getParentIssue() != null ? issue.getParentIssue().getId() : null,
-                        issue.getLevel(),
                         issue.getTitle(),
                         issue.getDescription(),
                         issue.getStatus(),
@@ -112,7 +107,6 @@ public record IssueDetailResponse(
                         issue.getId(),
                         issue.getProjectId(),
                         issue.getParentIssue() != null ? issue.getParentIssue().getId() : null,
-                        issue.getLevel(),
                         issue.getTitle(),
                         issue.getDescription(),
                         issue.getStatus(),

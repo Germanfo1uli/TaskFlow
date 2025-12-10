@@ -70,16 +70,12 @@ public class IssueService {
     }
 
     @Transactional(readOnly = true)
-    public IssueDetailResponse getIssueById(Long userId, Long projectId, Long issueId) {
-
-        authService.hasPermission(userId, projectId, EntityType.ISSUE, ActionType.VIEW);
+    public IssueDetailResponse getIssueById(Long userId, Long issueId) {
 
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new IssueNotFoundException("Issue with id " + issueId + " not found"));
 
-        if (!issue.getProjectId().equals(projectId)) {
-            throw new IssueNotFoundException("Issue not found in project " + projectId);
-        }
+        authService.hasPermission(userId, issue.getProjectId(), EntityType.ISSUE, ActionType.VIEW);
 
         Set<Long> userIds = Stream.of(
                         issue.getCreatorId(),
@@ -144,24 +140,20 @@ public class IssueService {
     }
 
     @Transactional
-    public void addAssignee(Long userId, Long projectId, Long issueId, Long assigneeId) {
+    public void addAssignee(Long userId, Long issueId, Long assigneeId) {
 
-        authService.hasPermission(userId, projectId, EntityType.ISSUE, ActionType.ASSIGN);
+        Issue issue = issueRepository.findById(issueId)
+                .orElseThrow(() -> new IssueNotFoundException("Issue with ID: " + issueId + " not found"));
+
+        authService.hasPermission(userId, issue.getProjectId(), EntityType.ISSUE, ActionType.ASSIGN);
 
         log.info("Adding user {} to assignee of issue {}", assigneeId, issueId);
-
-        if(!issueRepository.existsByIdAndProjectId(projectId, issueId)) {
-            throw new IssueNotFoundException("Issue not found in project: " + projectId);
-        }
 
         try {
             userClient.getProfileById(assigneeId);
         } catch (Exception e) {
             throw new UserNotFoundException("User with ID " + assigneeId + " does not exist");
         }
-
-        Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new IssueNotFoundException("Issue with ID: " + issueId + " not found"));
 
         issue.setAssigneeId(assigneeId);
 
@@ -170,18 +162,14 @@ public class IssueService {
     }
 
     @Transactional
-    public void removeAssignee(Long userId, Long projectId, Long issueId) {
-
-        authService.hasPermission(userId, projectId, EntityType.ISSUE, ActionType.ASSIGN);
-
-        log.info("Removing from assignees of issue {}", issueId);
-
-        if(!issueRepository.existsByIdAndProjectId(projectId, issueId)) {
-            throw new IssueNotFoundException("Issue not found in project: " + projectId);
-        }
+    public void removeAssignee(Long userId, Long issueId) {
 
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new IssueNotFoundException("Issue with ID: " + issueId + " not found"));
+
+        authService.hasPermission(userId, issue.getProjectId(), EntityType.ISSUE, ActionType.ASSIGN);
+
+        log.info("Removing from assignees of issue {}", issueId);
 
         issue.setAssigneeId(null);
 
