@@ -17,7 +17,7 @@ public class AuthService {
 
     public void hasPermission(Long userId, Long projectId, EntityType entity, ActionType action) {
         UserPermissionsResponse perms = cacheReader.getUserPermissions(userId, projectId);
-        if(perms.permissions().contains(entity.name() + ":" + action.name())) {
+        if(!perms.permissions().contains(entity.name() + ":" + action.name())) {
             throw new AccessDeniedException("User has no permission to view issues");
         }
     }
