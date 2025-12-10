@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 @SecurityRequirement(name = "bearerAuth")
 @Tag(name = "Roles Management", description = "Управление ролями в проекте")
 public class RoleController {
+
     private final ProjectRoleService roleService;
 
     @Operation(
@@ -82,6 +83,19 @@ public class RoleController {
             @AuthenticationPrincipal JwtUser principal) {
 
         GetRolesResponse response = roleService.getRolesByProjectId(principal.userId(), projectId);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "Получение персональной роли в проекте",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @GetMapping("/{projectId}/roles/me")
+    public ResponseEntity<RoleResponse> getOwnRole(
+            @PathVariable Long projectId,
+            @AuthenticationPrincipal JwtUser principal) {
+
+        RoleResponse response = roleService.getOwnRoleByProjectId(principal.userId(), projectId);
         return ResponseEntity.ok(response);
     }
 

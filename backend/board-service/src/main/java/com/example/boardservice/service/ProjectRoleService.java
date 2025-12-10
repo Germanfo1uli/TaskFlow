@@ -241,6 +241,23 @@ public class ProjectRoleService {
         return GetRolesResponse.fromEntities(projectId, roles);
     }
 
+    @Transactional(readOnly = true)
+    public RoleResponse getOwnRoleByProjectId(Long userId, Long projectId) {
+
+        ProjectMember member = memberRepository.findByUserIdAndProject_Id(userId, projectId)
+                .orElseThrow(() -> new AccessDeniedException("You are not member of this project"));
+
+        return new RoleResponse(
+                member.getRole().getId(),
+                member.getRole().getName(),
+                Boolean.TRUE.equals(member.getRole().getIsOwner()),
+                Boolean.TRUE.equals(member.getRole().getIsDefault()),
+                member.getRole().getPermissions().stream()
+                        .map(perm -> new PermissionEntry(perm.getEntity(), perm.getAction()))
+                        .collect(Collectors.toSet())
+        );
+    }
+
     private Set<RolePermission> createPermissions(ProjectRole role, Set<PermissionEntry> entries) {
         return entries.stream()
                 .map(entry -> RolePermission.builder()
