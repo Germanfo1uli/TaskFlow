@@ -852,3 +852,166 @@
 .deleteConfirmIcon {
     font-size: 0.9rem;
 }
+
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+    font-size: 1rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.error {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+    font-size: 1rem;
+    color: #ef4444;
+    font-weight: 500;
+    text-align: center;
+    padding: 2rem;
+    background: rgba(239, 68, 68, 0.05);
+    border-radius: 16px;
+    border: 1px solid rgba(239, 68, 68, 0.1);
+}
+
+.ownerBadge {
+    background: linear-gradient(135deg, #3d6bb3, #60a5fa);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+    border: 1px solid rgba(61, 107, 179, 0.3);
+}
+
+
+.ownerIcon {
+    color: #ffffff;
+}
+
+.modalOwnerLabel {
+    color: #ffffff;
+    font-weight: 600;
+    margin-left: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.ownerPermissionsInfo {
+    margin-top: 2rem;
+}
+
+.ownerInfoCard {
+    background: linear-gradient(135deg, rgba(61, 107, 179, 0.1), rgba(96, 165, 250, 0.05));
+    border: 1px solid rgba(61, 107, 179, 0.2);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.ownerInfoIcon {
+    color: #3d6bb3;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.ownerInfoContent {
+    flex: 1;
+}
+
+.ownerInfoTitle {
+    color: #3d6bb3;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+.ownerInfoText {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.ownerPermissions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+}
+
+.ownerPermission {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #1e293b;
+    font-size: 0.85rem;
+    background: rgba(61, 107, 179, 0.1);
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.ownerPermission svg {
+    color: #3d6bb3;
+}
+
+.formHint {
+    color: #64748b;
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+    font-style: italic;
+}
+
+.ownerCard {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(61, 107, 179, 0.03));
+    border: 2px solid rgba(61, 107, 179, 0.15);
+    position: relative;
+    order: -1;
+}
+
+.ownerCard::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3d6bb3, #60a5fa, #3d6bb3);
+}
+
+.rolesGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .rolesGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.viewButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    background: rgba(61, 107, 179, 0.15);
+    color: #3d6bb3;
+}
+
+.viewButton:hover {
+    background: rgba(61, 107, 179, 0.25);
+}

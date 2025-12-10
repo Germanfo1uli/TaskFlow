@@ -345,7 +345,7 @@ const SettingsContent = ({ project, onBackClick }: SettingsContentProps) => {
                                     exit={{ opacity: 0, x: -20 }}
                                     transition={{ duration: 0.3 }}
                                 >
-                                    <RolesSection />
+                                    <RolesSection projectId={project.id} />
                                 </motion.div>
                             )}
 
