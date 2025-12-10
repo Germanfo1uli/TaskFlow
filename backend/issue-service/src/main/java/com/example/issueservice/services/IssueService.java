@@ -49,6 +49,7 @@ public class IssueService {
         }
 
         Issue newIssue = Issue.builder()
+                .projectId(projectId)
                 .creatorId(userId)
                 .title(title)
                 .description(description)
