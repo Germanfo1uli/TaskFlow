@@ -70,7 +70,7 @@ public class ProjectRoleService {
     }
 
     @Transactional
-    public RoleResponse createRole(Long userId, Long projectId, boolean isDefault, String roleName, Set<PermissionEntry> request) {
+    public RoleResponse createRole(Long userId, Long projectId, String roleName, Set<PermissionEntry> request) {
 
         authService.checkOwnerOnly(userId, projectId);
 
@@ -83,7 +83,7 @@ public class ProjectRoleService {
         ProjectRole role = ProjectRole.builder()
                 .project(Project.builder().id(projectId).build())
                 .name(roleName)
-                .isDefault(isDefault)
+                .isDefault(false)
                 .isOwner(false)
                 .build();
 
@@ -106,7 +106,7 @@ public class ProjectRoleService {
     }
 
     @Transactional
-    public RoleResponse updateRole(Long userId, Long roleId, Long projectId, boolean isDefault, String roleName, Set<PermissionEntry> request) {
+    public RoleResponse updateRole(Long userId, Long roleId, Long projectId, String roleName, Set<PermissionEntry> request) {
 
         authService.checkOwnerOnly(userId, projectId);
 
@@ -121,7 +121,6 @@ public class ProjectRoleService {
             role.setName(roleName);
         }
 
-        role.setIsDefault(isDefault);
         permissionMatrixService.validatePermissions(request);
 
         redisCacheService.invalidateRolePermissions(roleId);
@@ -244,18 +243,10 @@ public class ProjectRoleService {
     @Transactional(readOnly = true)
     public RoleResponse getOwnRoleByProjectId(Long userId, Long projectId) {
 
-        ProjectMember member = memberRepository.findByUserIdAndProject_Id(userId, projectId)
-                .orElseThrow(() -> new AccessDeniedException("You are not member of this project"));
+        ProjectRole role = roleRepository.findByUserIdAndProjectId(userId, projectId)
+                .orElseThrow(() -> new AccessDeniedException("You are not exist in this project"));
 
-        return new RoleResponse(
-                member.getRole().getId(),
-                member.getRole().getName(),
-                Boolean.TRUE.equals(member.getRole().getIsOwner()),
-                Boolean.TRUE.equals(member.getRole().getIsDefault()),
-                member.getRole().getPermissions().stream()
-                        .map(perm -> new PermissionEntry(perm.getEntity(), perm.getAction()))
-                        .collect(Collectors.toSet())
-        );
+        return RoleResponse.fromEntity(role);
     }
 
     private Set<RolePermission> createPermissions(ProjectRole role, Set<PermissionEntry> entries) {

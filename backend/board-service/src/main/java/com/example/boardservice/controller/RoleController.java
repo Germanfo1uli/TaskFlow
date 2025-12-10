@@ -37,7 +37,7 @@ public class RoleController {
             @AuthenticationPrincipal JwtUser principal) {
 
         RoleResponse response = roleService.createRole(
-                principal.userId(), projectId, request.isDefault(),
+                principal.userId(), projectId,
                 request.name(), request.permissions());
         return ResponseEntity.ok(response);
     }
@@ -55,7 +55,7 @@ public class RoleController {
 
         RoleResponse response = roleService.updateRole(
                 principal.userId(), roleId, projectId,
-                request.isDefault(), request.name(), request.permissions());
+                request.name(), request.permissions());
         return ResponseEntity.ok(response);
     }
 
