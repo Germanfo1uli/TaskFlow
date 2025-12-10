@@ -20,12 +20,10 @@ public class IssueComment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Двусторонняя связь с задачей. Эта сущность - "владелец" связи.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "issue_id", nullable = false)
     private Issue issue;
 
-    // user_id приходит в API-запросе от клиентского приложения (фронтенда).
     @Column(name = "user_id", nullable = false)
     private Long userId;
 

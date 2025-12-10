@@ -1,10 +1,8 @@
 package com.example.issueservice.services;
 
-import com.example.issueservice.cache.UserCacheService;
 import com.example.issueservice.client.UserServiceClient;
 import com.example.issueservice.dto.data.UserBatchRequest;
 import com.example.issueservice.dto.models.enums.*;
-import com.example.issueservice.dto.response.CreateIssueResponse;
 import com.example.issueservice.dto.response.IssueDetailResponse;
 import com.example.issueservice.dto.response.PublicProfileResponse;
 import com.example.issueservice.exception.IssueNotFoundException;
