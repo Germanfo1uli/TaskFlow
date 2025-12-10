@@ -51,7 +51,11 @@ public class ProjectRoleService {
 
         for (ProjectRole role : roles) {
             Set<RolePermission> rolePermissions = permissionFactory.createPermissions(role);
-            permissionRepository.saveAll(rolePermissions);
+
+            role.getPermissions().addAll(rolePermissions);
+
+            roleRepository.save(role);
+
             log.debug("Saved {} permissions for role '{}'", rolePermissions.size(), role.getName());
         }
 
@@ -109,7 +113,7 @@ public class ProjectRoleService {
 
         authService.checkOwnerOnly(userId, projectId);
 
-        ProjectRole role = roleRepository.findById(roleId)
+        ProjectRole role = roleRepository.findByIdWithPermissions(roleId)
                 .orElseThrow(() -> new RoleNotFoundException("Role ID: " + roleId + " not found"));
 
         if (!Objects.equals(role.getProject().getId(), projectId)) {
@@ -122,16 +126,13 @@ public class ProjectRoleService {
 
         permissionMatrixService.validatePermissions(request);
 
-        redisCacheService.invalidateRolePermissions(roleId);
-        permissionRepository.deleteByRoleId(roleId);
+        Set<RolePermission> newPermissions = createPermissions(role, request);
+        role.getPermissions().clear();
+        role.getPermissions().addAll(newPermissions);
 
-        Set<RolePermission> permissions = createPermissions(role, request);
-        permissionRepository.saveAll(permissions);
-        role.setPermissions(permissions);
+        roleRepository.saveAndFlush(role);
 
         invalidateUserCaches(roleId);
-
-        cachePermissions(role.getId(), permissions, role.getIsOwner());
 
         log.info("User {} updated role '{}' (ID:{}) in project {}", userId, role.getName(), roleId, projectId);
 
@@ -265,6 +266,8 @@ public class ProjectRoleService {
     }
 
     private void invalidateUserCaches(Long roleId) {
+        redisCacheService.invalidateRolePermissions(roleId);
+
         List<ProjectMember> members = memberRepository.findAllByRoleId(roleId);
         if (members.isEmpty()) return;
 

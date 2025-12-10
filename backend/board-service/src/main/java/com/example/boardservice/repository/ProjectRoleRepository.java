@@ -27,4 +27,7 @@ public interface ProjectRoleRepository extends JpaRepository<ProjectRole, Long> 
             "WHERE pm.userId = :userId AND pm.project.id = :projectId)")
     Optional<ProjectRole> findByUserIdAndProjectId(@Param("userId") Long userId,
                                                    @Param("projectId") Long projectId);
+
+    @Query("SELECT r FROM ProjectRole r LEFT JOIN FETCH r.permissions WHERE r.id = :id")
+    Optional<ProjectRole> findByIdWithPermissions(@Param("id") Long id);
 }
