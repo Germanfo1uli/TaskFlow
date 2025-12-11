@@ -1,11 +1,14 @@
 package com.example.userservice.service;
 
+import com.example.userservice.cache.CacheConstants;
 import com.example.userservice.dto.response.*;
 import com.example.userservice.exception.*;
 import com.example.userservice.dto.models.RefreshToken;
 import com.example.userservice.dto.models.SystemRole;
 import com.example.userservice.dto.models.User;
 import com.example.userservice.repository.UserRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -161,6 +164,10 @@ public class AuthService {
         return ChangeEmailResponse.of(userId, LocalDateTime.now(), newEmail, pair);
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = CacheConstants.USER_PROFILE, key = "#userId"),
+            @CacheEvict(value = CacheConstants.USER_PROFILE_BATCH, allEntries = true)
+    })
     @Transactional
     public DeleteAccountResponse deleteAccount(Long userId, String password) {
 

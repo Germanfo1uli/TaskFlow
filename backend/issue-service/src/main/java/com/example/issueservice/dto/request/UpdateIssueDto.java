@@ -1,6 +1,9 @@
 package com.example.issueservice.dto.request;
 
 import com.example.issueservice.dto.models.Issue;
+import com.example.issueservice.dto.models.enums.IssueStatus;
+import com.example.issueservice.dto.models.enums.IssueType;
+import com.example.issueservice.dto.models.enums.Priority;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,8 +18,8 @@ import java.time.LocalDateTime;
 public class UpdateIssueDto {
     private String title;
     private String description;
-    private Issue.IssueStatus status;
-    private Issue.IssueType type;
-    private Issue.Priority priority;
+    private IssueStatus status;
+    private IssueType type;
+    private Priority priority;
     private LocalDateTime deadline;
 }

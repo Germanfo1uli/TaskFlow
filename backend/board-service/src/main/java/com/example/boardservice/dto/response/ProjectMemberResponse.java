@@ -18,9 +18,6 @@ public record ProjectMemberResponse(
         @Schema(description = "О себе")
         String bio,
 
-        @Schema(description = "Дата создания аккаунта")
-        LocalDateTime createdAt,
-
         @Schema(description = "Айди роли в проекте")
         Long roleId,
 

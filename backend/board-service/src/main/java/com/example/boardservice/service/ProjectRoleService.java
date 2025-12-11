@@ -22,10 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,56 +36,44 @@ public class ProjectRoleService {
     private final AuthService authService;
     private final RedisCacheService redisCacheService;
     private final UserServiceClient userServiceClient;
+    private final RolePermissionFactory permissionFactory;
 
-    @Transactional
+    @Transactional // при создании проекта генерируются 5 базовых ролей
     public ProjectRole createDefaultRoles(Long projectId) {
-        ProjectRole owner = ProjectRole.builder()
+        List<ProjectRole> roles = List.of(
+                roleBuilder(projectId, "Owner", false, true),
+                roleBuilder(projectId, "User", true, false),
+                roleBuilder(projectId, "Developer", false, false),
+                roleBuilder(projectId, "Code Reviewer", false, false),
+                roleBuilder(projectId, "QA Engineer", false, false)
+        );
+        roleRepository.saveAll(roles);
+
+        for (ProjectRole role : roles) {
+            Set<RolePermission> rolePermissions = permissionFactory.createPermissions(role);
+
+            role.getPermissions().addAll(rolePermissions);
+
+            roleRepository.save(role);
+
+            log.debug("Saved {} permissions for role '{}'", rolePermissions.size(), role.getName());
+        }
+
+        log.info("Created {} default roles for project {}", roles.size(), projectId);
+        return roles.getFirst();
+    }
+
+    private ProjectRole roleBuilder(Long projectId, String name, boolean isDefault, boolean isOwner) {
+        return ProjectRole.builder()
                 .project(Project.builder().id(projectId).build())
-                .name("Owner")
-                .isOwner(true)
-                .isDefault(false)
+                .name(name)
+                .isDefault(isDefault)
+                .isOwner(isOwner)
                 .build();
-
-        ProjectRole user = ProjectRole.builder()
-                .project(Project.builder().id(projectId).build())
-                .name("User")
-                .isOwner(false)
-                .isDefault(true)
-                .build();
-
-        roleRepository.saveAll(List.of(owner, user));
-
-        Set<RolePermission> ownerPerms = Arrays.stream(EntityType.values())
-                .flatMap(entity -> permissionMatrixService.getAllowedActions(entity).stream()
-                        .map(action -> RolePermission.builder()
-                                .role(owner)
-                                .entity(entity)
-                                .action(action)
-                                .build()))
-                .collect(Collectors.toSet());
-
-        Set<RolePermission> userPerms = Arrays.stream(EntityType.values())
-                .map(entity -> RolePermission.builder()
-                        .role(user)
-                        .entity(entity)
-                        .action(ActionType.VIEW)
-                        .build())
-                .collect(Collectors.toSet());
-
-        permissionRepository.saveAll(ownerPerms);
-        permissionRepository.saveAll(userPerms);
-
-        cachePermissions(owner.getId(), ownerPerms, owner.getIsOwner());
-        cachePermissions(user.getId(), userPerms, user.getIsOwner());
-
-        log.info("Created default roles for project {}: Owner(ID:{}) and User(ID:{})",
-                projectId, owner.getId(), user.getId());
-
-        return owner;
     }
 
     @Transactional
-    public RoleResponse createRole(Long userId, Long projectId, boolean isDefault, String roleName, Set<PermissionEntry> request) {
+    public RoleResponse createRole(Long userId, Long projectId, String roleName, Set<PermissionEntry> request) {
 
         authService.checkOwnerOnly(userId, projectId);
 
@@ -101,7 +86,7 @@ public class ProjectRoleService {
         ProjectRole role = ProjectRole.builder()
                 .project(Project.builder().id(projectId).build())
                 .name(roleName)
-                .isDefault(isDefault)
+                .isDefault(false)
                 .isOwner(false)
                 .build();
 
@@ -124,11 +109,11 @@ public class ProjectRoleService {
     }
 
     @Transactional
-    public RoleResponse updateRole(Long userId, Long roleId, Long projectId, boolean isDefault, String roleName, Set<PermissionEntry> request) {
+    public RoleResponse updateRole(Long userId, Long roleId, Long projectId, String roleName, Set<PermissionEntry> request) {
 
         authService.checkOwnerOnly(userId, projectId);
 
-        ProjectRole role = roleRepository.findById(roleId)
+        ProjectRole role = roleRepository.findByIdWithPermissions(roleId)
                 .orElseThrow(() -> new RoleNotFoundException("Role ID: " + roleId + " not found"));
 
         if (!Objects.equals(role.getProject().getId(), projectId)) {
@@ -139,19 +124,15 @@ public class ProjectRoleService {
             role.setName(roleName);
         }
 
-        role.setIsDefault(isDefault);
         permissionMatrixService.validatePermissions(request);
 
-        redisCacheService.invalidateRolePermissions(roleId);
-        permissionRepository.deleteByRoleId(roleId);
+        Set<RolePermission> newPermissions = createPermissions(role, request);
+        role.getPermissions().clear();
+        role.getPermissions().addAll(newPermissions);
 
-        Set<RolePermission> permissions = createPermissions(role, request);
-        permissionRepository.saveAll(permissions);
-        role.setPermissions(permissions);
+        roleRepository.saveAndFlush(role);
 
         invalidateUserCaches(roleId);
-
-        cachePermissions(role.getId(), permissions, role.getIsOwner());
 
         log.info("User {} updated role '{}' (ID:{}) in project {}", userId, role.getName(), roleId, projectId);
 
@@ -259,6 +240,15 @@ public class ProjectRoleService {
         return GetRolesResponse.fromEntities(projectId, roles);
     }
 
+    @Transactional(readOnly = true)
+    public RoleResponse getOwnRoleByProjectId(Long userId, Long projectId) {
+
+        ProjectRole role = roleRepository.findByUserIdAndProjectId(userId, projectId)
+                .orElseThrow(() -> new AccessDeniedException("You are not exist in this project"));
+
+        return RoleResponse.fromEntity(role);
+    }
+
     private Set<RolePermission> createPermissions(ProjectRole role, Set<PermissionEntry> entries) {
         return entries.stream()
                 .map(entry -> RolePermission.builder()
@@ -276,6 +266,8 @@ public class ProjectRoleService {
     }
 
     private void invalidateUserCaches(Long roleId) {
+        redisCacheService.invalidateRolePermissions(roleId);
+
         List<ProjectMember> members = memberRepository.findAllByRoleId(roleId);
         if (members.isEmpty()) return;
 

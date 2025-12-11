@@ -7,11 +7,12 @@ import lombok.*;
 
 @Entity
 @Table(name = "role_permissions", schema = "board_service_schema")
-@Data
+@Getter
+@Setter
 @Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(exclude = "role")
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(exclude = "role")
 public class RolePermission {
     @Id
@@ -25,9 +26,11 @@ public class RolePermission {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "entity_type", nullable = false)
+    @EqualsAndHashCode.Include
     private EntityType entity;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "action_type", nullable = false)
+    @EqualsAndHashCode.Include
     private ActionType action;
 }

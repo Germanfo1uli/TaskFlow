@@ -1,4 +1,3 @@
-// src/main/java/com/example/boardservice/exception/GlobalExceptionHandler.java
 package com.example.boardservice.exception;
 
 import jakarta.servlet.http.HttpServletRequest;

@@ -10,10 +10,7 @@ import com.example.boardservice.dto.models.enums.ActionType;
 import com.example.boardservice.dto.models.enums.EntityType;
 import com.example.boardservice.dto.response.ProjectMemberResponse;
 import com.example.boardservice.dto.response.PublicProfileResponse;
-import com.example.boardservice.exception.AlreadyMemberException;
-import com.example.boardservice.exception.InvalidInviteException;
-import com.example.boardservice.exception.RoleNotFoundException;
-import com.example.boardservice.exception.RoleNotInProjectException;
+import com.example.boardservice.exception.*;
 import com.example.boardservice.repository.ProjectMemberRepository;
 import com.example.boardservice.repository.ProjectRoleRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,10 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,7 +29,7 @@ import java.util.stream.Collectors;
 public class ProjectMemberService {
     private final ProjectMemberRepository memberRepository;
     private final ProjectRoleRepository roleRepository;
-    private final UserServiceClient userServiceClient;
+    private final UserServiceClient userClient;
     private final AuthService authService;
     private final RedisCacheService redisCacheService;
 
@@ -43,7 +37,7 @@ public class ProjectMemberService {
     public ProjectMember addMember(Long userId, Long projectId, Long roleId) {
 
         try {
-            userServiceClient.getProfileById(userId);
+            userClient.getProfileById(userId);
         } catch (Exception e) {
             throw new InvalidInviteException("User with ID " + userId + " does not exist");
         }
@@ -76,7 +70,7 @@ public class ProjectMemberService {
         }
 
         try {
-            userServiceClient.getProfileById(userId);
+            userClient.getProfileById(userId);
         } catch (Exception e) {
             throw new InvalidInviteException("User with ID " + userId + " does not exist");
         }
@@ -109,14 +103,11 @@ public class ProjectMemberService {
             return List.of();
         }
 
-        List<Long> userIds = members.stream().map(ProjectMember::getUserId).toList();
-        UserBatchRequest request = new UserBatchRequest(userIds);
+        Set<Long> userIds = members.stream()
+                .map(ProjectMember::getUserId)
+                .collect(Collectors.toSet());
 
-        log.info("Fetching {} user profiles from user-service for project {}", userIds.size(), projectId);
-        List<PublicProfileResponse> profiles = userServiceClient.getProfilesByIds(request);
-
-        Map<Long, PublicProfileResponse> profileMap = profiles.stream()
-                .collect(Collectors.toMap(PublicProfileResponse::id, p -> p));
+        Map<Long, PublicProfileResponse> profileMap = getUserProfilesBatch(userIds);
 
         return members.stream()
                 .map(member -> {
@@ -131,7 +122,6 @@ public class ProjectMemberService {
                             profile.username(),
                             profile.tag(),
                             profile.bio(),
-                            profile.createdAt(),
                             member.getRole().getId(),
                             member.getRole().getName()
                     );
@@ -140,11 +130,30 @@ public class ProjectMemberService {
                 .collect(Collectors.toList());
     }
 
+    public Map<Long, PublicProfileResponse> getUserProfilesBatch(Set<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        log.info("Cache miss for user profiles: {}. Fetching from UserService...", userIds);
+
+        try {
+            UserBatchRequest request = new UserBatchRequest(new ArrayList<>(userIds));
+            List<PublicProfileResponse> profiles = userClient.getProfilesByIds(request);
+
+            return profiles.stream()
+                    .collect(Collectors.toMap(PublicProfileResponse::id, p -> p));
+        } catch (Exception e) {
+            log.error("Failed to fetch profiles for users: {}", userIds, e);
+            throw new ServiceUnavailableException("Failed to fetch user profiles" + e.getMessage());
+        }
+    }
+
     @Transactional
     public void kickProjectMember(Long userId, Long kickedId, Long projectId) {
 
         try {
-            userServiceClient.getProfileById(kickedId);
+            userClient.getProfileById(kickedId);
         } catch (Exception e) {
             throw new InvalidInviteException("User with ID " + kickedId + " does not exist");
         }

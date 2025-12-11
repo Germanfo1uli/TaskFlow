@@ -20,6 +20,10 @@ public class OpenApiRoutes {
                         .path("/v3/api-docs/board-service")
                         .filters(f -> f.rewritePath("/v3/api-docs/board-service", "/v3/api-docs"))
                         .uri("lb://board-service"))
+                .route("issue-service-docs", r -> r
+                        .path("/v3/api-docs/issue-service")
+                        .filters(f -> f.rewritePath("/v3/api-docs/issue-service", "/v3/api-docs"))
+                        .uri("lb://issue-service"))
                 // Individual swaggers
                 .route("user-service-swagger", r -> r
                         .path("/api/user/swagger-ui/**")
@@ -29,6 +33,10 @@ public class OpenApiRoutes {
                         .path("/api/board/swagger-ui/**")
                         .filters(f -> f.rewritePath("/api/board/swagger-ui/(?<path>.*)", "/swagger-ui/${path}"))
                         .uri("lb://board-service"))
+                .route("issue-service-swagger", r -> r
+                        .path("/api/issue/swagger-ui/**")
+                        .filters(f -> f.rewritePath("/api/issue/swagger-ui/(?<path>.*)", "/swagger-ui/${path}"))
+                        .uri("lb://issue-service"))
                 .build();
     }
 }

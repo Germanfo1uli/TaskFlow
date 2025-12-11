@@ -1,6 +1,7 @@
 package com.example.issueservice.repositories;
 
 import com.example.issueservice.dto.models.Issue;
+import com.example.issueservice.dto.models.enums.IssueStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;
@@ -18,5 +19,7 @@ public interface IssueRepository extends JpaRepository<Issue, Long> {
     List<Issue> findByCreatorId(Long creatorId);
 
     // Найти все задачи с определенным статусом в проекте
-    List<Issue> findByProjectIdAndStatus(Long projectId, Issue.IssueStatus status);
+    List<Issue> findByProjectIdAndStatus(Long projectId, IssueStatus status);
+
+    boolean existsByIdAndProjectId(Long issueId, Long projectId);
 }

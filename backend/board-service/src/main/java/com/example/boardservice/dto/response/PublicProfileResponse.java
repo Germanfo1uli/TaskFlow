@@ -15,8 +15,5 @@ public record PublicProfileResponse(
         String tag,
 
         @Schema(description = "О себе", example = "Я лучший программист...")
-        String bio,
-
-        @Schema(description = "Дата создания аккаунта", example = "2025-01-01T10:30:00")
-        LocalDateTime createdAt
+        String bio
 ) {}

@@ -3,6 +3,7 @@ package com.example.boardservice.service;
 import com.example.boardservice.cache.RedisCacheService;
 import com.example.boardservice.dto.models.enums.ActionType;
 import com.example.boardservice.dto.models.enums.EntityType;
+import com.example.boardservice.dto.response.UserPermissionsResponse;
 import com.example.boardservice.exception.AccessDeniedException;
 import com.example.boardservice.exception.ProjectDeletedException;
 import com.example.boardservice.exception.ProjectNotFoundException;
@@ -108,6 +109,46 @@ public class AuthService {
 
         redisCacheService.cacheRoleIsOwner(roleId, isOwner);
         return isOwner;
+    }
+
+    // internal метод для передачи прав в другой микросервис по запросу
+    public UserPermissionsResponse getUserPermissions(Long userId, Long projectId) {
+        log.info("Fetching permissions for user {} in project {}", userId, projectId);
+
+        checkProjectNotDeleted(projectId);
+
+        Long roleId = redisCacheService.getUserRoleFromCache(userId, projectId);
+        if (roleId == null) {
+            roleId = memberRepository.findByUserIdAndProject_Id(userId, projectId)
+                    .orElseThrow(() -> new AccessDeniedException("User not in project"))
+                    .getRole().getId();
+            log.info("Role loaded from DB (cache miss): {}", roleId);
+            redisCacheService.cacheUserRole(userId, projectId, roleId);
+        } else {
+            log.debug("Role loaded from cache: {}", roleId);
+        }
+
+        Set<String> permissions = redisCacheService.getRolePermissionsFromCache(roleId);
+        if (permissions == null) {
+            permissions = permissionRepository.findByRoleId(roleId).stream()
+                    .map(p -> p.getEntity().name() + ":" + p.getAction().name())
+                    .collect(Collectors.toSet());
+            log.info("Permissions loaded from DB (cache miss): {}", permissions);
+            redisCacheService.cacheRolePermissions(roleId, permissions);
+        } else {
+            log.debug("Permissions loaded from cache: {}", permissions);
+        }
+
+        Boolean isOwner = redisCacheService.getRoleIsOwnerFromCache(roleId);
+        if (isOwner == null) {
+            isOwner = roleRepository.isOwnerRole(roleId);
+            log.debug("isOwner loaded from DB (cache miss): {}", isOwner);
+            redisCacheService.cacheRoleIsOwner(roleId, isOwner);
+        } else {
+            log.debug("isOwner loaded from cache: {}", isOwner);
+        }
+
+        return new UserPermissionsResponse(userId, projectId, permissions, isOwner);
     }
 
     private void checkProjectNotDeleted(Long projectId) {
