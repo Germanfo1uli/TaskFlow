@@ -28,14 +28,13 @@ public class AssigneeController {
     private final AssignService assignService;
 
     @Operation(
-            summary = "Назначение исполнителя на задачу (Для owner)",
+            summary = "Назначение исполнителя на задачу (Для owner) (type регулирует нужное назначение)",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @PostMapping("/{issueId}/assignees")
     public ResponseEntity<Void> addAssignee(
             @AuthenticationPrincipal JwtUser principal,
             @PathVariable Long issueId,
-            @Valid @RequestParam Long projectId,
             @Valid @RequestBody AddAssigneeRequest request) {
 
         log.info("Request to assign user {} to issue {}", request.userId(), issueId);
@@ -44,10 +43,10 @@ public class AssigneeController {
     }
 
     @Operation(
-            summary = "Стать исполнителем задачи (для Developer)",
+            summary = "Стать исполнителем задачи (для Developer) (type регулирует нужное назначение)",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @PostMapping("/{issueId}/assignees")
+    @PostMapping("/{issueId}/assignees/self")
     public ResponseEntity<Void> assignSelf(
             @AuthenticationPrincipal JwtUser principal,
             @PathVariable Long issueId,
@@ -59,7 +58,7 @@ public class AssigneeController {
     }
 
     @Operation(
-            summary = "Удаление исполнителя с задачи",
+            summary = "Удаление исполнителя с задачи (type регулирует нужное назначение)",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @DeleteMapping("/{issueId}/assignees")
@@ -70,6 +69,21 @@ public class AssigneeController {
 
         log.info("Request to remove assignee from issue {}", issueId);
         assignService.removeAssignee(principal.userId(), issueId, type);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+            summary = "Удаление своего исполнения с задачи (type регулирует нужное назначение)",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @DeleteMapping("/{issueId}/assignees/own")
+    public ResponseEntity<Void> removeSelfAssign(
+            @AuthenticationPrincipal JwtUser principal,
+            @PathVariable Long issueId,
+            @Valid @RequestBody AssignmentType type) {
+
+        log.info("Request to remove self assign from issue {}", issueId);
+        assignService.removeSelfAssign(principal.userId(), issueId, type);
         return ResponseEntity.noContent().build();
     }
 }
