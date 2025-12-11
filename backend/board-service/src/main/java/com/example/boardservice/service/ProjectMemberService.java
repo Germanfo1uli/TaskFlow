@@ -149,6 +149,11 @@ public class ProjectMemberService {
         }
     }
 
+    public ProjectMember getMemberInProject(Long userId, Long projectId) {
+        return memberRepository.findByUserIdAndProject_Id(userId, projectId)
+                .orElseThrow(() -> new UserNotFoundException("User with ID: " + userId + " not found in project " + projectId));
+    }
+
     @Transactional
     public void kickProjectMember(Long userId, Long kickedId, Long projectId) {
 
