@@ -1,15 +1,5 @@
 export type DeveloperRole = 'leader' | 'executor' | 'assistant';
 
-export interface ProjectMember {
-    userId: number;
-    username: string;
-    tag: string;
-    bio: string;
-    createdAt: string;
-    roleId: number;
-    role: string;
-}
-
 export interface Developer {
     id: number;
     name: string;
@@ -23,6 +13,7 @@ export interface Developer {
     bio?: string;
     createdAt?: string;
     roleId?: number;
+    originalRole?: string;
 }
 
 export interface NewDeveloper {

@@ -15,7 +15,6 @@ import {
 } from '@mui/material';
 import { FaTrash, FaEdit } from 'react-icons/fa';
 import { Developer } from '../types/developer.types';
-import { DeveloperRoleChip } from './DeveloperRoleChip';
 import { useDeveloperProjects } from '../hooks/useDeveloperProjects';
 
 interface DevelopersTableProps {
@@ -23,13 +22,20 @@ interface DevelopersTableProps {
     isLeader: boolean;
     onRemoveDeveloper: (developerId: number) => void;
     onEditDeveloper: (developer: Developer) => void;
+    projectRoles: Array<{
+        id: string;
+        name: string;
+        isOwner?: boolean;
+        isDefault?: boolean;
+    }>;
 }
 
 export const DevelopersTable = ({
                                     developers,
                                     isLeader,
                                     onRemoveDeveloper,
-                                    onEditDeveloper
+                                    onEditDeveloper,
+                                    projectRoles
                                 }: DevelopersTableProps) => {
     const { getDeveloperProjects } = useDeveloperProjects();
 
@@ -43,6 +49,19 @@ export const DevelopersTable = ({
 
     const getCurrentProjects = (developer: Developer) => {
         return getDeveloperProjects(developer);
+    };
+
+    const getRoleColor = (roleName: string) => {
+        const role = projectRoles.find(r => r.name === roleName);
+        if (!role) return 'linear-gradient(135deg, #3b82f6, #60a5fa)';
+
+        if (role.isOwner) return 'linear-gradient(135deg, #ef4444, #f87171)';
+        if (role.isDefault) return 'linear-gradient(135deg, #60a5fa, #93c5fd)';
+        return 'linear-gradient(135deg, #3b82f6, #60a5fa)';
+    };
+
+    const getRoleDisplayName = (developer: Developer) => {
+        return developer.originalRole || developer.role;
     };
 
     return (
@@ -213,7 +232,22 @@ export const DevelopersTable = ({
                                 </TableCell>
 
                                 <TableCell>
-                                    <DeveloperRoleChip role={developer.role} />
+                                    <Chip
+                                        label={getRoleDisplayName(developer)}
+                                        sx={{
+                                            background: getRoleColor(getRoleDisplayName(developer)),
+                                            color: 'white',
+                                            fontWeight: 700,
+                                            fontSize: '0.85rem',
+                                            height: '32px',
+                                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+                                            '&:hover': {
+                                                transform: 'translateY(-1px)',
+                                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+                                            },
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                    />
                                 </TableCell>
 
                                 <TableCell>

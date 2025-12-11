@@ -13,13 +13,28 @@ import { useDashboard } from '../DashboardContent/hooks/useDashboard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProjectMembers } from './hooks/useProjectMembers';
 import styles from './DevelopersPage.module.css';
+import { api } from '@/app/auth/hooks/useTokenRefresh';
 
 interface DevelopersPageProps {
     projectId: string | null;
 }
 
+interface ProjectRole {
+    id: string;
+    name: string;
+    description?: string;
+    permissions: Array<{
+        entity: string;
+        action: string;
+    }>;
+    memberCount?: number;
+    isDefault?: boolean;
+    isOwner?: boolean;
+}
+
 const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
     const [developers, setDevelopers] = useState<Developer[]>([]);
+    const [projectRoles, setProjectRoles] = useState<ProjectRole[]>([]);
     const [isAddDeveloperOpen, setIsAddDeveloperOpen] = useState(false);
     const [isEditDeveloperOpen, setIsEditDeveloperOpen] = useState(false);
     const [editingDeveloper, setEditingDeveloper] = useState<Developer | null>(null);
@@ -56,22 +71,47 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
     const { getDeveloperProjects } = useDeveloperProjects();
     const { boards } = useDashboard();
 
-    const roleMapping = useCallback((role: string): Developer['role'] => {
-        const mapping: Record<string, Developer['role']> = {
+    const fetchProjectRoles = useCallback(async () => {
+        if (!projectId) return;
+
+        try {
+            const response = await api.get(`/projects/${projectId}/roles`);
+            if (response.data && Array.isArray(response.data.roles)) {
+                setProjectRoles(response.data.roles);
+            }
+        } catch (err) {
+            console.error('Ошибка при загрузке ролей проекта:', err);
+        }
+    }, [projectId]);
+
+    const roleMapping = useCallback((roleName: string): Developer['role'] => {
+        const roleMap: Record<string, Developer['role']> = {
+            'OWNER': 'leader',
             'LEADER': 'leader',
+            'ADMIN': 'leader',
+            'MANAGER': 'leader',
             'EXECUTOR': 'executor',
+            'DEVELOPER': 'executor',
+            'PROGRAMMER': 'executor',
             'ASSISTANT': 'assistant',
-            'OWNER': 'leader'
+            'HELPER': 'assistant',
+            'VIEWER': 'assistant',
+            'OBSERVER': 'assistant'
         };
-        return mapping[role] || 'executor';
+
+        const normalizedRoleName = roleName.toUpperCase();
+        return roleMap[normalizedRoleName] || 'executor';
     }, []);
 
     const mapMemberToDeveloper = useCallback((member: ProjectMember): Developer => {
+        const roleName = member.role || '';
+        const mappedRole = roleMapping(roleName);
+
         return {
             id: member.userId,
             name: member.username,
             avatar: null,
-            role: roleMapping(member.role),
+            role: mappedRole,
             completedTasks: 0,
             overdueTasks: 0,
             projects: [],
@@ -79,7 +119,8 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
             tag: member.tag,
             bio: member.bio,
             createdAt: member.createdAt,
-            roleId: member.roleId
+            roleId: member.roleId,
+            originalRole: roleName
         };
     }, [roleMapping]);
 
@@ -149,6 +190,33 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
         }
     }, [boards]);
 
+    useEffect(() => {
+        fetchProjectRoles();
+    }, [fetchProjectRoles]);
+
+    const getRoleFilterOptions = useMemo(() => {
+        if (projectRoles.length === 0) {
+            return [
+                { value: 'all', label: 'Все' }
+            ];
+        }
+
+        const allRoles = [
+            { value: 'all', label: 'Все' },
+            ...projectRoles.map(role => ({
+                value: role.name,
+                label: role.name,
+                isOwner: role.isOwner,
+                isDefault: role.isDefault
+            }))
+        ];
+
+        const uniqueRoles = allRoles.filter((role, index, self) =>
+            index === self.findIndex((r) => r.value === role.value)
+        );
+
+        return uniqueRoles;
+    }, [projectRoles]);
 
     if (!projectId) {
         return (
@@ -226,12 +294,13 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
 
     const handleManualRefresh = () => {
         refetch();
+        fetchProjectRoles();
     };
 
     const filteredDevelopers = useMemo(() => {
         return developers.filter(dev => {
             if (filterRole === 'all') return true;
-            return dev.role === filterRole;
+            return dev.originalRole === filterRole;
         });
     }, [developers, filterRole]);
 
@@ -243,7 +312,7 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
                 case 'tasks':
                     return b.completedTasks - a.completedTasks;
                 case 'role':
-                    return a.role.localeCompare(b.role);
+                    return (a.originalRole || '').localeCompare(b.originalRole || '');
                 default:
                     return 0;
             }
@@ -256,8 +325,20 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
         executors: developers.filter(d => d.role === 'executor').length,
         assistants: developers.filter(d => d.role === 'assistant').length,
         totalCompleted: developers.reduce((sum, dev) => sum + dev.completedTasks, 0),
-        totalOverdue: developers.reduce((sum, dev) => sum + (dev.overdueTasks || 0), 0)
-    }), [developers]);
+        totalOverdue: developers.reduce((sum, dev) => sum + (dev.overdueTasks || 0), 0),
+        totalRoles: projectRoles.length
+    }), [developers, projectRoles]);
+
+    const getRoleColor = (roleValue: string) => {
+        if (roleValue === 'all') return 'linear-gradient(135deg, #8b5cf6, #a78bfa)';
+
+        const role = projectRoles.find(r => r.name === roleValue);
+        if (!role) return 'linear-gradient(135deg, #6b7280, #9ca3af)';
+
+        if (role.isOwner) return 'linear-gradient(135deg, #ef4444, #f87171)';
+        if (role.isDefault) return 'linear-gradient(135deg, #60a5fa, #93c5fd)';
+        return 'linear-gradient(135deg, #3b82f6, #60a5fa)';
+    };
 
     return (
         <motion.div
@@ -298,7 +379,7 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
                                     }}
                                 >
                                     <FaChartLine />
-                                    {error ? 'Ошибка загрузки' : `${stats.total} участников • ${stats.totalCompleted} выполненных задач`}
+                                    {error ? 'Ошибка загрузки' : `${stats.total} участников • ${stats.totalCompleted} выполненных задач • ${stats.totalRoles} ролей`}
                                 </Typography>
                                 {projectId && (
                                     <Typography
@@ -337,38 +418,32 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
                             background: 'rgba(255, 255, 255, 0.9)',
                             padding: '4px',
                             borderRadius: '12px',
-                            border: '1px solid rgba(139, 92, 246, 0.1)'
+                            border: '1px solid rgba(139, 92, 246, 0.1)',
+                            flexWrap: 'wrap'
                         }}>
-                            {['all', 'leader', 'executor', 'assistant'].map((role) => (
+                            {getRoleFilterOptions.map((role) => (
                                 <Button
-                                    key={role}
-                                    onClick={() => setFilterRole(role)}
-                                    variant={filterRole === role ? 'contained' : 'text'}
+                                    key={role.value}
+                                    onClick={() => setFilterRole(role.value)}
+                                    variant={filterRole === role.value ? 'contained' : 'text'}
                                     size="small"
                                     sx={{
                                         borderRadius: '8px',
                                         textTransform: 'none',
                                         fontWeight: 600,
                                         fontSize: '0.8rem',
-                                        padding: '6px 16px',
+                                        padding: '6px 12px',
                                         minWidth: 'auto',
-                                        background: filterRole === role
-                                            ? role === 'all'
-                                                ? 'linear-gradient(135deg, #8b5cf6, #a78bfa)'
-                                                : role === 'leader'
-                                                    ? 'linear-gradient(135deg, #ef4444, #f87171)'
-                                                    : role === 'executor'
-                                                        ? 'linear-gradient(135deg, #3b82f6, #60a5fa)'
-                                                        : 'linear-gradient(135deg, #10b981, #34d399)'
-                                            : 'transparent',
+                                        whiteSpace: 'nowrap',
+                                        background: filterRole === role.value ? getRoleColor(role.value) : 'transparent',
+                                        color: filterRole === role.value ? 'white' : '#64748b',
                                         '&:hover': {
-                                            background: filterRole === role ? undefined : 'rgba(139, 92, 246, 0.05)'
+                                            background: filterRole === role.value ? getRoleColor(role.value) : 'rgba(139, 92, 246, 0.05)',
+                                            color: filterRole === role.value ? 'white' : '#3b82f6'
                                         }
                                     }}
                                 >
-                                    {role === 'all' ? 'Все' :
-                                        role === 'leader' ? 'Руководители' :
-                                            role === 'executor' ? 'Разработчики' : 'Помощники'}
+                                    {role.label}
                                 </Button>
                             ))}
                         </Box>
@@ -507,6 +582,7 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
                             isLeader={developers.some(dev => dev.isCurrentUser && dev.role === 'leader')}
                             onRemoveDeveloper={handleRemoveDeveloper}
                             onEditDeveloper={handleEditDeveloper}
+                            projectRoles={projectRoles}
                         />
                     </motion.div>
                 )}

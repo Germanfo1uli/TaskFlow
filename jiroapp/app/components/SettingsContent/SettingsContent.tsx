@@ -113,7 +113,6 @@ const SettingsContent = ({ project, onBackClick }: SettingsContentProps) => {
     const tabs = [
         { id: 'general', label: 'Основные', icon: <FaCog /> },
         { id: 'roles', label: 'Роли и доступы', icon: <FaUserTag /> },
-        { id: 'team', label: 'Команда', icon: <FaUsers /> }
     ];
 
     const handleCopyLink = async () => {
