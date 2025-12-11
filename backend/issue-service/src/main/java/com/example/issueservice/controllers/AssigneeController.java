@@ -4,7 +4,6 @@ import com.example.issueservice.dto.models.enums.AssignmentType;
 import com.example.issueservice.dto.request.AddAssigneeRequest;
 import com.example.issueservice.security.JwtUser;
 import com.example.issueservice.services.AssignService;
-import com.example.issueservice.services.IssueService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
