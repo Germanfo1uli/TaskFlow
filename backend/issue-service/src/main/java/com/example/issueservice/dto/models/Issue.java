@@ -4,10 +4,7 @@ import com.example.issueservice.dto.models.enums.IssueStatus;
 import com.example.issueservice.dto.models.enums.IssueType;
 import com.example.issueservice.dto.models.enums.Priority;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -24,10 +21,12 @@ import java.util.Set;
 @Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Issue {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     @Column(name = "project_id", nullable = false)
@@ -38,19 +37,24 @@ public class Issue {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_issue_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Issue parentIssue;
 
     @OneToMany(mappedBy = "parentIssue", cascade = CascadeType.ALL, orphanRemoval = true)
     @OnDelete(action = OnDeleteAction.CASCADE)
+    @EqualsAndHashCode.Exclude
     private List<Issue> childIssues = new ArrayList<>();
 
     @Column(name = "level", nullable = false)
     private Integer level;
 
     @OneToMany(mappedBy = "issue", cascade = CascadeType.ALL, orphanRemoval = true)
+    @EqualsAndHashCode.Exclude
     private List<IssueComment> comments = new ArrayList<>();
 
     @OneToMany(mappedBy = "issue", cascade = CascadeType.ALL, orphanRemoval = true)
+    @EqualsAndHashCode.Exclude
     private List<Attachment> attachments = new ArrayList<>();
 
     @Column(name = "assignee_id")
@@ -69,6 +73,8 @@ public class Issue {
             joinColumns = @JoinColumn(name = "issue_id"),
             inverseJoinColumns = @JoinColumn(name = "tag_id")
     )
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<ProjectTag> tags = new HashSet<>();
 
     @Column(nullable = false)

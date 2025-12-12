@@ -1,6 +1,5 @@
 package com.example.issueservice.controllers;
 
-import com.example.issueservice.dto.request.AssignTagDto;
 import com.example.issueservice.dto.request.CreateIssueRequest;
 import com.example.issueservice.dto.request.UpdateIssueRequest;
 import com.example.issueservice.dto.response.IssueDetailResponse;
@@ -11,7 +10,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
@@ -31,7 +29,7 @@ public class IssueController {
     private final IssueService issueService;
 
     @Operation(
-            summary = "Создание задачи",
+            summary = "Создание задачи (Назначение тегов сразу)",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @PostMapping
@@ -81,7 +79,7 @@ public class IssueController {
             summary = "Обновление задачи (в том числе вместе с тегами)",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @PutMapping("/{issueId}")
+    @PatchMapping("/{issueId}")
     public ResponseEntity<IssueDetailResponse> updateIssue(
             @AuthenticationPrincipal JwtUser principal,
             @PathVariable Long issueId,
@@ -106,21 +104,6 @@ public class IssueController {
 
         log.info("Request to delete issue by id: {}", issueId);
         issueService.deleteIssue(principal.userId(), issueId);
-        return ResponseEntity.noContent().build();
-    }
-
-    // --- Управление тегами (будет использовать TagService) ---
-    @PostMapping("/{issueId}/tags")
-    public ResponseEntity<Void> assignTagToIssue(@PathVariable Long issueId, @Valid @RequestBody AssignTagDto dto) {
-        log.info("Request to assign tag {} to issue {}", dto.getTagId(), issueId);
-        // tagService.assignTagToIssue(issueId, dto);
-        return ResponseEntity.ok().build();
-    }
-
-    @DeleteMapping("/{issueId}/tags/{tagId}")
-    public ResponseEntity<Void> removeTagFromIssue(@PathVariable Long issueId, @PathVariable Long tagId) {
-        log.info("Request to remove tag {} from issue {}", tagId, issueId);
-        // tagService.removeTagFromIssue(issueId, tagId);
         return ResponseEntity.noContent().build();
     }
 }

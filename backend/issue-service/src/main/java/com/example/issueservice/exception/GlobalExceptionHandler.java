@@ -122,7 +122,7 @@ public class GlobalExceptionHandler {
     }
 
     // 409 тег уже существует
-    @ExceptionHandler(CommentNotFoundException.class)
+    @ExceptionHandler(TagAlreadyExistsException.class)
     public ResponseEntity<Object> handleTagAlreadyExists(TagAlreadyExistsException ex,
                                                         HttpServletRequest request) {
         log.warn("Conflict for tag {} {}: {}",
