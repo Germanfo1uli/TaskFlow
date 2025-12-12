@@ -25,7 +25,7 @@ public class ProjectTag {
 
     @ManyToMany(mappedBy = "tags")
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
+    @Builder.Default
     private Set<Issue> issues = new HashSet<>();
 
     @Column(nullable = false)

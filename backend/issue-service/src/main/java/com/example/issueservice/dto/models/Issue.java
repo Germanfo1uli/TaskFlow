@@ -37,24 +37,22 @@ public class Issue {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_issue_id")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Issue parentIssue;
 
     @OneToMany(mappedBy = "parentIssue", cascade = CascadeType.ALL, orphanRemoval = true)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @EqualsAndHashCode.Exclude
+    @Builder.Default
     private List<Issue> childIssues = new ArrayList<>();
 
     @Column(name = "level", nullable = false)
     private Integer level;
 
     @OneToMany(mappedBy = "issue", cascade = CascadeType.ALL, orphanRemoval = true)
-    @EqualsAndHashCode.Exclude
+    @Builder.Default
     private List<IssueComment> comments = new ArrayList<>();
 
     @OneToMany(mappedBy = "issue", cascade = CascadeType.ALL, orphanRemoval = true)
-    @EqualsAndHashCode.Exclude
+    @Builder.Default
     private List<Attachment> attachments = new ArrayList<>();
 
     @Column(name = "assignee_id")
@@ -73,8 +71,7 @@ public class Issue {
             joinColumns = @JoinColumn(name = "issue_id"),
             inverseJoinColumns = @JoinColumn(name = "tag_id")
     )
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
+    @Builder.Default
     private Set<ProjectTag> tags = new HashSet<>();
 
     @Column(nullable = false)
