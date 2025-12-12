@@ -50,10 +50,10 @@ public class AssigneeController {
     public ResponseEntity<Void> assignSelf(
             @AuthenticationPrincipal JwtUser principal,
             @PathVariable Long issueId,
-            @Valid @RequestBody AssignmentType type) {
+            @Valid @RequestBody AssigneeRequest request) {
 
         log.info("Request to assign self user {} to issue {}", principal.userId(), issueId);
-        assignService.assignSelf(principal.userId(), issueId, type);
+        assignService.assignSelf(principal.userId(), issueId, request.type());
         return ResponseEntity.ok().build();
     }
 
