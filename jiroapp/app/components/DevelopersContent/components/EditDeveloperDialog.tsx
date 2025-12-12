@@ -4,17 +4,15 @@ import {
     DialogContent,
     DialogActions,
     Button,
-    TextField,
-    MenuItem,
     FormControl,
     InputLabel,
     Select,
     Box,
     Typography,
-    Chip
+    MenuItem
 } from '@mui/material';
 import { FaSave, FaUserEdit, FaTasks, FaCalendarTimes } from 'react-icons/fa';
-import { Developer, DeveloperRole } from '../types/developer.types';
+import { Developer } from '../types/developer.types';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useForm, Controller } from 'react-hook-form';
@@ -26,18 +24,24 @@ interface EditDeveloperDialogProps {
     developer: Developer | null;
     onClose: () => void;
     onUpdate: (developer: Developer) => void;
+    projectRoles: Array<{
+        id: string;
+        name: string;
+        isOwner?: boolean;
+        isDefault?: boolean;
+    }>;
 }
 
 const schema = yup.object({
-    name: yup.string().required('Имя обязательно').min(2, 'Минимум 2 символа'),
-    role: yup.string().oneOf(['executor', 'assistant', 'leader']).required('Роль обязательна')
+    role: yup.string().required('Роль обязательна')
 });
 
 export const EditDeveloperDialog = ({
                                         open,
                                         developer,
                                         onClose,
-                                        onUpdate
+                                        onUpdate,
+                                        projectRoles
                                     }: EditDeveloperDialogProps) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -49,8 +53,7 @@ export const EditDeveloperDialog = ({
     useEffect(() => {
         if (developer) {
             reset({
-                name: developer.name,
-                role: developer.role
+                role: developer.originalRole || developer.role
             });
         }
     }, [developer, reset]);
@@ -63,11 +66,9 @@ export const EditDeveloperDialog = ({
         try {
             const updatedDeveloper: Developer = {
                 ...developer,
-                ...data
+                role: data.role,
+                originalRole: data.role
             };
-
-            // Имитация API задержки
-            await new Promise(resolve => setTimeout(resolve, 300));
 
             onUpdate(updatedDeveloper);
         } finally {
@@ -82,6 +83,10 @@ export const EditDeveloperDialog = ({
 
     if (!developer) return null;
 
+    const isOwnerRole = projectRoles.some(role =>
+        role.name === developer.originalRole && role.isOwner
+    );
+
     return (
         <AnimatePresence>
             {open && (
@@ -93,9 +98,7 @@ export const EditDeveloperDialog = ({
                         initial: { opacity: 0, scale: 0.95, y: 20 },
                         animate: { opacity: 1, scale: 1, y: 0 },
                         exit: { opacity: 0, scale: 0.95, y: 20 },
-                        transition: { type: 'spring', damping: 25, stiffness: 300 }
-                    }}
-                    PaperProps={{
+                        transition: { type: 'spring', damping: 25, stiffness: 300 },
                         sx: {
                             borderRadius: '20px',
                             background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98))',
@@ -180,37 +183,14 @@ export const EditDeveloperDialog = ({
                                     animate={{ x: 0, opacity: 1 }}
                                     transition={{ delay: 0.2 }}
                                 >
-                                    <Controller
-                                        name="name"
-                                        control={control}
-                                        render={({ field }) => (
-                                            <TextField
-                                                {...field}
-                                                label="Имя и фамилия"
-                                                placeholder="Иван Иванов"
-                                                fullWidth
-                                                error={!!errors.name}
-                                                helperText={errors.name?.message}
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root': {
-                                                        borderRadius: '12px',
-                                                        background: 'rgba(248, 250, 252, 0.8)',
-                                                        '&:hover fieldset': {
-                                                            borderColor: '#8b5cf6',
-                                                            borderWidth: '2px'
-                                                        },
-                                                        '&.Mui-focused fieldset': {
-                                                            borderColor: '#8b5cf6',
-                                                            borderWidth: '2px'
-                                                        }
-                                                    },
-                                                    '& .MuiInputLabel-root': {
-                                                        fontWeight: 600
-                                                    }
-                                                }}
-                                            />
-                                        )}
-                                    />
+                                    <Box sx={{ mb: 2 }}>
+                                        <Typography variant="subtitle2" sx={{ color: '#64748b', fontWeight: 600, mb: 1 }}>
+                                            Имя участника
+                                        </Typography>
+                                        <Typography variant="body1" sx={{ fontWeight: 700, color: '#1e293b', fontSize: '1.1rem' }}>
+                                            {developer.name}
+                                        </Typography>
+                                    </Box>
                                 </motion.div>
 
                                 <motion.div
@@ -227,6 +207,7 @@ export const EditDeveloperDialog = ({
                                                 <Select
                                                     {...field}
                                                     label="Роль в проекте"
+                                                    disabled={isOwnerRole}
                                                     sx={{
                                                         borderRadius: '12px',
                                                         background: 'rgba(248, 250, 252, 0.8)',
@@ -238,40 +219,34 @@ export const EditDeveloperDialog = ({
                                                         }
                                                     }}
                                                 >
-                                                    <MenuItem value="executor">
-                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                                            <Box sx={{
-                                                                width: 8,
-                                                                height: 8,
-                                                                borderRadius: '50%',
-                                                                background: '#3b82f6'
-                                                            }} />
-                                                            Разработчик
-                                                        </Box>
-                                                    </MenuItem>
-                                                    <MenuItem value="assistant">
-                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                                            <Box sx={{
-                                                                width: 8,
-                                                                height: 8,
-                                                                borderRadius: '50%',
-                                                                background: '#10b981'
-                                                            }} />
-                                                            Помощник разработчика
-                                                        </Box>
-                                                    </MenuItem>
-                                                    <MenuItem value="leader">
-                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                                            <Box sx={{
-                                                                width: 8,
-                                                                height: 8,
-                                                                borderRadius: '50%',
-                                                                background: '#ef4444'
-                                                            }} />
-                                                            Руководитель
-                                                        </Box>
-                                                    </MenuItem>
+                                                    {projectRoles
+                                                        .filter(role => !role.isOwner)
+                                                        .map((role) => (
+                                                            <MenuItem key={role.id} value={role.name}>
+                                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                                    <Box sx={{
+                                                                        width: 8,
+                                                                        height: 8,
+                                                                        borderRadius: '50%',
+                                                                        background: role.isDefault ? '#10b981' : '#3b82f6'
+                                                                    }} />
+                                                                    {role.name}
+                                                                </Box>
+                                                            </MenuItem>
+                                                        ))}
                                                 </Select>
+                                                {isOwnerRole && (
+                                                    <Typography
+                                                        variant="caption"
+                                                        sx={{
+                                                            color: '#ef4444',
+                                                            mt: 1,
+                                                            display: 'block'
+                                                        }}
+                                                    >
+                                                        Роль Owner нельзя изменить
+                                                    </Typography>
+                                                )}
                                             </FormControl>
                                         )}
                                     />
@@ -417,7 +392,7 @@ export const EditDeveloperDialog = ({
                                 onClick={handleSubmit(onSubmit)}
                                 variant="contained"
                                 startIcon={<FaSave />}
-                                disabled={!isValid || isSubmitting}
+                                disabled={!isValid || isSubmitting || isOwnerRole}
                                 sx={{
                                     background: 'linear-gradient(135deg, #8b5cf6, #a78bfa)',
                                     borderRadius: '12px',

@@ -35,6 +35,7 @@ interface ProjectRole {
 const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
     const [developers, setDevelopers] = useState<Developer[]>([]);
     const [projectRoles, setProjectRoles] = useState<ProjectRole[]>([]);
+    const [currentUserRole, setCurrentUserRole] = useState<ProjectRole | null>(null);
     const [isAddDeveloperOpen, setIsAddDeveloperOpen] = useState(false);
     const [isEditDeveloperOpen, setIsEditDeveloperOpen] = useState(false);
     const [editingDeveloper, setEditingDeveloper] = useState<Developer | null>(null);
@@ -77,10 +78,24 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
         try {
             const response = await api.get(`/projects/${projectId}/roles`);
             if (response.data && Array.isArray(response.data.roles)) {
-                setProjectRoles(response.data.roles);
+                const uniqueRoles = response.data.roles.filter((role: ProjectRole, index: number, self: ProjectRole[]) =>
+                    index === self.findIndex((r) => r.id === role.id)
+                );
+                setProjectRoles(uniqueRoles);
             }
         } catch (err) {
             console.error('Ошибка при загрузке ролей проекта:', err);
+        }
+    }, [projectId]);
+
+    const fetchCurrentUserRole = useCallback(async () => {
+        if (!projectId) return;
+
+        try {
+            const response = await api.get(`/projects/${projectId}/roles/me`);
+            setCurrentUserRole(response.data);
+        } catch (err) {
+            console.error('Ошибка при загрузке роли текущего пользователя:', err);
         }
     }, [projectId]);
 
@@ -192,7 +207,8 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
 
     useEffect(() => {
         fetchProjectRoles();
-    }, [fetchProjectRoles]);
+        fetchCurrentUserRole();
+    }, [fetchProjectRoles, fetchCurrentUserRole]);
 
     const getRoleFilterOptions = useMemo(() => {
         if (projectRoles.length === 0) {
@@ -218,34 +234,9 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
         return uniqueRoles;
     }, [projectRoles]);
 
-    if (!projectId) {
-        return (
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className={styles.developersSection}
-            >
-                <Box sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: '400px',
-                    textAlign: 'center',
-                    padding: 4
-                }}>
-                    <FaExclamationTriangle style={{ fontSize: '64px', color: '#f59e0b', marginBottom: '20px' }} />
-                    <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: '#1e293b' }}>
-                        Проект не выбран
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: '#64748b', maxWidth: '500px', mb: 3 }}>
-                        Для просмотра участников команды сначала выберите проект в левой панели навигации или создайте новый проект.
-                    </Typography>
-                </Box>
-            </motion.div>
-        );
-    }
+    const isOwner = useMemo(() => {
+        return currentUserRole?.isOwner || false;
+    }, [currentUserRole]);
 
     const handleAddDeveloper = (developerData: { name: string; role: Developer['role'] }) => {
         showSnackbar('Добавление участников через API пока не поддерживается', 'info');
@@ -256,10 +247,35 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
         setIsEditDeveloperOpen(true);
     };
 
-    const handleUpdateDeveloper = (updatedDeveloper: Developer) => {
-        showSnackbar('Редактирование участников через API пока не поддерживается', 'info');
-        setIsEditDeveloperOpen(false);
-        setEditingDeveloper(null);
+    const handleUpdateDeveloper = async (updatedDeveloper: Developer) => {
+        if (!projectId || !editingDeveloper) return;
+
+        try {
+            const role = projectRoles.find(r => r.name === updatedDeveloper.role);
+            if (!role) {
+                showSnackbar('Роль не найдена', 'error');
+                return;
+            }
+
+            await api.patch(`/projects/${projectId}/users/${editingDeveloper.id}`, {
+                roleId: role.id
+            });
+
+            showSnackbar('Роль участника успешно обновлена', 'success');
+
+            setDevelopers(prev => prev.map(dev =>
+                dev.id === editingDeveloper.id
+                    ? { ...dev, role: updatedDeveloper.role, originalRole: updatedDeveloper.role }
+                    : dev
+            ));
+
+            setIsEditDeveloperOpen(false);
+            setEditingDeveloper(null);
+            refetch();
+        } catch (err) {
+            console.error('Ошибка при обновлении роли:', err);
+            showSnackbar('Не удалось обновить роль участника', 'error');
+        }
     };
 
     const handleRemoveDeveloper = (developerId: number) => {
@@ -273,9 +289,24 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
         }
     };
 
-    const confirmDelete = () => {
-        if (deleteConfirmation.developerId) {
-            showSnackbar('Удаление участников через API пока не поддерживается', 'info');
+    const confirmDelete = async () => {
+        if (!deleteConfirmation.developerId || !projectId) {
+            setDeleteConfirmation({ isOpen: false, developerId: null, developerName: '' });
+            return;
+        }
+
+        try {
+            await api.delete(`/projects/${projectId}/members/${deleteConfirmation.developerId}`);
+
+            showSnackbar('Участник успешно удален из проекта', 'success');
+
+            setDevelopers(prev => prev.filter(dev => dev.id !== deleteConfirmation.developerId));
+
+            setDeleteConfirmation({ isOpen: false, developerId: null, developerName: '' });
+            refetch();
+        } catch (err) {
+            console.error('Ошибка при удалении участника:', err);
+            showSnackbar('Не удалось удалить участника из проекта', 'error');
             setDeleteConfirmation({ isOpen: false, developerId: null, developerName: '' });
         }
     };
@@ -295,6 +326,7 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
     const handleManualRefresh = () => {
         refetch();
         fetchProjectRoles();
+        fetchCurrentUserRole();
     };
 
     const filteredDevelopers = useMemo(() => {
@@ -480,29 +512,31 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
                             {loading ? 'Обновление...' : 'Обновить'}
                         </Button>
 
-                        <Button
-                            onClick={() => setIsAddDeveloperOpen(true)}
-                            variant="contained"
-                            startIcon={<FaPlus />}
-                            sx={{
-                                padding: '10px 24px',
-                                borderRadius: '12px',
-                                background: 'linear-gradient(135deg, #10b981, #34d399)',
-                                color: 'white',
-                                fontWeight: 600,
-                                textTransform: 'none',
-                                fontSize: '0.9rem',
-                                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
-                                '&:hover': {
-                                    background: 'linear-gradient(135deg, #059669, #10b981)',
-                                    boxShadow: '0 6px 20px rgba(16, 185, 129, 0.4)',
-                                    transform: 'translateY(-2px)'
-                                },
-                                transition: 'all 0.3s ease'
-                            }}
-                        >
-                            Добавить участника
-                        </Button>
+                        {isOwner && (
+                            <Button
+                                onClick={() => setIsAddDeveloperOpen(true)}
+                                variant="contained"
+                                startIcon={<FaPlus />}
+                                sx={{
+                                    padding: '10px 24px',
+                                    borderRadius: '12px',
+                                    background: 'linear-gradient(135deg, #10b981, #34d399)',
+                                    color: 'white',
+                                    fontWeight: 600,
+                                    textTransform: 'none',
+                                    fontSize: '0.9rem',
+                                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                                    '&:hover': {
+                                        background: 'linear-gradient(135deg, #059669, #10b981)',
+                                        boxShadow: '0 6px 20px rgba(16, 185, 129, 0.4)',
+                                        transform: 'translateY(-2px)'
+                                    },
+                                    transition: 'all 0.3s ease'
+                                }}
+                            >
+                                Добавить участника
+                            </Button>
+                        )}
                     </Box>
                 </motion.div>
             </div>
@@ -523,7 +557,7 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
                         }}>
                             {[1, 2, 3, 4].map((i) => (
                                 <motion.div
-                                    key={i}
+                                    key={`loading-skeleton-${i}`}
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: i * 0.1 }}
@@ -579,7 +613,7 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
                     >
                         <DevelopersTable
                             developers={sortedDevelopers}
-                            isLeader={developers.some(dev => dev.isCurrentUser && dev.role === 'leader')}
+                            isLeader={isOwner}
                             onRemoveDeveloper={handleRemoveDeveloper}
                             onEditDeveloper={handleEditDeveloper}
                             projectRoles={projectRoles}
@@ -604,6 +638,7 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
                     setEditingDeveloper(null);
                 }}
                 onUpdate={handleUpdateDeveloper}
+                projectRoles={projectRoles}
             />
 
             <DeleteConfirmationDialog

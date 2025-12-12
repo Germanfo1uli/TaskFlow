@@ -44,7 +44,10 @@ export const DevelopersTable = ({
     };
 
     const canRemoveDeveloper = (developer: Developer) => {
-        return isLeader && !developer.isCurrentUser && developer.role !== 'leader';
+        const isDeveloperOwner = projectRoles.some(role =>
+            role.name === developer.originalRole && role.isOwner
+        );
+        return isLeader && !developer.isCurrentUser && !isDeveloperOwner;
     };
 
     const getCurrentProjects = (developer: Developer) => {
@@ -62,6 +65,12 @@ export const DevelopersTable = ({
 
     const getRoleDisplayName = (developer: Developer) => {
         return developer.originalRole || developer.role;
+    };
+
+    const isRoleOwner = (developer: Developer) => {
+        return projectRoles.some(role =>
+            role.name === developer.originalRole && role.isOwner
+        );
     };
 
     return (
@@ -118,8 +127,9 @@ export const DevelopersTable = ({
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {developers.map((developer, index) => {
+                    {developers.map((developer) => {
                         const developerProjects = getCurrentProjects(developer);
+                        const isOwner = isRoleOwner(developer);
 
                         return (
                             <TableRow
@@ -133,9 +143,10 @@ export const DevelopersTable = ({
                                     },
                                     transition: 'all 0.3s ease',
                                     position: 'relative',
-                                    background: index % 2 === 0
-                                        ? 'rgba(255, 255, 255, 0.5)'
-                                        : 'rgba(248, 250, 252, 0.7)',
+                                    background: 'rgba(255, 255, 255, 0.5)',
+                                    '&:nth-of-type(odd)': {
+                                        background: 'rgba(248, 250, 252, 0.7)'
+                                    },
                                     '& td': {
                                         borderBottom: '1px solid rgba(0, 0, 0, 0.04)',
                                         padding: '16px 20px',
@@ -149,13 +160,19 @@ export const DevelopersTable = ({
                                             sx={{
                                                 width: 44,
                                                 height: 44,
-                                                background: 'linear-gradient(135deg, #3b82f6, #60a5fa)',
-                                                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                                                background: isOwner
+                                                    ? 'linear-gradient(135deg, #ef4444, #f87171)'
+                                                    : 'linear-gradient(135deg, #3b82f6, #60a5fa)',
+                                                boxShadow: isOwner
+                                                    ? '0 4px 12px rgba(239, 68, 68, 0.3)'
+                                                    : '0 4px 12px rgba(59, 130, 246, 0.3)',
                                                 border: '2px solid rgba(255, 255, 255, 0.9)',
                                                 transition: 'all 0.3s ease',
                                                 '&:hover': {
                                                     transform: 'scale(1.05)',
-                                                    boxShadow: '0 6px 20px rgba(59, 130, 246, 0.4)'
+                                                    boxShadow: isOwner
+                                                        ? '0 6px 20px rgba(239, 68, 68, 0.4)'
+                                                        : '0 6px 20px rgba(59, 130, 246, 0.4)'
                                                 }
                                             }}
                                         >
@@ -214,6 +231,20 @@ export const DevelopersTable = ({
                                                         }}
                                                     />
                                                 )}
+                                                {isOwner && (
+                                                    <Chip
+                                                        label="Owner"
+                                                        size="small"
+                                                        sx={{
+                                                            background: 'linear-gradient(135deg, #ef4444, #f87171)',
+                                                            color: 'white',
+                                                            fontWeight: 700,
+                                                            fontSize: '0.7rem',
+                                                            height: '20px',
+                                                            boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)'
+                                                        }}
+                                                    />
+                                                )}
                                             </Box>
                                             {developer.bio && (
                                                 <Typography
@@ -254,7 +285,7 @@ export const DevelopersTable = ({
                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxWidth: '200px' }}>
                                         {developerProjects.slice(0, 3).map((project, index) => (
                                             <Chip
-                                                key={index}
+                                                key={`${developer.id}-project-${index}`}
                                                 label={project}
                                                 size="small"
                                                 sx={{
@@ -374,7 +405,7 @@ export const DevelopersTable = ({
 
                                 <TableCell align="center">
                                     <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
-                                        {canEditDeveloper(developer) && (
+                                        {canEditDeveloper(developer) && !isOwner && (
                                             <Tooltip
                                                 title="Редактировать участника"
                                                 arrow

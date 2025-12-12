@@ -25,7 +25,7 @@ export const DeleteConfirmationDialog = ({
                                              onConfirm
                                          }: DeleteConfirmationDialogProps) => {
     const handleConfirm = async () => {
-        // Имитация API задержки
+
         await new Promise(resolve => setTimeout(resolve, 300));
         onConfirm();
     };
@@ -260,7 +260,7 @@ export const DeleteConfirmationDialog = ({
                                     overflow: 'hidden'
                                 }}
                             >
-                                Удалить участника
+                                Удалить
                             </Button>
                         </DialogActions>
                     </motion.div>
