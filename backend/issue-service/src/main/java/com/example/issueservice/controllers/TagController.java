@@ -65,7 +65,9 @@ public class TagController {
             @AuthenticationPrincipal JwtUser principal) {
 
         log.info("Request to update project tag with id: {}", tagId);
-        TagResponse tag = tagService.updateProjectTag(principal.userId(), request.projectId(), tagId);
+        TagResponse tag = tagService.updateProjectTag(
+                principal.userId(), request.projectId(),
+                tagId, request.name());
 
         log.info("Successfully update project tag {}", tagId);
         return ResponseEntity.ok(tag);
