@@ -9,8 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Objects;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -24,17 +22,24 @@ public class TransitionService {
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new IssueNotFoundException("Issue with ID: " + issueId + " not found"));
 
-        ActionType requiredAction = (type == AssignmentType.ASSIGNEE)
-                ? ActionType.VIEW
-                : type.getActionType();
+        boolean hasFinalizePermission = false;
+        try {
+            authService.hasPermission(userId, issue.getProjectId(), EntityType.ISSUE, ActionType.FULL_TRANSITION);
+            hasFinalizePermission = true;
+        } catch (AccessDeniedException _) {}
 
-        authService.hasPermission(userId, issue.getProjectId(), EntityType.ISSUE, requiredAction);
+        if (!hasFinalizePermission) {
+            ActionType requiredAction = (type == AssignmentType.ASSIGNEE)
+                    ? ActionType.VIEW
+                    : type.getActionType();
 
-        validateTransition(issue.getStatus(), targetStatus, type);
-        assignHelper.validateUserAssignedToRole(issue, userId, type);
+            authService.hasPermission(userId, issue.getProjectId(), EntityType.ISSUE, requiredAction);
+            validateTransition(issue.getStatus(), targetStatus, type);
+            assignHelper.validateUserAssignedToRole(issue, userId, type);
+        }
 
-        log.info("Transitioning issue {} from {} to {} by user {} as {}",
-                issueId, issue.getStatus().name(), targetStatus.name(), userId, type.name());
+        log.info("Transitioning issue {} from {} to {} by user {} as {} (finalize: {})",
+                issueId, issue.getStatus().name(), targetStatus.name(), userId, type.name(), hasFinalizePermission);
 
         issue.setStatus(targetStatus);
         issueRepository.save(issue);

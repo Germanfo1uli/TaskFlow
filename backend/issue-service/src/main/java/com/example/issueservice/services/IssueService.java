@@ -33,8 +33,8 @@ public class IssueService {
 
     @Transactional
     public IssueDetailResponse createIssue(
-            Long userId, Long projectId, Long parentId, String title, String description,
-            IssueType type, Priority priority, LocalDateTime deadline) {
+            Long userId, Long projectId, Long parentId, String title,
+            String description, IssueType type, Priority priority) {
 
         authService.hasPermission(userId, projectId, EntityType.ISSUE, ActionType.CREATE);
 
@@ -60,7 +60,6 @@ public class IssueService {
                 .description(description)
                 .type(type)
                 .priority(priority)
-                .deadline(deadline)
                 .status(IssueStatus.TO_DO)
                 .build();
 

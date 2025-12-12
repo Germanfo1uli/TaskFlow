@@ -42,7 +42,7 @@ public class IssueController {
         IssueDetailResponse response = issueService.createIssue(
                 principal.userId(), request.projectId(), request.parentId(),
                 request.title(), request.description(),
-                request.type(), request.priority(), request.deadline());
+                request.type(), request.priority());
         return ResponseEntity.ok(response);
     }
 

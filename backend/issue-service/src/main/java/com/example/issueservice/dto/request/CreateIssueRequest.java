@@ -5,8 +5,6 @@ import com.example.issueservice.dto.models.enums.Priority;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 
-import java.time.LocalDateTime;
-
 public record CreateIssueRequest(
         @Schema(description = "ID проекта", example = "123")
         @NotNull
@@ -29,8 +27,5 @@ public record CreateIssueRequest(
 
         @Schema(description = "Приоритет задачи", example = "MEDIUM")
         @NotNull(message = "Priority is required")
-        Priority priority,
-
-        @Schema(description = "Дедлайн задачи", example = "времяяяя")
-        LocalDateTime deadline
+        Priority priority
 ) {}
