@@ -272,6 +272,41 @@ export const useProfile = () => {
         }
     };
 
+    const deleteAccount = async (): Promise<void> => {
+        setIsLoading(true);
+
+        try {
+            const refreshToken = localStorage.getItem('refreshToken');
+            const accessToken = localStorage.getItem('token');
+
+            if (!refreshToken) {
+                throw new Error('Refresh token не найден');
+            }
+            if (!accessToken) {
+                throw new Error('Access token не найден');
+            }
+
+            await api.delete('/auth/account', {
+                data: { refreshToken },
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            toast.success('Учетная запись успешно удалена');
+        } catch (error: any) {
+            let errorMessage = 'Ошибка при удалении учетной записи';
+            if (error.response) {
+                errorMessage = error.response.data?.message || error.response.data?.error || errorMessage;
+            }
+            toast.error(errorMessage);
+            throw error;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return {
         profile,
         isLoading,
@@ -280,6 +315,7 @@ export const useProfile = () => {
         updateAvatar,
         deleteAvatar,
         loadUserAvatar,
-        loadUserProfile
+        loadUserProfile,
+        deleteAccount
     };
 };

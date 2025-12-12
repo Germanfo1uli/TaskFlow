@@ -3,6 +3,8 @@
     --color-primary-light: #4facfe;
     --color-danger: #ef4444;
     --color-danger-dark: #dc2626;
+    --color-danger-light: #ff0000;
+    --color-danger-light-hover: #da0d0d;
     --color-text: #1e293b;
     --color-text-muted: #64748b;
     --color-bg: #ffffff;
@@ -23,7 +25,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 10000;
+    z-index: 500;
     padding: 1rem;
 }
 
@@ -78,6 +80,44 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
+}
+
+.deleteProfileButton {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: 2px solid rgba(239, 68, 68, 0.2);
+    border-radius: 8px;
+    background: var(--color-danger-light);
+    color: white;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    font-size: 0.85rem;
+    font-weight: 600;
+    position: relative;
+    overflow: hidden;
+}
+
+.deleteProfileButton:hover {
+    background: var(--color-danger-light-hover);
+    border-color: rgba(239, 68, 68, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.deleteProfileButton:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.1);
+}
+
+.deleteIcon {
+    font-size: 0.85rem;
+    transition: transform var(--transition-fast);
+}
+
+.deleteProfileButton:hover .deleteIcon {
+    transform: scale(1.1);
 }
 
 .logoutButton {
@@ -362,6 +402,7 @@
         gap: 0.5rem;
     }
 
+    .deleteProfileButton,
     .logoutButton {
         padding: 0.4rem 0.75rem;
         font-size: 0.8rem;
@@ -402,12 +443,15 @@
     }
 
     .headerActions {
-        flex-direction: column;
+        flex-direction: row;
+        flex-wrap: wrap;
         gap: 0.5rem;
     }
 
-    .logoutButton {
-        width: 100%;
+    .logoutButton,
+    .deleteProfileButton {
+        flex: 1;
+        min-width: 140px;
         justify-content: center;
     }
 }

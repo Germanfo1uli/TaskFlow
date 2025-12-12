@@ -1,15 +1,15 @@
-import { memo, useCallback, useEffect, useRef } from 'react';
-import { FaTimes, FaSignOutAlt, FaCopy } from 'react-icons/fa';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { FaTimes, FaSignOutAlt, FaCopy, FaTrash } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProfile } from './hooks/useProfile';
-import { AvatarUpload } from './components/AvatarUpload';
-import { ProfileForm } from './components/ProfileForm';
-import { ProfileStats } from './components/ProfileStats';
-import { LogoutConfirmation } from './components/LogoutConfirmation';
+import { AvatarUpload } from './components/AvatarUpload/AvatarUpload';
+import { ProfileForm } from './components/ProfileForm/ProfileForm';
+import { ProfileStats } from './components/ProfileStats/ProfileStats';
+import { LogoutConfirmation } from './components/LogoutConfirrmation/LogoutConfirmation';
+import DeleteProfileModal from './components/DeleteProfileModal/DeleteProfileModal';
 import styles from './ProfileModal.module.css';
 import { useAuth } from '@/app/auth/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 import { useNotification } from '@/app/auth/hooks/useNotification';
 import type { ProfileFormData } from './types/profile.types';
 import { api } from '@/app/auth/hooks/useTokenRefresh';
@@ -25,6 +25,7 @@ export const ProfileModal = memo(({ isOpen, onClose }: ProfileModalProps) => {
     const { showSuccess, showError } = useNotification();
     const router = useRouter();
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+    const [showDeleteProfile, setShowDeleteProfile] = useState(false);
     const [avatarError, setAvatarError] = useState<string | null>(null);
     const modalRef = useRef<HTMLDivElement>(null);
 
@@ -111,6 +112,81 @@ export const ProfileModal = memo(({ isOpen, onClose }: ProfileModalProps) => {
         }
     }, [deleteAvatar, showSuccess, showError]);
 
+    const handleDeleteProfile = useCallback(async (password: string) => {
+        try {
+            const refreshToken = localStorage.getItem('refreshToken');
+            const accessToken = localStorage.getItem('token');
+
+            if (!refreshToken) {
+                throw new Error('Refresh token не найден');
+            }
+            if (!accessToken) {
+                throw new Error('Access token не найден');
+            }
+
+            console.log('Отправка запроса на удаление профиля...');
+            console.log('Пароль для удаления:', password ? 'передан' : 'не передан');
+
+            // ОТПРАВЛЯЕМ ПАРОЛЬ СТРОКОЙ, БЕЗ КАВЫЧЕК
+            const response = await api.delete('/auth/account', {
+                data: {
+                    refreshToken,
+                    password: password // Просто строка, как есть
+                },
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            console.log('Профиль успешно удален, ответ:', response.data);
+
+            showSuccess('Ваш профиль успешно удален');
+
+            // Очищаем локальное хранилище
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+
+            // Перенаправляем на welcome страницу
+            router.push('/welcome');
+            handleCloseDeleteProfile();
+            onClose();
+
+        } catch (error: any) {
+            console.error('Ошибка при удалении профиля:', error);
+
+            let errorMessage = 'Не удалось удалить профиль. Попробуйте позже.';
+
+            if (error.response) {
+                console.error('Статус ошибки:', error.response.status);
+                console.error('Данные ошибки:', error.response.data);
+
+                if (error.response.status === 401) {
+                    if (error.response.data?.message?.toLowerCase().includes('password')) {
+                        errorMessage = 'Неверный пароль. Попробуйте еще раз.';
+                    } else if (error.response.data?.message?.toLowerCase().includes('token')) {
+                        errorMessage = 'Токен устарел. Попробуйте выйти и войти заново.';
+                    } else {
+                        errorMessage = 'Ошибка авторизации.';
+                    }
+                } else if (error.response.status === 403) {
+                    errorMessage = 'У вас недостаточно прав для удаления профиля.';
+                } else if (error.response.status === 404) {
+                    errorMessage = 'Сервис удаления профиля временно недоступен.';
+                } else if (error.response.data?.message) {
+                    errorMessage = error.response.data.message;
+                }
+            } else if (error.request) {
+                console.error('Нет ответа от сервера:', error.request);
+                errorMessage = 'Нет ответа от сервера. Проверьте подключение к интернету.';
+            } else {
+                console.error('Ошибка настройки запроса:', error.message);
+            }
+
+            throw new Error(errorMessage);
+        }
+    }, [router, onClose, showSuccess]);
+
     const handleLogoutClick = useCallback(() => setShowLogoutConfirm(true), []);
     const handleCancelLogout = useCallback(() => setShowLogoutConfirm(false), []);
 
@@ -152,10 +228,18 @@ export const ProfileModal = memo(({ isOpen, onClose }: ProfileModalProps) => {
 
     const currentUser = getCurrentUser();
 
+    const handleOpenDeleteProfile = useCallback(() => {
+        setShowDeleteProfile(true);
+    }, []);
+
+    const handleCloseDeleteProfile = useCallback(() => {
+        setShowDeleteProfile(false);
+    }, []);
+
     return (
-        <AnimatePresence>
-            {isOpen && (
-                <>
+        <>
+            <AnimatePresence>
+                {isOpen && (
                     <motion.div
                         className={styles.profileModalOverlay}
                         onClick={onClose}
@@ -183,11 +267,22 @@ export const ProfileModal = memo(({ isOpen, onClose }: ProfileModalProps) => {
                                             Профиль сотрудника
                                         </h1>
                                         <p className={styles.modalSubtitle}>
-                                            Управление персональной информацией и настройками
+                                            Управление персональной информации и настройками
                                         </p>
                                     </div>
 
                                     <div className={styles.headerActions}>
+                                        <motion.button
+                                            className={styles.deleteProfileButton}
+                                            onClick={handleOpenDeleteProfile}
+                                            title="Удалить профиль"
+                                            whileHover={{ scale: 1.03 }}
+                                            whileTap={{ scale: 0.97 }}
+                                        >
+                                            <FaTrash className={styles.deleteIcon} />
+                                            Удалить профиль
+                                        </motion.button>
+
                                         <motion.button
                                             className={styles.logoutButton}
                                             onClick={handleLogoutClick}
@@ -231,13 +326,13 @@ export const ProfileModal = memo(({ isOpen, onClose }: ProfileModalProps) => {
                                                 {profile.name || currentUser?.username || 'Пользователь'}
                                             </h2>
                                             <div className={styles.profileTags}>
-                        <span className={styles.profileEmail}>
-                          {profile.email || currentUser?.email}
-                        </span>
+                                                <span className={styles.profileEmail}>
+                                                    {profile.email || currentUser?.email}
+                                                </span>
                                                 <div className={styles.tagContainer}>
-                          <span className={styles.profileTag}>
-                            #{profile.tag || currentUser?.tag}
-                          </span>
+                                                    <span className={styles.profileTag}>
+                                                        #{profile.tag || currentUser?.tag}
+                                                    </span>
                                                     <motion.button
                                                         className={styles.copyButton}
                                                         onClick={handleCopyTag}
@@ -261,7 +356,7 @@ export const ProfileModal = memo(({ isOpen, onClose }: ProfileModalProps) => {
                                                         className={styles.avatarErrorClose}
                                                         aria-label="Закрыть ошибку"
                                                     >
-
+                                                        ×
                                                     </button>
                                                 </motion.div>
                                             )}
@@ -299,15 +394,22 @@ export const ProfileModal = memo(({ isOpen, onClose }: ProfileModalProps) => {
                             </div>
                         </motion.div>
                     </motion.div>
+                )}
+            </AnimatePresence>
 
-                    <LogoutConfirmation
-                        isOpen={showLogoutConfirm}
-                        onConfirm={handleConfirmLogout}
-                        onCancel={handleCancelLogout}
-                    />
-                </>
-            )}
-        </AnimatePresence>
+            <LogoutConfirmation
+                isOpen={showLogoutConfirm}
+                onConfirm={handleConfirmLogout}
+                onCancel={handleCancelLogout}
+            />
+
+            <DeleteProfileModal
+                isOpen={showDeleteProfile}
+                onClose={handleCloseDeleteProfile}
+                onConfirm={handleDeleteProfile}
+                userName={profile.name || currentUser?.username || 'Пользователь'}
+            />
+        </>
     );
 });
 

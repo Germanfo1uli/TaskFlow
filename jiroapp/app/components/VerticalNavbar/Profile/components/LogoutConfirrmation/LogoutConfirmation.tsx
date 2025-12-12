@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { FaTimes, FaSignOutAlt } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import styles from './LogoutConfirmation.module.css';
-import styles2 from '../../CreateProject/CreateProjectModal.module.css';
+import styles2 from '../../../CreateProject/CreateProjectModal.module.css';
 
 interface LogoutConfirmationProps {
     isOpen: boolean;

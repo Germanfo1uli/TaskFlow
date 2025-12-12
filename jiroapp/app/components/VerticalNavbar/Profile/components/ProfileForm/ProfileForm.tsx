@@ -2,8 +2,8 @@ import { memo, useCallback, useState, useEffect } from 'react';
 import { Formik, Form, Field, ErrorMessage, useFormikContext } from 'formik';
 import { FaSave, FaEdit, FaEnvelope, FaShieldAlt, FaExclamationTriangle } from 'react-icons/fa';
 import { AnimatePresence, motion } from 'framer-motion';
-import type { ProfileFormData } from '../types/profile.types';
-import { profileSchema } from '../validation/profileSchema';
+import type { ProfileFormData } from '../../types/profile.types';
+import { profileSchema } from '../../validation/profileSchema';
 import { useNotification } from '@/app/auth/hooks/useNotification';
 import styles from './ProfileForm.module.css';
 
