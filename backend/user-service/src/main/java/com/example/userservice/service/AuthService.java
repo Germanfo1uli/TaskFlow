@@ -175,7 +175,7 @@ public class AuthService {
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
         if (!passwordEncoder.matches(password, user.getPasswordHash())) {
-            throw new AuthenticationException("Incorrect login or password");
+            throw new AuthenticationException("Incorrect password");
         }
 
         user.setDeletedAt(LocalDateTime.now());
