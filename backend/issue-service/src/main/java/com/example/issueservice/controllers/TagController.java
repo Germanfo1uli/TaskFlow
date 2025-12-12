@@ -1,56 +1,52 @@
 package com.example.issueservice.controllers;
 
 import com.example.issueservice.dto.request.AssignTagDto;
-import com.example.issueservice.dto.request.CreateProjectTagDto;
-import com.example.issueservice.dto.response.TagDto;
+import com.example.issueservice.dto.request.CreateProjectTagResponse;
+import com.example.issueservice.dto.response.TagResponse;
+import com.example.issueservice.security.JwtUser;
 import com.example.issueservice.services.TagService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/tags")
+@RequestMapping("/api/issues")
 @RequiredArgsConstructor
 public class TagController {
 
     private final TagService tagService;
 
-    // --- Управление тегами проекта ---
+    @Operation(
+            summary = "Создание тега",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PostMapping("/tags")
+    public ResponseEntity<TagResponse> createProjectTag(
+            @Valid @RequestBody CreateProjectTagResponse request,
+            @AuthenticationPrincipal JwtUser principal) {
 
-    /**
-     * Создать новый тег в рамках проекта.
-     * Пример запроса: POST /api/tags/projects/123
-     */
-    @PostMapping("/projects/{projectId}")
-    public ResponseEntity<TagDto> createProjectTag(
-            @PathVariable Long projectId,
-            @Valid @RequestBody CreateProjectTagDto dto) {
-        log.info("Request to create tag '{}' for project {}", dto.getName(), projectId);
-        TagDto createdTag = tagService.createProjectTag(dto);
-        log.info("Successfully created project tag with id: {}", createdTag.getId());
-        return new ResponseEntity<>(createdTag, HttpStatus.CREATED);
+        log.info("Request to create tag '{}' for project {}", request.name(), request.projectId());
+        TagResponse response = tagService.createProjectTag(principal.userId(), request.projectId(), request.name());
+
+        log.info("Successfully created project tag with id: {}", response.id());
+        return ResponseEntity.ok(response);
     }
 
-    /**
-     * Получить все теги для конкретного проекта.
-     * Пример запроса: GET /api/tags/projects/123
-     */
     @GetMapping("/projects/{projectId}")
-    public ResponseEntity<List<TagDto>> getTagsByProject(@PathVariable Long projectId) {
+    public ResponseEntity<List<TagResponse>> getTagsByProject(@PathVariable Long projectId) {
         log.info("Request to get all tags for project: {}", projectId);
-        List<TagDto> tags = tagService.getTagsByProject(projectId);
+        List<TagResponse> tags = tagService.getTagsByProject(projectId);
         return ResponseEntity.ok(tags);
     }
 
-    /**
-     * Удалить тег проекта.
-     * Пример запроса: DELETE /api/tags/456
-     */
     @DeleteMapping("/{tagId}")
     public ResponseEntity<Void> deleteProjectTag(@PathVariable Long tagId) {
         log.info("Request to delete project tag with id: {}", tagId);
@@ -59,12 +55,6 @@ public class TagController {
         return ResponseEntity.noContent().build();
     }
 
-    // --- Управление привязкой тегов к задачам ---
-
-    /**
-     * Привязать существующий тег к задаче.
-     * Пример запроса: POST /api/tags/issues/123
-     */
     @PostMapping("/issues/{issueId}")
     public ResponseEntity<Void> assignTagToIssue(
             @PathVariable Long issueId,
@@ -75,10 +65,6 @@ public class TagController {
         return ResponseEntity.ok().build();
     }
 
-    /**
-     * Отвязать тег от задачи.
-     * Пример запроса: DELETE /api/tags/issues/123/tags/456
-     */
     @DeleteMapping("/issues/{issueId}/tags/{tagId}")
     public ResponseEntity<Void> removeTagFromIssue(
             @PathVariable Long issueId,
@@ -89,14 +75,10 @@ public class TagController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Получить все теги, привязанные к конкретной задаче.
-     * Пример запроса: GET /api/tags/issues/123
-     */
     @GetMapping("/issues/{issueId}")
-    public ResponseEntity<List<TagDto>> getTagsByIssue(@PathVariable Long issueId) {
+    public ResponseEntity<List<TagResponse>> getTagsByIssue(@PathVariable Long issueId) {
         log.info("Request to get all tags for issue: {}", issueId);
-        List<TagDto> tags = tagService.getTagsByIssue(issueId);
+        List<TagResponse> tags = tagService.getTagsByIssue(issueId);
         return ResponseEntity.ok(tags);
     }
 }

@@ -121,6 +121,15 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
+    // 409 тег уже существует
+    @ExceptionHandler(CommentNotFoundException.class)
+    public ResponseEntity<Object> handleTagAlreadyExists(TagAlreadyExistsException ex,
+                                                        HttpServletRequest request) {
+        log.warn("Conflict for tag {} {}: {}",
+                request.getMethod(), request.getRequestURI(), ex.getMessage());
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
     // 503 сервис недоступен
     @ExceptionHandler(ServiceUnavailableException.class)
     public ResponseEntity<Object> handleServiceUnavailable(ServiceUnavailableException ex,

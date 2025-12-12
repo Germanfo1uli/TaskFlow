@@ -14,4 +14,6 @@ public interface ProjectTagRepository extends JpaRepository<ProjectTag, Long> {
 
     // Проверить, существует ли тег с таким именем в проекте
     Optional<ProjectTag> findByProjectIdAndName(Long projectId, String name);
+
+    boolean existsByProjectIdAndName(Long projectId, String name);
 }

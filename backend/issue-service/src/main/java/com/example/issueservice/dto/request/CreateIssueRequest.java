@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 
 public record CreateIssueRequest(
         @Schema(description = "ID проекта", example = "123")
-        @NotNull
+        @NotNull(message = "ProjectID is required")
         Long projectId,
 
         @Schema(description = "ID родительской задачи", example = "123")

@@ -1,11 +1,14 @@
 package com.example.issueservice.services;
 
+import com.example.issueservice.dto.models.enums.ActionType;
+import com.example.issueservice.dto.models.enums.EntityType;
 import com.example.issueservice.dto.request.AssignTagDto;
-import com.example.issueservice.dto.request.CreateProjectTagDto;
-import com.example.issueservice.dto.response.TagDto;
+import com.example.issueservice.dto.request.CreateProjectTagResponse;
+import com.example.issueservice.dto.response.TagResponse;
 import com.example.issueservice.exception.ProjectTagNotFoundException;
 import com.example.issueservice.dto.models.Issue;
 import com.example.issueservice.dto.models.ProjectTag;
+import com.example.issueservice.exception.TagAlreadyExistsException;
 import com.example.issueservice.repositories.IssueRepository;
 import com.example.issueservice.repositories.ProjectTagRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,15 +26,17 @@ public class TagService {
 
     private final ProjectTagRepository projectTagRepository;
     private final IssueRepository issueRepository;
-
-    // --- Управление тегами проекта ---
+    private final AuthService authService;
 
     @Transactional
-    public TagDto createProjectTag(CreateProjectTagDto dto) {
-        log.info("Creating tag '{}' for project {}", dto.getName(), dto.getProjectId());
+    public TagResponse createProjectTag(Long userId, Long projectId, String name) {
 
-        if (projectTagRepository.findByProjectIdAndName(dto.getProjectId(), dto.getName()).isPresent()) {
-            throw new IllegalArgumentException("Tag with name '" + dto.getName() + "' already exists in this project");
+        authService.hasPermission(userId, projectId, EntityType.ISSUE, ActionType.CREATE);
+
+        log.info("Creating tag '{}' for project {}", name, projectId);
+
+        if(projectTagRepository.existsByProjectIdAndName(projectId, name)) {
+            throw new TagAlreadyExistsException("Tag " + name + "already exists in project " + projectId);
         }
 
         ProjectTag newTag = ProjectTag.builder()
@@ -43,7 +48,7 @@ public class TagService {
         return convertToDto(savedTag);
     }
 
-    public List<TagDto> getTagsByProject(Long projectId) {
+    public List<TagResponse> getTagsByProject(Long projectId) {
         log.info("Fetching all tags for project: {}", projectId);
         List<ProjectTag> tags = projectTagRepository.findByProjectId(projectId);
         return tags.stream().map(this::convertToDto).collect(Collectors.toList());
@@ -88,7 +93,7 @@ public class TagService {
         log.info("Successfully removed tag from issue.");
     }
 
-    public List<TagDto> getTagsByIssue(Long issueId) {
+    public List<TagResponse> getTagsByIssue(Long issueId) {
         log.info("Fetching tags for issue: {}", issueId);
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new IllegalArgumentException("Issue not found"));
@@ -98,8 +103,8 @@ public class TagService {
                 .collect(Collectors.toList());
     }
 
-    private TagDto convertToDto(ProjectTag tag) {
-        return TagDto.builder()
+    private TagResponse convertToDto(ProjectTag tag) {
+        return TagResponse.builder()
                 .id(tag.getId())
                 .name(tag.getName())
                 .build();
