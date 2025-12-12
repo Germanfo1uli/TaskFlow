@@ -63,8 +63,8 @@ services:
     image: rabbitmq:3-management-alpine
     hostname: rabbitmq-node
     ports:
-      - "5672:5672"   
-      - "15672:15672" 
+      - "5672:5672"
+      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-secret}
@@ -143,6 +143,78 @@ services:
       - ./user-service/src:/app/src:ro
       - maven-cache:/root/.m2
 
+  board-service:
+    build:
+      context: ./board-service
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8082:8082"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    environment:
+      SERVER_PORT: 8082
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=board_service_schema
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-admin}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASS:-secret}
+    volumes:
+      - ./board-service/src:/app/src:ro
+      - maven-cache:/root/.m2
+
+  issue-service:
+    build:
+      context: ./issue-service
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8083:8083"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    environment:
+      SERVER_PORT: 8083
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=issue_service_schema
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-admin}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASS:-secret}
+    volumes:
+      - ./issue-service/src:/app/src:ro
+      - maven-cache:/root/.m2
+
   sprints-service:
     build:
       context: .
@@ -154,7 +226,7 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-      redis: 
+      redis:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
@@ -175,14 +247,12 @@ services:
       
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
-
       RABBITMQ__HOSTNAME: rabbitmq
-      RABBITMQ__PORT: 5672 
+      RABBITMQ__PORT: 5672
       RABBITMQ__USERNAME: ${RABBITMQ_USER:-admin}
       RABBITMQ__PASSWORD: ${RABBITMQ_PASS:-secret}
 
-      DOTNET_URLS: http://localhost:8084
-    
+
   dashboard-service:
     build:
       context: .
@@ -217,18 +287,17 @@ services:
       SPRING_REDIS_PORT: 6379
 
       RABBITMQ__HOSTNAME: rabbitmq
-      RABBITMQ__PORT: 5672 
+      RABBITMQ__PORT: 5672
       RABBITMQ__USERNAME: ${RABBITMQ_USER:-admin}
       RABBITMQ__PASSWORD: ${RABBITMQ_PASS:-secret}
       
       DOTNET_URLS: http://localhost:8085
-      
-    volumes:
-      - ./dashboard-service:/src/dashboard-service
-      - ./shared-libs:/src/shared-libs
+
 
 volumes:
   pg_data:
   redis_data:
   rabbitmq_data:
   maven-cache:
+  dashboard-nuget-cache:
+  sprints-nuget-cache:
