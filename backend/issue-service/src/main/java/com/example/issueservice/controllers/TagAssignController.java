@@ -2,6 +2,7 @@ package com.example.issueservice.controllers;
 
 import com.example.issueservice.dto.request.AssignTagDto;
 import com.example.issueservice.dto.response.TagResponse;
+import com.example.issueservice.services.TagAssignService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,6 +24,8 @@ import java.util.List;
 @Tag(name = "Tag Assign Management", description = "Управление назначениями тегов на задачи в проекте")
 public class TagAssignController {
 
+    private final TagAssignService tagAssignService;
+
     @Operation(
             summary = "Назначение тега задаче",
             security = @SecurityRequirement(name = "bearerAuth")
@@ -32,7 +35,7 @@ public class TagAssignController {
             @PathVariable Long issueId,
             @Valid @RequestBody AssignTagDto dto) {
         log.info("Request to assign tag {} to issue {}", dto.getTagId(), issueId);
-        tagService.assignTagToIssue(issueId, dto);
+        tagAssignService.assignTagToIssue(issueId, dto);
         log.info("Successfully assigned tag to issue.");
         return ResponseEntity.ok().build();
     }
@@ -42,7 +45,7 @@ public class TagAssignController {
             @PathVariable Long issueId,
             @PathVariable Long tagId) {
         log.info("Request to remove tag {} from issue {}", tagId, issueId);
-        tagService.removeTagFromIssue(issueId, tagId);
+        tagAssignService.removeTagFromIssue(issueId, tagId);
         log.info("Successfully removed tag from issue.");
         return ResponseEntity.noContent().build();
     }
@@ -50,7 +53,7 @@ public class TagAssignController {
     @GetMapping("/issues/{issueId}")
     public ResponseEntity<List<TagResponse>> getTagsByIssue(@PathVariable Long issueId) {
         log.info("Request to get all tags for issue: {}", issueId);
-        List<TagResponse> tags = tagService.getTagsByIssue(issueId);
+        List<TagResponse> tags = tagAssignService.getTagsByIssue(issueId);
         return ResponseEntity.ok(tags);
     }
 }

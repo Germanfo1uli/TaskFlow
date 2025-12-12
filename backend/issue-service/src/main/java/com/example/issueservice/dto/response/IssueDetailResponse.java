@@ -7,6 +7,8 @@ import com.example.issueservice.dto.models.enums.Priority;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 
 @Schema(description = "Детальная информация о задаче с данными о пользователях")
 public record IssueDetailResponse(
@@ -53,7 +55,10 @@ public record IssueDetailResponse(
         PublicProfileResponse reviewer,
 
         @Schema(description = "Данные о QA engineer")
-        PublicProfileResponse qa
+        PublicProfileResponse qa,
+
+        @Schema(description = "Список тегов задачи")
+        List<TagResponse> tags
 ) {
         public static IssueDetailResponse fromIssue(Issue issue) {
                 return new IssueDetailResponse(
@@ -71,29 +76,8 @@ public record IssueDetailResponse(
                         null,
                         null,
                         null,
-                        null
-                );
-        }
-
-        public static IssueDetailResponse withAssignee(
-                Issue issue,
-                PublicProfileResponse assignee) {
-                return new IssueDetailResponse(
-                        issue.getId(),
-                        issue.getProjectId(),
-                        issue.getParentIssue() != null ? issue.getParentIssue().getId() : null,
-                        issue.getTitle(),
-                        issue.getDescription(),
-                        issue.getStatus(),
-                        issue.getType(),
-                        issue.getPriority(),
-                        issue.getDeadline(),
-                        issue.getCreatedAt(),
-                        issue.getUpdatedAt(),
                         null,
-                        assignee,
-                        null,
-                        null
+                        Collections.emptyList()
                 );
         }
 
@@ -102,7 +86,8 @@ public record IssueDetailResponse(
                 PublicProfileResponse creator,
                 PublicProfileResponse assignee,
                 PublicProfileResponse reviewer,
-                PublicProfileResponse qa) {
+                PublicProfileResponse qa,
+                List<TagResponse> tags) {
                 return new IssueDetailResponse(
                         issue.getId(),
                         issue.getProjectId(),
@@ -118,7 +103,8 @@ public record IssueDetailResponse(
                         creator,
                         assignee,
                         reviewer,
-                        qa
+                        qa,
+                        tags
                 );
         }
 }

@@ -5,6 +5,7 @@ import com.example.issueservice.dto.data.UserBatchRequest;
 import com.example.issueservice.dto.models.enums.*;
 import com.example.issueservice.dto.response.IssueDetailResponse;
 import com.example.issueservice.dto.response.PublicProfileResponse;
+import com.example.issueservice.dto.response.TagResponse;
 import com.example.issueservice.exception.IssueNotFoundException;
 import com.example.issueservice.dto.models.Issue;
 import com.example.issueservice.exception.IssueNotInProjectException;
@@ -76,7 +77,7 @@ public class IssueService {
     @Transactional(readOnly = true)
     public IssueDetailResponse getIssueById(Long userId, Long issueId) {
 
-        Issue issue = issueRepository.findById(issueId)
+        Issue issue = issueRepository.findWithTagsById(issueId)
                 .orElseThrow(() -> new IssueNotFoundException("Issue with id " + issueId + " not found"));
 
         authService.hasPermission(userId, issue.getProjectId(), EntityType.ISSUE, ActionType.VIEW);
@@ -92,12 +93,17 @@ public class IssueService {
 
         var userProfiles = getUserProfilesBatch(userIds);
 
+        List<TagResponse> tags = issue.getTags().stream()
+                .map(TagResponse::from)
+                .toList();
+
         return IssueDetailResponse.withUsers(
                 issue,
                 userProfiles.get(issue.getCreatorId()),
                 userProfiles.get(issue.getAssigneeId()),
                 userProfiles.get(issue.getCodeReviewerId()),
-                userProfiles.get(issue.getQaEngineerId())
+                userProfiles.get(issue.getQaEngineerId()),
+                tags
         );
     }
 
@@ -108,18 +114,38 @@ public class IssueService {
 
         List<Issue> issues = issueRepository.findByProjectId(projectId);
 
-        Set<Long> assigneeIds = issues.stream()
-                .map(Issue::getAssigneeId)
+        Set<Long> userIds = issues.stream()
+                .flatMap(issue -> Stream.of(
+                        issue.getCreatorId(),
+                        issue.getAssigneeId(),
+                        issue.getCodeReviewerId(),
+                        issue.getQaEngineerId()
+                ))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        Map<Long, PublicProfileResponse> assigneeProfiles = getUserProfilesBatch(assigneeIds);
+        Map<Long, PublicProfileResponse> userProfiles = getUserProfilesBatch(userIds);
 
         return issues.stream()
-                .map(issue -> IssueDetailResponse.withAssignee(
-                        issue,
-                        assigneeProfiles.get(issue.getAssigneeId())
-                ))
+                .map(issue -> {
+                    List<TagResponse> tags = issue.getTags().stream()
+                            .map(TagResponse::from)
+                            .toList();
+
+                    PublicProfileResponse creator = userProfiles.get(issue.getCreatorId());
+                    PublicProfileResponse assignee = userProfiles.get(issue.getAssigneeId());
+                    PublicProfileResponse reviewer = userProfiles.get(issue.getCodeReviewerId());
+                    PublicProfileResponse qa = userProfiles.get(issue.getQaEngineerId());
+
+                    return IssueDetailResponse.withUsers(
+                            issue,
+                            creator,
+                            assignee,
+                            reviewer,
+                            qa,
+                            tags
+                    );
+                })
                 .collect(Collectors.toList());
     }
 

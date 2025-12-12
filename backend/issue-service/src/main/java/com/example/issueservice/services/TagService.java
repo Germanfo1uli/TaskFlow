@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 public class TagService {
 
     private final ProjectTagRepository projectTagRepository;
-    private final IssueRepository issueRepository;
     private final AuthService authService;
 
     @Transactional
@@ -93,43 +92,5 @@ public class TagService {
 
         projectTagRepository.deleteById(tagId);
         log.info("Successfully deleted project tag {}", tagId);
-    }
-
-    @Transactional
-    public void assignTagToIssue(Long issueId, AssignTagDto dto) {
-        log.info("Assigning tag {} to issue {}", dto.getTagId(), issueId);
-        Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new IllegalArgumentException("Issue not found"));
-        ProjectTag tag = projectTagRepository.findById(dto.getTagId())
-                .orElseThrow(() -> new IllegalArgumentException("Tag not found"));
-
-        issue.getTags().add(tag);
-        issueRepository.save(issue);
-        log.info("Successfully assigned tag to issue.");
-    }
-
-
-    @Transactional
-    public void removeTagFromIssue(Long issueId, Long tagId) {
-        log.info("Removing tag {} from issue {}", tagId, issueId);
-        Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new IllegalArgumentException("Issue not found"));
-        ProjectTag tag = projectTagRepository.findById(tagId)
-                .orElseThrow(() -> new IllegalArgumentException("Tag not found"));
-
-        issue.getTags().remove(tag);
-        issueRepository.save(issue);
-        log.info("Successfully removed tag from issue.");
-    }
-
-    public List<TagResponse> getTagsByIssue(Long issueId) {
-
-        log.info("Fetching tags for issue: {}", issueId);
-        Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new IllegalArgumentException("Issue not found"));
-
-        return issue.getTags().stream()
-                .map(TagResponse::from)
-                .collect(Collectors.toList());
     }
 }
