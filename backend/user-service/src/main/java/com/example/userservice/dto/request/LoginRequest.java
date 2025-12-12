@@ -10,7 +10,7 @@ public record LoginRequest (
         @NotBlank(message = "Email is required")
         String email,
 
-        @Schema(description = "Пароль пользователя", example = "Password")
+        @Schema(description = "Пароль пользователя", example = "Password1234")
         @NotBlank(message = "Password is required")
         String password
 ) {}
