@@ -11,6 +11,7 @@ import com.example.issueservice.dto.response.PublicProfileResponse;
 import com.example.issueservice.dto.response.TagResponse;
 import com.example.issueservice.exception.*;
 import com.example.issueservice.dto.models.Issue;
+import com.example.issueservice.repositories.IssueCommentRepository;
 import com.example.issueservice.repositories.IssueRepository;
 import com.example.issueservice.repositories.ProjectTagRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class IssueService {
 
     private final IssueRepository issueRepository;
     private final ProjectTagRepository tagRepository;
+    private final IssueCommentRepository commentRepository;
     private final IssueHierarchyValidator hierarchyValidator;
     private final AuthService authService;
     private final UserServiceClient userClient;
@@ -184,6 +186,7 @@ public class IssueService {
 
         authService.hasPermission(userId, issue.getProjectId(), EntityType.ISSUE, ActionType.VIEW);
 
+        // Собираем ID пользователей задачи (без комментариев)
         Set<Long> userIds = Stream.of(
                         issue.getCreatorId(),
                         issue.getAssigneeId(),
@@ -193,22 +196,13 @@ public class IssueService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        List<Long> commentUserIds = issue.getComments().stream()
-                .map(IssueComment::getUserId)
-                .distinct()
-                .toList();
+        Map<Long, PublicProfileResponse> userProfiles = getUserProfilesBatch(userIds);
 
-        userIds.addAll(commentUserIds);
-
-        var userProfiles = getUserProfilesBatch(userIds);
+        List<CommentResponse> comments = getCommentsForIssue(userId, issue.getProjectId(), issueId);
 
         List<TagResponse> tags = issue.getTags().stream()
                 .map(TagResponse::from)
                 .toList();
-
-        List<CommentResponse> comments = issue.getComments().stream()
-                .map(comment -> CommentResponse.from(comment, userProfiles.get(comment.getUserId())))
-                .collect(Collectors.toList());
 
         return IssueDetailResponse.withUsers(
                 issue,
@@ -219,6 +213,32 @@ public class IssueService {
                 tags,
                 comments
         );
+    }
+
+    private List<CommentResponse> getCommentsForIssue(Long userId, Long projectId, Long issueId) {
+        try {
+            authService.hasPermission(userId, projectId, EntityType.COMMENT, ActionType.VIEW);
+
+            List<IssueComment> comments = commentRepository.findByIssueIdOrderByCreatedAtAsc(issueId);
+
+            if (comments.isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            Set<Long> commentUserIds = comments.stream()
+                    .map(IssueComment::getUserId)
+                    .collect(Collectors.toSet());
+
+            Map<Long, PublicProfileResponse> profiles = getUserProfilesBatch(commentUserIds);
+
+            return comments.stream()
+                    .map(comment -> CommentResponse.from(comment, profiles.get(comment.getUserId())))
+                    .collect(Collectors.toList());
+
+        } catch (AccessDeniedException e) {
+            log.warn("User {} does not have permission to view comments for issue {}", userId, issueId);
+            return null;
+        }
     }
 
     @Transactional(readOnly = true)

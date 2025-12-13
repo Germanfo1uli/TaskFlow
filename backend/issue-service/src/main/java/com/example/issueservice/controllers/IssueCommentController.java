@@ -40,16 +40,8 @@ public class IssueCommentController {
         Long authorId = 1L;
 
         CommentResponse createdComment = commentService.createComment(principal.userId(), issueId, request.message());
-        log.info("Successfully created comment with id: {}", createdComment.getId());
+        log.info("Successfully created comment with id: {}", createdComment.id());
         return new ResponseEntity<>(createdComment, HttpStatus.CREATED);
-    }
-
-    //Получить все комментарии для конкретной задачи.
-    @GetMapping
-    public ResponseEntity<List<CommentResponse>> getCommentsByIssue(@PathVariable Long issueId) {
-        log.info("Request to get all comments for issue: {}", issueId);
-        List<CommentResponse> comments = commentService.getCommentsByIssueId(issueId);
-        return ResponseEntity.ok(comments);
     }
 
     // Удалить комментарий
