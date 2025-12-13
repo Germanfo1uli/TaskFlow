@@ -8,10 +8,9 @@ import java.util.Optional;
 
 @Repository
 public interface ProjectTagRepository extends JpaRepository<ProjectTag, Long> {
-
-    // Найти все теги, доступные в проекте
     List<ProjectTag> findByProjectId(Long projectId);
 
-    // Проверить, существует ли тег с таким именем в проекте
-    Optional<ProjectTag> findByProjectIdAndName(Long projectId, String name);
+    boolean existsByProjectIdAndName(Long projectId, String name);
+
+    Optional<ProjectTag> findByIdAndProjectId(Long id, Long projectId);
 }

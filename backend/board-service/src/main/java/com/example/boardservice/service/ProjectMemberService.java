@@ -8,6 +8,7 @@ import com.example.boardservice.dto.models.ProjectMember;
 import com.example.boardservice.dto.models.ProjectRole;
 import com.example.boardservice.dto.models.enums.ActionType;
 import com.example.boardservice.dto.models.enums.EntityType;
+import com.example.boardservice.dto.response.MemberExistResponse;
 import com.example.boardservice.dto.response.ProjectMemberResponse;
 import com.example.boardservice.dto.response.PublicProfileResponse;
 import com.example.boardservice.exception.*;
@@ -147,6 +148,16 @@ public class ProjectMemberService {
             log.error("Failed to fetch profiles for users: {}", userIds, e);
             throw new ServiceUnavailableException("Failed to fetch user profiles" + e.getMessage());
         }
+    }
+
+    public MemberExistResponse getMemberInProject(Long userId, Long projectId) {
+        ProjectMember member = memberRepository.findByUserIdAndProject_Id(userId, projectId)
+                .orElseThrow(() -> new UserNotFoundException("User with ID: " + userId + " not found in project " + projectId));
+
+        return new MemberExistResponse(
+                member.getUserId(),
+                member.getProject().getId()
+        );
     }
 
     @Transactional

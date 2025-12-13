@@ -119,8 +119,9 @@ public class AuthController {
     @DeleteMapping("/account")
     public ResponseEntity<DeleteAccountResponse> deleteMyAccount(
             @AuthenticationPrincipal JwtUser principal,
-            @Valid @RequestBody String password) {
-        DeleteAccountResponse response = authService.deleteAccount(principal.userId(), password);
+            @Valid @RequestBody DeleteAccountRequest request) {
+
+        DeleteAccountResponse response = authService.deleteAccount(principal.userId(), request.password());
         return ResponseEntity.ok(response);
     }
 }

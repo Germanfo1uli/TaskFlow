@@ -2,20 +2,20 @@ package com.example.issueservice.services;
 
 import com.example.issueservice.client.UserServiceClient;
 import com.example.issueservice.dto.data.UserBatchRequest;
+import com.example.issueservice.dto.models.ProjectTag;
 import com.example.issueservice.dto.models.enums.*;
 import com.example.issueservice.dto.response.IssueDetailResponse;
 import com.example.issueservice.dto.response.PublicProfileResponse;
-import com.example.issueservice.exception.IssueNotFoundException;
+import com.example.issueservice.dto.response.TagResponse;
+import com.example.issueservice.exception.*;
 import com.example.issueservice.dto.models.Issue;
-import com.example.issueservice.exception.ServiceUnavailableException;
-import com.example.issueservice.exception.UserNotFoundException;
 import com.example.issueservice.repositories.IssueRepository;
+import com.example.issueservice.repositories.ProjectTagRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -27,52 +27,156 @@ import java.util.stream.Stream;
 public class IssueService {
 
     private final IssueRepository issueRepository;
+    private final ProjectTagRepository tagRepository;
     private final IssueHierarchyValidator hierarchyValidator;
     private final AuthService authService;
     private final UserServiceClient userClient;
 
     @Transactional
     public IssueDetailResponse createIssue(
-            Long userId, Long projectId, Long parentId, String title, String description,
-            IssueType type, Priority priority, LocalDateTime deadline) {
+            Long userId, Long projectId, Long parentId, String title,
+            String description, IssueType type, Priority priority, List<Long> tagIds) {
 
         authService.hasPermission(userId, projectId, EntityType.ISSUE, ActionType.CREATE);
-
         log.info("Creating new issue for project: {}", projectId);
 
-        Issue parentIssue = null;
-        if (parentId != null) {
-            parentIssue = issueRepository.findById(parentId)
-                    .orElseThrow(() -> new IllegalArgumentException(
-                            "Parent issue with id " + parentId + " not found"));
-            log.info("Found parent issue: {}", parentIssue.getTitle());
+        Issue parentIssue = findAndValidateParentIssue(parentId, projectId);
+        Issue newIssue = buildAndSaveBaseIssue(userId, projectId, parentIssue, title, description, type, priority);
+
+        List<TagResponse> tags = (tagIds != null && !tagIds.isEmpty())
+                ? assignTagsToIssue(newIssue, tagIds, projectId, true)
+                : List.of();
+
+        log.info("Successfully created issue with id: {}, level: {}", newIssue.getId(), newIssue.getLevel());
+        return IssueDetailResponse.fromIssue(
+                newIssue,
+                tags
+        );
+    }
+
+    @Transactional
+    public IssueDetailResponse updateIssue(
+            Long userId, Long issueId, String title, String description,
+            Priority priority, List<Long> tagIds) {
+
+        Issue issue = issueRepository.findWithTagsById(issueId)
+                .orElseThrow(() -> new IssueNotFoundException("Issue with id " + issueId + " not found"));
+
+        authService.hasPermission(userId, issue.getProjectId(), EntityType.ISSUE, ActionType.EDIT);
+        log.info("Updating issue with id: {}", issueId);
+
+        if (title != null) {
+            issue.setTitle(title);
+        }
+        if (description != null) {
+            issue.setDescription(description);
+        }
+        if (priority != null) {
+            issue.setPriority(priority);
         }
 
+        if (tagIds != null) {
+            assignTagsToIssue(issue, tagIds, issue.getProjectId(), false);
+        }
+
+        issueRepository.save(issue);
+        log.info("Successfully updated issue with id: {}", issue.getId());
+
+        return getIssueById(userId, issueId);
+    }
+
+    @Transactional
+    public IssueDetailResponse assignTagsToIssue(Long userId, Long issueId, List<Long> tagIds) {
+
+        Issue issue = issueRepository.findWithTagsById(issueId)
+                .orElseThrow(() -> new IssueNotFoundException("Issue with id " + issueId + " not found"));
+
+        authService.hasPermission(userId, issue.getProjectId(), EntityType.ISSUE, ActionType.APPLY);
+
+        if (issue.getAssigneeId() == null) {
+            throw new AccessDeniedException("Issue has no assignee. Cannot modify tags.");
+        }
+        if (!issue.getAssigneeId().equals(userId)) {
+            throw new AccessDeniedException("Only the assignee can modify issue tags");
+        }
+
+        log.info("Assigning tags {} to issue {} by user {}", tagIds, issueId, userId);
+
+        assignTagsToIssue(issue, tagIds, issue.getProjectId(), false);
+
+        issueRepository.save(issue);
+
+        return getIssueById(userId, issueId);
+    }
+
+    private List<TagResponse> assignTagsToIssue(Issue issue, List<Long> tagIds, Long projectId, boolean saveAfter) {
+        if (tagIds.isEmpty()) {
+            issue.setTags(new HashSet<>());
+            if (saveAfter) issueRepository.save(issue);
+            return List.of();
+        }
+
+        Set<ProjectTag> foundTags = new HashSet<>(tagRepository.findAllById(tagIds));
+        validateTagsForProject(foundTags, tagIds, projectId);
+
+        issue.setTags(foundTags);
+        if (saveAfter) issueRepository.save(issue);
+
+        return foundTags.stream().map(TagResponse::from).toList();
+    }
+
+    private void validateTagsForProject(Set<ProjectTag> foundTags, List<Long> requestedTagIds, Long projectId) {
+
+        if (foundTags.size() != requestedTagIds.size()) {
+            throw new ProjectTagNotFoundException("One or more tags not found");
+        }
+
+        if (!foundTags.stream().allMatch(tag -> tag.getProjectId().equals(projectId))) {
+            throw new ProjectTagNotFoundException("All tags must belong to project " + projectId);
+        }
+    }
+
+    private Issue findAndValidateParentIssue(Long parentId, Long projectId) {
+        if (parentId == null) {
+            return null;
+        }
+
+        Issue parentIssue = issueRepository.findById(parentId)
+                .orElseThrow(() -> new IssueNotFoundException(
+                        "Parent issue with id " + parentId + " not found"));
+        log.info("Found parent issue: {}", parentIssue.getTitle());
+
+        if (!projectId.equals(parentIssue.getProjectId())) {
+            throw new IssueNotInProjectException(
+                    "Parent issue belongs to project " + parentIssue.getProjectId() + ", not to project " + projectId);
+        }
+        return parentIssue;
+    }
+
+    private Issue buildAndSaveBaseIssue(
+            Long userId, Long projectId, Issue parentIssue,
+            String title, String description, IssueType type, Priority priority) {
+
         Issue newIssue = Issue.builder()
+                .projectId(projectId)
                 .creatorId(userId)
                 .title(title)
                 .description(description)
                 .type(type)
                 .priority(priority)
-                .deadline(deadline)
                 .status(IssueStatus.TO_DO)
                 .build();
 
         newIssue.setParentIssue(parentIssue);
-
         hierarchyValidator.validateHierarchy(newIssue, parentIssue);
 
-        Issue savedIssue = issueRepository.save(newIssue);
-        log.info("Successfully created issue with id: {}, level: {}",
-                savedIssue.getId(), savedIssue.getLevel());
-
-        return IssueDetailResponse.fromIssue(savedIssue);
+        return issueRepository.save(newIssue);
     }
 
     @Transactional(readOnly = true)
     public IssueDetailResponse getIssueById(Long userId, Long issueId) {
 
-        Issue issue = issueRepository.findById(issueId)
+        Issue issue = issueRepository.findWithTagsById(issueId)
                 .orElseThrow(() -> new IssueNotFoundException("Issue with id " + issueId + " not found"));
 
         authService.hasPermission(userId, issue.getProjectId(), EntityType.ISSUE, ActionType.VIEW);
@@ -88,12 +192,17 @@ public class IssueService {
 
         var userProfiles = getUserProfilesBatch(userIds);
 
+        List<TagResponse> tags = issue.getTags().stream()
+                .map(TagResponse::from)
+                .toList();
+
         return IssueDetailResponse.withUsers(
                 issue,
                 userProfiles.get(issue.getCreatorId()),
                 userProfiles.get(issue.getAssigneeId()),
                 userProfiles.get(issue.getCodeReviewerId()),
-                userProfiles.get(issue.getQaEngineerId())
+                userProfiles.get(issue.getQaEngineerId()),
+                tags
         );
     }
 
@@ -104,18 +213,38 @@ public class IssueService {
 
         List<Issue> issues = issueRepository.findByProjectId(projectId);
 
-        Set<Long> assigneeIds = issues.stream()
-                .map(Issue::getAssigneeId)
+        Set<Long> userIds = issues.stream()
+                .flatMap(issue -> Stream.of(
+                        issue.getCreatorId(),
+                        issue.getAssigneeId(),
+                        issue.getCodeReviewerId(),
+                        issue.getQaEngineerId()
+                ))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        Map<Long, PublicProfileResponse> assigneeProfiles = getUserProfilesBatch(assigneeIds);
+        Map<Long, PublicProfileResponse> userProfiles = getUserProfilesBatch(userIds);
 
         return issues.stream()
-                .map(issue -> IssueDetailResponse.withAssignee(
-                        issue,
-                        assigneeProfiles.get(issue.getAssigneeId())
-                ))
+                .map(issue -> {
+                    List<TagResponse> tags = issue.getTags().stream()
+                            .map(TagResponse::from)
+                            .toList();
+
+                    PublicProfileResponse creator = userProfiles.get(issue.getCreatorId());
+                    PublicProfileResponse assignee = userProfiles.get(issue.getAssigneeId());
+                    PublicProfileResponse reviewer = userProfiles.get(issue.getCodeReviewerId());
+                    PublicProfileResponse qa = userProfiles.get(issue.getQaEngineerId());
+
+                    return IssueDetailResponse.withUsers(
+                            issue,
+                            creator,
+                            assignee,
+                            reviewer,
+                            qa,
+                            tags
+                    );
+                })
                 .collect(Collectors.toList());
     }
 
@@ -125,7 +254,7 @@ public class IssueService {
             return Collections.emptyMap();
         }
 
-        log.info("Cache miss for user profiles: {}. Fetching from UserService...", userIds);
+        log.info("Fetching users from UserService");
 
         try {
             UserBatchRequest request = new UserBatchRequest(new ArrayList<>(userIds));
@@ -140,41 +269,13 @@ public class IssueService {
     }
 
     @Transactional
-    public void addAssignee(Long userId, Long issueId, Long assigneeId) {
+    public void deleteIssue(Long userId, Long issueId) {
 
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new IssueNotFoundException("Issue with ID: " + issueId + " not found"));
+                .orElseThrow(() -> new IssueNotFoundException("Issue with id " + issueId + " not found"));
 
-        authService.hasPermission(userId, issue.getProjectId(), EntityType.ISSUE, ActionType.ASSIGN);
+        authService.hasPermission(userId, issue.getProjectId(), EntityType.ISSUE, ActionType.DELETE);
 
-        log.info("Adding user {} to assignee of issue {}", assigneeId, issueId);
-
-        try {
-            userClient.getProfileById(assigneeId);
-        } catch (Exception e) {
-            throw new UserNotFoundException("User with ID " + assigneeId + " does not exist");
-        }
-
-        issue.setAssigneeId(assigneeId);
-
-        issueRepository.save(issue);
-        log.info("Successfully added assignee.");
-    }
-
-    @Transactional
-    public void removeAssignee(Long userId, Long issueId) {
-
-        Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new IssueNotFoundException("Issue with ID: " + issueId + " not found"));
-
-        authService.hasPermission(userId, issue.getProjectId(), EntityType.ISSUE, ActionType.ASSIGN);
-
-        log.info("Removing from assignees of issue {}", issueId);
-
-        issue.setAssigneeId(null);
-
-        log.info("Successfully removed assignee.");
+        issueRepository.deleteById(issueId);
     }
 }
-
-

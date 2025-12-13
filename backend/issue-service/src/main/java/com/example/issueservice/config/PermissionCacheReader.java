@@ -17,7 +17,7 @@ public class PermissionCacheReader {
     private final BoardServiceClient boardServiceClient;
 
     public UserPermissionsResponse getUserPermissions(Long userId, Long projectId) {
-        String roleKey = String.format("user:role:%d:%d", userId, projectId);
+        String roleKey = String.format("user:%d:project:%d", userId, projectId);
 
         String roleId = redisTemplate.opsForValue().get(roleKey);
 
@@ -26,10 +26,10 @@ public class PermissionCacheReader {
             return boardServiceClient.getUserPermissions(userId, projectId);
         }
 
-        String permsKey = String.format("role:perms:%s", roleId);
+        String permsKey = String.format("role:%s:permissions", roleId);
         Set<String> permissions = redisTemplate.opsForSet().members(permsKey);
 
-        String ownerKey = String.format("role:owner:%s", roleId);
+        String ownerKey = String.format("role:%s:isOwner", roleId);
         String isOwnerStr = redisTemplate.opsForValue().get(ownerKey);
 
         return new UserPermissionsResponse(

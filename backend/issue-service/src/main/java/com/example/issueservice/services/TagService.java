@@ -1,12 +1,11 @@
 package com.example.issueservice.services;
 
-import com.example.issueservice.dto.request.AssignTagDto;
-import com.example.issueservice.dto.request.CreateProjectTagDto;
-import com.example.issueservice.dto.response.TagDto;
+import com.example.issueservice.dto.models.enums.ActionType;
+import com.example.issueservice.dto.models.enums.EntityType;
+import com.example.issueservice.dto.response.TagResponse;
 import com.example.issueservice.exception.ProjectTagNotFoundException;
-import com.example.issueservice.dto.models.Issue;
 import com.example.issueservice.dto.models.ProjectTag;
-import com.example.issueservice.repositories.IssueRepository;
+import com.example.issueservice.exception.TagAlreadyExistsException;
 import com.example.issueservice.repositories.ProjectTagRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,86 +21,73 @@ import java.util.stream.Collectors;
 public class TagService {
 
     private final ProjectTagRepository projectTagRepository;
-    private final IssueRepository issueRepository;
-
-    // --- Управление тегами проекта ---
+    private final AuthService authService;
 
     @Transactional
-    public TagDto createProjectTag(CreateProjectTagDto dto) {
-        log.info("Creating tag '{}' for project {}", dto.getName(), dto.getProjectId());
+    public TagResponse createProjectTag(Long userId, Long projectId, String name) {
 
-        if (projectTagRepository.findByProjectIdAndName(dto.getProjectId(), dto.getName()).isPresent()) {
-            throw new IllegalArgumentException("Tag with name '" + dto.getName() + "' already exists in this project");
+        authService.hasPermission(userId, projectId, EntityType.ISSUE, ActionType.CREATE);
+
+        log.info("Creating tag '{}' for project {}", name, projectId);
+
+        if(projectTagRepository.existsByProjectIdAndName(projectId, name)) {
+            throw new TagAlreadyExistsException("Tag " + name + "already exists in project " + projectId);
         }
 
         ProjectTag newTag = ProjectTag.builder()
-                .projectId(dto.getProjectId())
-                .name(dto.getName())
+                .projectId(projectId)
+                .name(name)
                 .build();
+
         ProjectTag savedTag = projectTagRepository.save(newTag);
+
         log.info("Successfully created project tag with id: {}", savedTag.getId());
-        return convertToDto(savedTag);
+
+        return TagResponse.from(savedTag);
     }
 
-    public List<TagDto> getTagsByProject(Long projectId) {
+    @Transactional(readOnly = true)
+    public List<TagResponse> getTagsByProject(Long userId, Long projectId) {
+
+        authService.hasPermission(userId, projectId, EntityType.TAG, ActionType.VIEW);
+
         log.info("Fetching all tags for project: {}", projectId);
         List<ProjectTag> tags = projectTagRepository.findByProjectId(projectId);
-        return tags.stream().map(this::convertToDto).collect(Collectors.toList());
-    }
 
-    @Transactional
-    public void deleteProjectTag(Long tagId) {
-        log.info("Deleting project tag with id: {}", tagId);
-        if (!projectTagRepository.existsById(tagId)) {
-            throw new ProjectTagNotFoundException("Project tag with id " + tagId + " not found");
-        }
-        projectTagRepository.deleteById(tagId);
-        log.info("Successfully deleted project tag {}", tagId);
-    }
-
-    // --- Управление привязкой тегов к задачам ---
-
-    @Transactional
-    public void assignTagToIssue(Long issueId, AssignTagDto dto) {
-        log.info("Assigning tag {} to issue {}", dto.getTagId(), issueId);
-        Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new IllegalArgumentException("Issue not found"));
-        ProjectTag tag = projectTagRepository.findById(dto.getTagId())
-                .orElseThrow(() -> new IllegalArgumentException("Tag not found"));
-
-        issue.getTags().add(tag);
-        issueRepository.save(issue);
-        log.info("Successfully assigned tag to issue.");
-    }
-
-
-    @Transactional
-    public void removeTagFromIssue(Long issueId, Long tagId) {
-        log.info("Removing tag {} from issue {}", tagId, issueId);
-        Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new IllegalArgumentException("Issue not found"));
-        ProjectTag tag = projectTagRepository.findById(tagId)
-                .orElseThrow(() -> new IllegalArgumentException("Tag not found"));
-
-        issue.getTags().remove(tag);
-        issueRepository.save(issue);
-        log.info("Successfully removed tag from issue.");
-    }
-
-    public List<TagDto> getTagsByIssue(Long issueId) {
-        log.info("Fetching tags for issue: {}", issueId);
-        Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new IllegalArgumentException("Issue not found"));
-
-        return issue.getTags().stream()
-                .map(this::convertToDto)
+        return tags.stream()
+                .map(TagResponse::from)
                 .collect(Collectors.toList());
     }
 
-    private TagDto convertToDto(ProjectTag tag) {
-        return TagDto.builder()
-                .id(tag.getId())
-                .name(tag.getName())
-                .build();
+    @Transactional
+    public TagResponse updateProjectTag(Long userId, Long projectId, Long tagId, String name) {
+
+        ProjectTag tag = projectTagRepository.findByIdAndProjectId(tagId, projectId)
+                .orElseThrow(() -> new ProjectTagNotFoundException("Tag with ID " + tagId + " not found"));
+
+        authService.hasPermission(userId, projectId, EntityType.TAG, ActionType.EDIT);
+
+        log.info("Updating project tag with id: {}", tagId);
+
+        tag.setName(name);
+
+        projectTagRepository.save(tag);
+        log.info("Successfully updated project tag {}", tagId);
+
+        return TagResponse.from(tag);
+    }
+
+    @Transactional
+    public void deleteProjectTag(Long userId, Long tagId) {
+
+        ProjectTag tag = projectTagRepository.findById(tagId)
+                .orElseThrow(() -> new ProjectTagNotFoundException("Tag with ID " + tagId + " not found"));
+
+        authService.hasPermission(userId, tag.getProjectId(), EntityType.TAG, ActionType.DELETE);
+
+        log.info("Deleting project tag with id: {}", tagId);
+
+        projectTagRepository.deleteById(tagId);
+        log.info("Successfully deleted project tag {}", tagId);
     }
 }
