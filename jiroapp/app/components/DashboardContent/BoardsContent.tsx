@@ -14,12 +14,17 @@ import EditCardModal from './components/modal/EditCardModal'
 import ViewCardModal from './components/modal/ViewCardModal'
 import { useEffect } from 'react'
 
-const DashboardContent = () => {
+interface BoardsContentProps {
+    projectId: number | null
+}
+
+const BoardsContent = ({ projectId }: BoardsContentProps) => {
     const {
         boards,
         state,
         updateState,
         authors,
+        isLoading,
         getPriorityColor,
         getPriorityBgColor,
         toggleBoardExpansion,
@@ -45,8 +50,8 @@ const DashboardContent = () => {
         cancelDelete,
         filterAndSortCards,
         getAvailableBoardTitles,
-        getBoardByCardId
-    } = useDashboard()
+        getBoardByCardId,
+    } = useDashboard(projectId)
 
     useEffect(() => {
         const createParticles = () => {
@@ -69,6 +74,12 @@ const DashboardContent = () => {
         const interval = setInterval(createParticles, 10000)
         return () => clearInterval(interval)
     }, [])
+
+    const totalTasks = boards.reduce((sum, board) => sum + (board.cards?.length || 0), 0)
+    const completedTasks = boards.reduce((sum, board) => {
+        if (board.title === 'DONE') return sum + (board.cards?.length || 0)
+        return sum
+    }, 0)
 
     return (
         <motion.div
@@ -106,16 +117,8 @@ const DashboardContent = () => {
             />
 
             <DashboardHeader
-                title="Мои доски"
-                subtitle="Управляйте задачами и отслеживайте прогресс по проектам"
-                stats={{
-                    totalBoards: boards.length,
-                    totalTasks: boards.reduce((sum, board) => sum + (board.cards?.length || 0), 0),
-                    completedTasks: boards.reduce((sum, board) => {
-                        if (board.title === 'DONE') return sum + (board.cards?.length || 0)
-                        return sum
-                    }, 0)
-                }}
+                title={projectId ? `Доски проекта` : "Мои доски"}
+                subtitle={projectId ? "Задачи текущего проекта" : "Управляйте задачами и отслеживайте прогресс по проектам"}
             />
 
             <ControlsSection
@@ -131,20 +134,51 @@ const DashboardContent = () => {
                 onBoardManagerOpen={openBoardManager}
             />
 
-            <BoardsGrid
-                boards={boards}
-                expandedBoards={state.expandedBoards}
-                collapsedBoards={state.collapsedBoards}
-                getPriorityColor={getPriorityColor}
-                getPriorityBgColor={getPriorityBgColor}
-                filterAndSortCards={filterAndSortCards}
-                onToggleCollapse={toggleBoardCollapse}
-                onToggleExpansion={toggleBoardExpansion}
-                onEditCard={handleEditCard}
-                onDeleteCard={handleDeleteCard}
-                onViewCard={handleViewCard}
-                onAddCard={openAddCardModal}
-            />
+            {isLoading ? (
+                <div className={styles.skeletonContainer}>
+                    {[...Array(4)].map((_, boardIndex) => (
+                        <div key={boardIndex} className={styles.boardSkeleton}>
+                            <div className={styles.boardHeaderSkeleton}>
+                                <div className={styles.boardTitleSkeleton}></div>
+                                <div className={styles.cardsCountSkeleton}></div>
+                            </div>
+                            <div className={styles.cardsListSkeleton}>
+                                {[...Array(3)].map((_, cardIndex) => (
+                                    <div key={cardIndex} className={styles.cardSkeleton}>
+                                        <div className={styles.cardContentSkeleton}>
+                                            <div className={styles.cardTitleSkeleton}></div>
+                                            <div className={styles.cardDescriptionSkeleton}></div>
+                                            <div className={styles.cardTagsSkeleton}>
+                                                <div className={styles.tagSkeleton}></div>
+                                                <div className={styles.tagSkeleton}></div>
+                                            </div>
+                                            <div className={styles.cardFooterSkeleton}>
+                                                <div className={styles.cardMetaSkeleton}></div>
+                                                <div className={styles.assigneeSkeleton}></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <BoardsGrid
+                    boards={boards}
+                    expandedBoards={state.expandedBoards}
+                    collapsedBoards={state.collapsedBoards}
+                    getPriorityColor={getPriorityColor}
+                    getPriorityBgColor={getPriorityBgColor}
+                    filterAndSortCards={filterAndSortCards}
+                    onToggleCollapse={toggleBoardCollapse}
+                    onToggleExpansion={toggleBoardExpansion}
+                    onEditCard={handleEditCard}
+                    onDeleteCard={handleDeleteCard}
+                    onViewCard={handleViewCard}
+                    onAddCard={openAddCardModal}
+                />
+            )}
 
             <AnimatePresence>
                 {state.isTreeViewOpen && (
@@ -226,4 +260,4 @@ const DashboardContent = () => {
     )
 }
 
-export default DashboardContent
+export default BoardsContent

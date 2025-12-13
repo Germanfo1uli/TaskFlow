@@ -1,196 +1,63 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Board, Card, SortOption, FilterOption, DashboardState, Priority, Attachment, Comment, Author } from '../types/dashboard.types';
+import { api } from '@/app/auth/hooks/useTokenRefresh';
+
+interface IssueUser {
+    id: number;
+    username: string;
+    tag: string;
+    bio: string;
+}
+
+interface IssueTag {
+    id: number;
+    projectId: number;
+    name: string;
+}
+
+interface IssueResponse {
+    id: number;
+    projectId: number;
+    parentId: number | null;
+    title: string;
+    description: string;
+    status: string;
+    type: string;
+    priority: string;
+    deadline: string | null;
+    createdAt: string;
+    updatedAt: string;
+    creator: IssueUser;
+    assignee: IssueUser | null;
+    reviewer: IssueUser | null;
+    qa: IssueUser | null;
+    tags: IssueTag[];
+}
 
 const initialBoards: Board[] = [
     {
         id: 1,
         title: 'TO DO',
         color: '#3b82f6',
-        cards: [
-            {
-                id: 1,
-                title: 'Прототип главной страницы',
-                description: 'Создать прототип главной страницы с основными компонентами и интерфейсом пользователя',
-                priority: 'high',
-                priorityLevel: 3,
-                author: {
-                    name: 'Алексей Петров',
-                    avatar: null,
-                    role: 'Дизайнер'
-                },
-                assignees: [
-                    { name: 'Алексей Петров', avatar: null, role: 'Дизайнер' },
-                    { name: 'Мария Иванова', avatar: null, role: 'Frontend разработчик' }
-                ],
-                tags: ['Дизайн', 'Прототип', 'UI/UX'],
-                progress: 0,
-                comments: 3,
-                attachments: 2,
-                attachmentsList: [
-                    { id: 1, name: 'wireframe.fig', url: '#', size: '2.4 MB', type: 'figma' },
-                    { id: 2, name: 'requirements.pdf', url: '#', size: '1.8 MB', type: 'pdf' }
-                ],
-                commentsList: [
-                    { id: 1, author: { name: 'Мария Иванова', avatar: null, role: 'Frontend разработчик' }, content: 'Нужно добавить раздел с настройками профиля', createdAt: '15.01.2024 14:30' },
-                    { id: 2, author: { name: 'Иван Сидоров', avatar: null, role: 'Backend разработчик' }, content: 'Согласен, также стоит предусмотреть адаптивную версию', createdAt: '15.01.2024 15:45' },
-                    { id: 3, author: { name: 'Алексей Петров', avatar: null, role: 'Дизайнер' }, content: 'Хорошо, добавлю в следующий прототип', createdAt: '16.01.2024 10:20' }
-                ],
-                createdAt: '10.01.2024'
-            }
-        ]
+        cards: []
     },
     {
         id: 2,
         title: 'IN PROGRESS',
         color: '#f59e0b',
-        cards: [
-            {
-                id: 2,
-                title: 'Разработка API',
-                description: 'Реализовать основные endpoints для работы с задачами и пользователями',
-                priority: 'medium',
-                priorityLevel: 2,
-                author: {
-                    name: 'Мария Иванова',
-                    avatar: null,
-                    role: 'Frontend разработчик'
-                },
-                assignees: [
-                    { name: 'Мария Иванова', avatar: null, role: 'Frontend разработчик' },
-                    { name: 'Иван Сидоров', avatar: null, role: 'Backend разработчик' },
-                    { name: 'Алексей Петров', avatar: null, role: 'Дизайнер' }
-                ],
-                tags: ['Бэкенд', 'API', 'Node.js'],
-                progress: 65,
-                comments: 7,
-                attachments: 5,
-                attachmentsList: [
-                    { id: 1, name: 'api-spec.yaml', url: '#', size: '45 KB', type: 'yaml' },
-                    { id: 2, name: 'endpoints.md', url: '#', size: '12 KB', type: 'markdown' }
-                ],
-                commentsList: [
-                    { id: 1, author: { name: 'Иван Сидоров', avatar: null, role: 'Backend разработчик' }, content: 'Нужно добавить пагинацию для списка задач', createdAt: '14.01.2024 11:20' },
-                    { id: 2, author: { name: 'Мария Иванова', avatar: null, role: 'Frontend разработчик' }, content: 'Уже добавил, проверяйте', createdAt: '14.01.2024 13:45' }
-                ],
-                createdAt: '12.01.2024'
-            },
-            {
-                id: 3,
-                title: 'Интеграция с базой данных',
-                description: 'Настроить подключение и модели для работы с PostgreSQL и Redis',
-                priority: 'high',
-                priorityLevel: 3,
-                author: {
-                    name: 'Иван Сидоров',
-                    avatar: null,
-                    role: 'Backend разработчик'
-                },
-                assignees: [
-                    { name: 'Иван Сидоров', avatar: null, role: 'Backend разработчик' },
-                    { name: 'Елена Козлова', avatar: null, role: 'DevOps инженер' }
-                ],
-                tags: ['База данных', 'Настройка', 'PostgreSQL'],
-                progress: 40,
-                comments: 2,
-                attachments: 4,
-                attachmentsList: [
-                    { id: 1, name: 'database-schema.sql', url: '#', size: '8 KB', type: 'sql' }
-                ],
-                commentsList: [
-                    { id: 1, author: { name: 'Елена Козлова', avatar: null, role: 'DevOps инженер' }, content: 'Не забыть про индексы для оптимизации', createdAt: '13.01.2024 09:15' }
-                ],
-                createdAt: '13.01.2024'
-            }
-        ]
+        cards: []
     },
     {
         id: 3,
         title: 'CODE REVIEW',
         color: '#8b5cf6',
-        cards: [
-            {
-                id: 4,
-                title: 'Тестирование компонентов',
-                description: 'Провести unit и integration тесты для основных компонентов системы',
-                priority: 'medium',
-                priorityLevel: 2,
-                author: {
-                    name: 'Елена Козлова',
-                    avatar: null,
-                    role: 'DevOps инженер'
-                },
-                assignees: [
-                    { name: 'Елена Козлова', avatar: null, role: 'DevOps инженер' },
-                    { name: 'Алексей Петров', avatar: null, role: 'Дизайнер' },
-                    { name: 'Мария Иванова', avatar: null, role: 'Frontend разработчик' }
-                ],
-                tags: ['Тестирование', 'QA', 'Jest'],
-                progress: 100,
-                comments: 5,
-                attachments: 3,
-                attachmentsList: [
-                    { id: 1, name: 'test-results.pdf', url: '#', size: '3.2 MB', type: 'pdf' }
-                ],
-                commentsList: [
-                    { id: 1, author: { name: 'Алексей Петров', avatar: null, role: 'Дизайнер' }, content: 'Отличная работа! Все тесты проходят', createdAt: '16.01.2024 16:30' }
-                ],
-                createdAt: '11.01.2024'
-            }
-        ]
+        cards: []
     },
     {
         id: 4,
         title: 'DONE',
         color: '#10b981',
-        cards: [
-            {
-                id: 5,
-                title: 'Настройка проекта',
-                description: 'Инициализация проекта и настройка базовых конфигураций, инструментов разработки',
-                priority: 'low',
-                priorityLevel: 1,
-                author: {
-                    name: 'Алексей Петров',
-                    avatar: null,
-                    role: 'Дизайнер'
-                },
-                assignees: [
-                    { name: 'Алексей Петров', avatar: null, role: 'Дизайнер' }
-                ],
-                tags: ['Настройка', 'DevOps'],
-                progress: 100,
-                comments: 1,
-                attachments: 0,
-                attachmentsList: [],
-                commentsList: [
-                    { id: 1, author: { name: 'Мария Иванова', avatar: null, role: 'Frontend разработчик' }, content: 'Готово к работе!', createdAt: '09.01.2024 18:00' }
-                ],
-                createdAt: '09.01.2024'
-            }
-        ]
-    }
-];
-
-const initialAuthors = [
-    {
-        name: 'Алексей Петров',
-        avatar: null,
-        role: 'Дизайнер'
-    },
-    {
-        name: 'Мария Иванова',
-        avatar: null,
-        role: 'Frontend разработчик'
-    },
-    {
-        name: 'Иван Сидоров',
-        avatar: null,
-        role: 'Backend разработчик'
-    },
-    {
-        name: 'Елена Козлова',
-        avatar: null,
-        role: 'DevOps инженер'
+        cards: []
     }
 ];
 
@@ -204,8 +71,36 @@ const availableBoardTitles = [
     'DONE'
 ];
 
-export const useDashboard = () => {
+const statusToBoardMap: Record<string, string> = {
+    'TO_DO': 'TO DO',
+    'TODO': 'TO DO',
+    'BACKLOG': 'TO DO',
+    'IN_PROGRESS': 'IN PROGRESS',
+    'INPROGRESS': 'IN PROGRESS',
+    'CODE_REVIEW': 'CODE REVIEW',
+    'REVIEW': 'CODE REVIEW',
+    'DONE': 'DONE',
+    'COMPLETED': 'DONE',
+    'SELECTED_FOR_DEVELOPMENT': 'SELECTED FOR DEVELOPMENT',
+    'QA': 'QA',
+    'STAGING': 'STAGING'
+};
+
+const priorityMap: Record<string, Priority> = {
+    'LOW': 'low',
+    'MEDIUM': 'medium',
+    'HIGH': 'high'
+};
+
+const priorityLevelMap: Record<string, number> = {
+    'LOW': 1,
+    'MEDIUM': 2,
+    'HIGH': 3
+};
+
+export const useDashboard = (projectId: number | null) => {
     const [boards, setBoards] = useState<Board[]>(initialBoards);
+    const [isLoading, setIsLoading] = useState(false);
     const [state, setState] = useState<DashboardState>({
         searchQuery: '',
         isFilterOpen: false,
@@ -227,10 +122,120 @@ export const useDashboard = () => {
         }
     });
 
-    const authors = initialAuthors;
+    const authors: Author[] = [];
 
     const updateState = (updates: Partial<DashboardState>) => {
         setState(prev => ({ ...prev, ...updates }));
+    };
+
+    const transformIssueToCard = (issue: IssueResponse): Card => {
+        const assignees: Author[] = [];
+        if (issue.assignee) {
+            assignees.push({
+                name: issue.assignee.username,
+                avatar: null,
+                role: 'Исполнитель'
+            });
+        }
+        if (issue.reviewer) {
+            assignees.push({
+                name: issue.reviewer.username,
+                avatar: null,
+                role: 'Ревьюер'
+            });
+        }
+        if (issue.qa) {
+            assignees.push({
+                name: issue.qa.username,
+                avatar: null,
+                role: 'QA'
+            });
+        }
+
+        return {
+            id: issue.id,
+            title: issue.title,
+            description: issue.description || 'Без описания',
+            priority: priorityMap[issue.priority] || 'medium',
+            priorityLevel: priorityLevelMap[issue.priority] || 2,
+            author: {
+                name: issue.creator.username,
+                avatar: null,
+                role: 'Создатель'
+            },
+            assignees: assignees.length > 0 ? assignees : undefined,
+            tags: issue.tags?.map(tag => tag.name) || [],
+            progress: 0,
+            comments: 0,
+            attachments: 0,
+            attachmentsList: [],
+            commentsList: [],
+            createdAt: issue.createdAt ? new Date(issue.createdAt).toLocaleDateString('ru-RU') : 'Дата не указана'
+        };
+    };
+
+    const fetchIssues = useCallback(async () => {
+        if (projectId === null || projectId === undefined) {
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const response = await api.get<IssueResponse[]>('/issues', {
+                params: { projectId }
+            });
+
+            const issues = response.data;
+
+            const updatedBoards = initialBoards.map(board => {
+                const boardCards = issues
+                    .filter(issue => {
+                        const mappedBoardTitle = statusToBoardMap[issue.status];
+                        return mappedBoardTitle === board.title;
+                    })
+                    .map(issue => transformIssueToCard(issue));
+
+                return {
+                    ...board,
+                    cards: boardCards
+                };
+            });
+
+            setBoards(updatedBoards);
+
+        } catch (error: any) {
+            console.error('Ошибка при загрузке задач:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [projectId]);
+
+    useEffect(() => {
+        if (projectId !== null && projectId !== undefined) {
+            fetchIssues();
+        } else {
+            setBoards(initialBoards);
+        }
+    }, [projectId, fetchIssues]);
+
+    const fetchIssueById = async (issueId: number): Promise<Card | null> => {
+        try {
+            const response = await api.get<IssueResponse>(`/issues/${issueId}`);
+            return transformIssueToCard(response.data);
+        } catch (error) {
+            console.error('Ошибка при загрузке задачи:', error);
+            return null;
+        }
+    };
+
+    const deleteIssue = async (issueId: number): Promise<boolean> => {
+        try {
+            await api.delete(`/issues/${issueId}`);
+            return true;
+        } catch (error) {
+            console.error('Ошибка при удалении задачи:', error);
+            return false;
+        }
     };
 
     const getPriorityColor = (priority: Priority): string => {
@@ -321,7 +326,7 @@ export const useDashboard = () => {
         setBoards(updatedBoards);
     };
 
-    const handleAddCard = (data: { card: Card; boardIds: number[] }) => {
+    const handleAddCard = async (data: { card: Card; boardIds: number[] }) => {
         const updatedBoards = boards.map(board => {
             if (data.boardIds.includes(board.id)) {
                 return {
@@ -345,8 +350,18 @@ export const useDashboard = () => {
         }
     };
 
-    const handleViewCard = (card: Card) => {
-        openViewCardModal(card);
+    const handleViewCard = async (card: Card) => {
+        try {
+            const fullCardData = await fetchIssueById(card.id);
+            if (fullCardData) {
+                openViewCardModal(fullCardData);
+            } else {
+                openViewCardModal(card);
+            }
+        } catch (error) {
+            console.error('Ошибка при загрузке деталей задачи:', error);
+            openViewCardModal(card);
+        }
     };
 
     const handleUpdateCard = (data: { card: Card; boardIds: number[] }) => {
@@ -382,7 +397,7 @@ export const useDashboard = () => {
         updateState({ editingCard: null });
     };
 
-    const handleDeleteCard = (cardId: number) => {
+    const handleDeleteCard = async (cardId: number) => {
         const cardToDelete = boards
             .flatMap(board => board.cards || [])
             .find(card => card.id === cardId);
@@ -396,6 +411,32 @@ export const useDashboard = () => {
                 }
             });
         }
+    };
+
+    const confirmDelete = async () => {
+        if (state.deleteConfirmation.cardId) {
+            try {
+                const success = await deleteIssue(state.deleteConfirmation.cardId);
+                if (success) {
+                    const updatedBoards = boards.map(board => ({
+                        ...board,
+                        cards: board.cards ? board.cards.filter(card => card.id !== state.deleteConfirmation.cardId) : []
+                    }));
+                    setBoards(updatedBoards);
+                    updateState({
+                        deleteConfirmation: { isOpen: false, cardId: null, cardTitle: '' }
+                    });
+                }
+            } catch (error) {
+                console.error('Ошибка при удалении задачи:', error);
+            }
+        }
+    };
+
+    const cancelDelete = () => {
+        updateState({
+            deleteConfirmation: { isOpen: false, cardId: null, cardTitle: '' }
+        });
     };
 
     const handleAddComment = (cardId: number, comment: Comment) => {
@@ -414,25 +455,6 @@ export const useDashboard = () => {
             })
         }));
         setBoards(updatedBoards);
-    };
-
-    const confirmDelete = () => {
-        if (state.deleteConfirmation.cardId) {
-            const updatedBoards = boards.map(board => ({
-                ...board,
-                cards: board.cards ? board.cards.filter(card => card.id !== state.deleteConfirmation.cardId) : []
-            }));
-            setBoards(updatedBoards);
-            updateState({
-                deleteConfirmation: { isOpen: false, cardId: null, cardTitle: '' }
-            });
-        }
-    };
-
-    const cancelDelete = () => {
-        updateState({
-            deleteConfirmation: { isOpen: false, cardId: null, cardTitle: '' }
-        });
     };
 
     const filterAndSortCards = (cards: Card[]): Card[] => {
@@ -490,6 +512,7 @@ export const useDashboard = () => {
         state,
         updateState,
         authors,
+        isLoading,
         getPriorityColor,
         getPriorityBgColor,
         toggleBoardExpansion,
@@ -515,6 +538,7 @@ export const useDashboard = () => {
         cancelDelete,
         filterAndSortCards,
         getAvailableBoardTitles,
-        getBoardByCardId
+        getBoardByCardId,
+        refreshIssues: fetchIssues
     };
 };

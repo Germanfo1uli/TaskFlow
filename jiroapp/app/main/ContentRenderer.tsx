@@ -3,11 +3,12 @@ import { ActivePage } from './types/types'
 import { Project } from '../components/VerticalNavbar/CreateProject/types/types'
 import { LoadingFallback } from './LoadingFallback'
 
-const DashboardContent = lazy(() => import('../components/DashboardContent/DashboardContent'))
+const DashboardContent = lazy(() => import('../components/DashboardContent/BoardsContent'))
 const DevelopersPage = lazy(() => import('../components/DevelopersContent/DevelopersPage'))
 const ReportsPage = lazy(() => import('../components/ReportsContent/ReportsPage'))
 const SettingsContent = lazy(() => import('../components/SettingsContent/SettingsContent'))
 const ProjectContent = lazy(() => import('../components/ProjectContent/ProjectContent'))
+const BoardsContent = lazy(() => import('../components/BoardsContent/BoardsContent'))
 
 interface ContentRendererProps {
     activePage: ActivePage
@@ -23,9 +24,9 @@ export const ContentRenderer: React.FC<ContentRendererProps> = ({
     const renderComponent = () => {
         switch (activePage) {
             case 'dashboard':
-                return <DashboardContent />
+                return <DashboardContent projectId={activeProject?.id || null} />
             case 'board':
-                return <BoardsContent />
+                return <BoardsContent projectId={activeProject?.id || null} />
             case 'developers':
                 return <DevelopersPage projectId={activeProject?.id || null} />
             case 'reports':
@@ -46,7 +47,7 @@ export const ContentRenderer: React.FC<ContentRendererProps> = ({
                     />
                 ) : null
             default:
-                return <BoardsContent />
+                return <BoardsContent projectId={activeProject?.id || null} />
         }
     }
 
@@ -56,5 +57,3 @@ export const ContentRenderer: React.FC<ContentRendererProps> = ({
         </Suspense>
     )
 }
-
-const BoardsContent = lazy(() => import('../components/BoardsContent/BoardsContent'))
