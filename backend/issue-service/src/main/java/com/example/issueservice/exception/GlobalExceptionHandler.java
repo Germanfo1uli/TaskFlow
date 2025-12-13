@@ -40,6 +40,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(body);
     }
 
+    // 400 ошибка загрузки файла
+    @ExceptionHandler(FileUploadException.class)
+    public ResponseEntity<Object> handleFileUpload(FileUploadException ex,
+                                                   HttpServletRequest request) {
+        log.warn("File upload failed for {} {}: {}",
+                request.getMethod(), request.getRequestURI(), ex.getMessage());
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
     // 400 ошибка валидации иерархии задач
     @ExceptionHandler(InvalidIssueHierarchyException.class)
     public ResponseEntity<Object> handleInvalidHierarchy(InvalidIssueHierarchyException ex,
@@ -117,6 +126,24 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handleCommentNotFound(CommentNotFoundException ex,
                                                         HttpServletRequest request) {
         log.warn("Comment not found for {} {}: {}",
+                request.getMethod(), request.getRequestURI(), ex.getMessage());
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    // 404 проект не найден
+    @ExceptionHandler(ProjectNotFoundException.class)
+    public ResponseEntity<Object> handleProjectNotFound(ProjectNotFoundException ex,
+                                                        HttpServletRequest request) {
+        log.warn("Project not found for {} {}: {}",
+                request.getMethod(), request.getRequestURI(), ex.getMessage());
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    // 404 файл не найден
+    @ExceptionHandler(AttachmentNotFoundException.class)
+    public ResponseEntity<Object> handleProjectNotFound(AttachmentNotFoundException ex,
+                                                        HttpServletRequest request) {
+        log.warn("Attachment not found for {} {}: {}",
                 request.getMethod(), request.getRequestURI(), ex.getMessage());
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }

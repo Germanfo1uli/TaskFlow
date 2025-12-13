@@ -2,6 +2,9 @@ package com.example.issueservice.config;
 
 import com.example.issueservice.client.BoardServiceClient;
 import com.example.issueservice.dto.response.UserPermissionsResponse;
+import com.example.issueservice.exception.ProjectNotFoundException;
+import com.example.issueservice.exception.ServiceUnavailableException;
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -23,7 +26,13 @@ public class PermissionCacheReader {
 
         if (roleId == null) {
             log.warn("Cache miss for user {} in project {}, calling BoardService", userId, projectId);
-            return boardServiceClient.getUserPermissions(userId, projectId);
+            try {
+                return boardServiceClient.getUserPermissions(userId, projectId);
+            } catch (FeignException.NotFound e) {
+                throw new ProjectNotFoundException(projectId);
+            } catch (FeignException e) {
+                throw new ServiceUnavailableException("Board service error: " + e.getMessage());
+            }
         }
 
         String permsKey = String.format("role:%s:permissions", roleId);
