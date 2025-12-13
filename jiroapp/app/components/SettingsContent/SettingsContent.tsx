@@ -84,6 +84,7 @@ const SettingsContent = ({ project, onBackClick }: SettingsContentProps) => {
             const imageUrl = URL.createObjectURL(file);
             setAvatar(imageUrl);
             refreshProject(project.id);
+            window.location.reload();
         } catch (error) {
             console.error('Ошибка при загрузке аватара:', error);
             throw error;
@@ -95,6 +96,7 @@ const SettingsContent = ({ project, onBackClick }: SettingsContentProps) => {
             await api.delete(`/projects/${project.id}/avatar`);
             setAvatar(null);
             refreshProject(project.id);
+            window.location.reload();
         } catch (error) {
             console.error('Ошибка при удалении аватара:', error);
             throw error;
