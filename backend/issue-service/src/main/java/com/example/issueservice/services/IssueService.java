@@ -43,13 +43,16 @@ public class IssueService {
         authService.hasPermission(userId, projectId, EntityType.ISSUE, ActionType.CREATE);
         log.info("Creating new issue for project: {}", projectId);
 
-        try {
-            boardClient.getMember(assigneeId, projectId);
-        } catch (Exception e) {
-            throw new UserNotFoundException("User " + userId + " is not a member of project " + projectId);
-        }
+        PublicProfileResponse assignee = null;
 
-        PublicProfileResponse assignee = userClient.getProfileById(assigneeId);
+        if (assigneeId != null) {
+            try {
+                boardClient.getMember(assigneeId, projectId);
+                assignee = userClient.getProfileById(assigneeId);
+            } catch (Exception e) {
+                throw new UserNotFoundException("User " + assigneeId + " is not a member of project " + projectId);
+            }
+        }
 
         Issue parentIssue = findAndValidateParentIssue(parentId, projectId);
         Issue newIssue = buildAndSaveBaseIssue(userId, projectId, parentIssue, title, description, type, priority);

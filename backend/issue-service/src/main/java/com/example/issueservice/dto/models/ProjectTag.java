@@ -2,6 +2,8 @@ package com.example.issueservice.dto.models;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -24,6 +26,7 @@ public class ProjectTag {
     private Long projectId;
 
     @ManyToMany(mappedBy = "tags")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @ToString.Exclude
     @Builder.Default
     private Set<Issue> issues = new HashSet<>();
