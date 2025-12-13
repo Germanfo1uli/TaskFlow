@@ -58,9 +58,12 @@ public record IssueDetailResponse(
         PublicProfileResponse qa,
 
         @Schema(description = "Список тегов задачи")
-        List<TagResponse> tags
+        List<TagResponse> tags,
+
+        @Schema(description = "Список комментариев")
+        List<CommentResponse> comments
 ) {
-        public static IssueDetailResponse fromIssue(Issue issue, List<TagResponse> tags) {
+        public static IssueDetailResponse fromIssue(Issue issue, List<TagResponse> tags, List<CommentResponse> comments) {
                 return new IssueDetailResponse(
                         issue.getId(),
                         issue.getProjectId(),
@@ -77,7 +80,8 @@ public record IssueDetailResponse(
                         null,
                         null,
                         null,
-                        tags
+                        tags,
+                        comments
                 );
         }
 
@@ -87,7 +91,8 @@ public record IssueDetailResponse(
                 PublicProfileResponse assignee,
                 PublicProfileResponse reviewer,
                 PublicProfileResponse qa,
-                List<TagResponse> tags) {
+                List<TagResponse> tags,
+                List<CommentResponse> comments) {
                 return new IssueDetailResponse(
                         issue.getId(),
                         issue.getProjectId(),
@@ -104,7 +109,8 @@ public record IssueDetailResponse(
                         assignee,
                         reviewer,
                         qa,
-                        tags
+                        tags,
+                        comments
                 );
         }
 }

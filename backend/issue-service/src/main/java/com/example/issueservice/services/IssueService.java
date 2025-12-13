@@ -2,8 +2,10 @@ package com.example.issueservice.services;
 
 import com.example.issueservice.client.UserServiceClient;
 import com.example.issueservice.dto.data.UserBatchRequest;
+import com.example.issueservice.dto.models.IssueComment;
 import com.example.issueservice.dto.models.ProjectTag;
 import com.example.issueservice.dto.models.enums.*;
+import com.example.issueservice.dto.response.CommentResponse;
 import com.example.issueservice.dto.response.IssueDetailResponse;
 import com.example.issueservice.dto.response.PublicProfileResponse;
 import com.example.issueservice.dto.response.TagResponse;
@@ -50,7 +52,8 @@ public class IssueService {
         log.info("Successfully created issue with id: {}, level: {}", newIssue.getId(), newIssue.getLevel());
         return IssueDetailResponse.fromIssue(
                 newIssue,
-                tags
+                tags,
+                null
         );
     }
 
@@ -190,11 +193,22 @@ public class IssueService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
+        List<Long> commentUserIds = issue.getComments().stream()
+                .map(IssueComment::getUserId)
+                .distinct()
+                .toList();
+
+        userIds.addAll(commentUserIds);
+
         var userProfiles = getUserProfilesBatch(userIds);
 
         List<TagResponse> tags = issue.getTags().stream()
                 .map(TagResponse::from)
                 .toList();
+
+        List<CommentResponse> comments = issue.getComments().stream()
+                .map(comment -> CommentResponse.from(comment, userProfiles.get(comment.getUserId())))
+                .collect(Collectors.toList());
 
         return IssueDetailResponse.withUsers(
                 issue,
@@ -202,7 +216,8 @@ public class IssueService {
                 userProfiles.get(issue.getAssigneeId()),
                 userProfiles.get(issue.getCodeReviewerId()),
                 userProfiles.get(issue.getQaEngineerId()),
-                tags
+                tags,
+                comments
         );
     }
 
@@ -242,7 +257,8 @@ public class IssueService {
                             assignee,
                             reviewer,
                             qa,
-                            tags
+                            tags,
+                            null
                     );
                 })
                 .collect(Collectors.toList());
