@@ -95,6 +95,9 @@ public class Issue {
     @Column(name = "deadline")
     private LocalDateTime deadline;
 
+    @Column(name = "completed_at", updatable = false)
+    private LocalDateTime completedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

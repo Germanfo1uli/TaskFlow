@@ -103,7 +103,7 @@ public class RoleController {
             summary = "Назначение роли",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @PatchMapping("/{projectId}/users/{userId}")
+    @PatchMapping("/{projectId}/roles/assign")
     public ResponseEntity<?> assignRole(
             @PathVariable Long projectId,
             @Valid @RequestBody RoleAssignRequest request,
