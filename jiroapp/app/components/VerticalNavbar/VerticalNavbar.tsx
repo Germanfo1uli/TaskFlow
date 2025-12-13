@@ -32,7 +32,6 @@ const VerticalNavbar = ({
 
     const { projects, loading, addProject, updateProjectAvatar, updateProjectName, removeProject } = useProjectData()
 
-    // Убираем дубликаты проектов
     const uniqueProjects = useMemo(() => {
         const seen = new Set<string>()
         return projects.filter(project => {

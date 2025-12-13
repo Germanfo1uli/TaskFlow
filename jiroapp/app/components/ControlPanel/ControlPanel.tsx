@@ -3,6 +3,19 @@
 import { FaThLarge, FaChartBar, FaCog, FaUsers, FaProjectDiagram, FaHome, FaLightbulb } from 'react-icons/fa'
 import styles from './ControlPanel.module.css'
 
+interface Permission {
+    entity: string;
+    action: string;
+}
+
+interface Role {
+    id: number;
+    name: string;
+    isOwner: boolean;
+    isDefault: boolean;
+    permissions: Permission[];
+}
+
 interface ControlPanelProps {
     activePage: string
     onPageChange: (page: string) => void
@@ -10,6 +23,8 @@ interface ControlPanelProps {
     hasActiveProject?: boolean
     onBackToProjects?: () => void
     showFullMenu?: boolean
+    userRole?: Role | null
+    isLoadingRole?: boolean
 }
 
 const ControlPanel = ({
@@ -18,7 +33,9 @@ const ControlPanel = ({
                           isOpen = true,
                           hasActiveProject = false,
                           onBackToProjects,
-                          showFullMenu = false
+                          showFullMenu = false,
+                          userRole,
+                          isLoadingRole = false
                       }: ControlPanelProps) => {
     const handleNavClick = (page: string) => {
         onPageChange(page)
@@ -26,7 +43,6 @@ const ControlPanel = ({
 
     const handleHomeClick = () => {
         if (hasActiveProject) {
-
             onPageChange('project')
         } else {
             onPageChange('board')
@@ -85,13 +101,15 @@ const ControlPanel = ({
                             <span className={styles.panelNavText}>Отчёты</span>
                         </button>
 
-                        <button
-                            className={`${styles.panelNavButton} ${activePage === 'settings' ? styles.active : ''}`}
-                            onClick={() => handleNavClick('settings')}
-                        >
-                            <FaCog className={styles.panelNavIcon} />
-                            <span className={styles.panelNavText}>Настройки</span>
-                        </button>
+                        {userRole?.isOwner && (
+                            <button
+                                className={`${styles.panelNavButton} ${activePage === 'settings' ? styles.active : ''}`}
+                                onClick={() => handleNavClick('settings')}
+                            >
+                                <FaCog className={styles.panelNavIcon} />
+                                <span className={styles.panelNavText}>Настройки</span>
+                            </button>
+                        )}
 
                         <button
                             className={`${styles.panelNavButton} ${activePage === 'developers' ? styles.active : ''}`}
