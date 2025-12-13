@@ -20,3 +20,19 @@ export interface NewDeveloper {
     name: string;
     role: DeveloperRole;
 }
+export interface DevelopersPageProps {
+    projectId: string | null;
+}
+
+export interface ProjectRole {
+    id: number;
+    name: string;
+    description?: string;
+    permissions: Array<{
+        entity: string;
+        action: string;
+    }>;
+    memberCount?: number;
+    isDefault?: boolean;
+    isOwner?: boolean;
+}

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button, Snackbar, Alert, Box, CircularProgress, Typography } from '@mui/material';
 import { FaUserPlus, FaSync, FaPlus, FaChartLine, FaExclamationTriangle } from 'react-icons/fa';
-import { Developer, ProjectMember } from './types/developer.types';
+import { Developer, ProjectRole, DevelopersPageProps } from './types/developer.types';
 import { DevelopersTable } from './components/DevelopersTable';
 import { AddDeveloperDialog } from './components/AddDeveloperDialog';
 import { DeleteConfirmationDialog } from './components/DeleteConfirmationDialog';
@@ -15,22 +15,6 @@ import { useProjectMembers } from './hooks/useProjectMembers';
 import styles from './DevelopersPage.module.css';
 import { api } from '@/app/auth/hooks/useTokenRefresh';
 
-interface DevelopersPageProps {
-    projectId: string | null;
-}
-
-interface ProjectRole {
-    id: string;
-    name: string;
-    description?: string;
-    permissions: Array<{
-        entity: string;
-        action: string;
-    }>;
-    memberCount?: number;
-    isDefault?: boolean;
-    isOwner?: boolean;
-}
 
 const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
     const [developers, setDevelopers] = useState<Developer[]>([]);
@@ -39,7 +23,6 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
     const [isAddDeveloperOpen, setIsAddDeveloperOpen] = useState(false);
     const [isEditDeveloperOpen, setIsEditDeveloperOpen] = useState(false);
     const [editingDeveloper, setEditingDeveloper] = useState<Developer | null>(null);
-    const [isRefreshing, setIsRefreshing] = useState(false);
     const [filterRole, setFilterRole] = useState<string>('all');
     const [sortBy, setSortBy] = useState<'name' | 'tasks' | 'role'>('name');
 
@@ -78,7 +61,11 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
         try {
             const response = await api.get(`/projects/${projectId}/roles`);
             if (response.data && Array.isArray(response.data.roles)) {
-                const uniqueRoles = response.data.roles.filter((role: ProjectRole, index: number, self: ProjectRole[]) =>
+                const rolesWithNumberIds = response.data.roles.map((role: any) => ({
+                    ...role,
+                    id: Number(role.id)
+                }));
+                const uniqueRoles = rolesWithNumberIds.filter((role: ProjectRole, index: number, self: ProjectRole[]) =>
                     index === self.findIndex((r) => r.id === role.id)
                 );
                 setProjectRoles(uniqueRoles);
@@ -93,7 +80,13 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
 
         try {
             const response = await api.get(`/projects/${projectId}/roles/me`);
-            setCurrentUserRole(response.data);
+            if (response.data) {
+                const roleWithNumberId = {
+                    ...response.data,
+                    id: Number(response.data.id)
+                };
+                setCurrentUserRole(roleWithNumberId);
+            }
         } catch (err) {
             console.error('Ошибка при загрузке роли текущего пользователя:', err);
         }
@@ -257,7 +250,8 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
                 return;
             }
 
-            await api.patch(`/projects/${projectId}/users/${editingDeveloper.id}`, {
+            await api.patch(`/projects/${projectId}/roles/assign`, {
+                userId: editingDeveloper.id,
                 roleId: role.id
             });
 
@@ -272,9 +266,17 @@ const DevelopersPage = ({ projectId }: DevelopersPageProps) => {
             setIsEditDeveloperOpen(false);
             setEditingDeveloper(null);
             refetch();
-        } catch (err) {
+        } catch (err: any) {
             console.error('Ошибка при обновлении роли:', err);
-            showSnackbar('Не удалось обновить роль участника', 'error');
+
+            let errorMessage = 'Не удалось обновить роль участника';
+            if (err.response?.data?.message) {
+                errorMessage = err.response.data.message;
+            } else if (err.response?.status === 500) {
+                errorMessage = 'Внутренняя ошибка сервера. Попробуйте позже.';
+            }
+
+            showSnackbar(errorMessage, 'error');
         }
     };
 

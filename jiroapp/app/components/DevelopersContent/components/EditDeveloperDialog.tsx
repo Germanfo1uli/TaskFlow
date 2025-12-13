@@ -25,7 +25,7 @@ interface EditDeveloperDialogProps {
     onClose: () => void;
     onUpdate: (developer: Developer) => void;
     projectRoles: Array<{
-        id: string;
+        id: number;
         name: string;
         isOwner?: boolean;
         isDefault?: boolean;
@@ -64,10 +64,17 @@ export const EditDeveloperDialog = ({
         setIsSubmitting(true);
 
         try {
+            const role = projectRoles.find(r => r.name === data.role);
+            if (!role) {
+                console.error('Роль не найдена:', data.role);
+                return;
+            }
+
             const updatedDeveloper: Developer = {
                 ...developer,
                 role: data.role,
-                originalRole: data.role
+                originalRole: data.role,
+                roleId: Number(role.id)
             };
 
             onUpdate(updatedDeveloper);

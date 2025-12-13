@@ -1,5 +1,5 @@
 export interface ProjectRole {
-    id: string;
+    id: number;
     name: string;
     description?: string;
     permissions: Array<{
@@ -28,4 +28,8 @@ export interface ProjectMembersResponse {
 export interface ProjectRolesResponse {
     projectId: number;
     roles: ProjectRole[];
+}
+export interface UpdateUserRoleRequest {
+    userId: number;
+    roleId: number;
 }
