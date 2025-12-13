@@ -1,6 +1,7 @@
 package com.example.issueservice.controllers;
 
-import com.example.issueservice.dto.request.CreateUpdateTagResponse;
+import com.example.issueservice.dto.request.CreateTagResponse;
+import com.example.issueservice.dto.request.UpdateTagRequest;
 import com.example.issueservice.dto.response.TagResponse;
 import com.example.issueservice.security.JwtUser;
 import com.example.issueservice.services.TagService;
@@ -33,7 +34,7 @@ public class TagController {
     )
     @PostMapping
     public ResponseEntity<TagResponse> createProjectTag(
-            @Valid @RequestBody CreateUpdateTagResponse request,
+            @Valid @RequestBody CreateTagResponse request,
             @AuthenticationPrincipal JwtUser principal) {
 
         log.info("Request to create tag '{}' for project {}", request.name(), request.projectId());
@@ -65,13 +66,12 @@ public class TagController {
     @PatchMapping("/{tagId}")
     public ResponseEntity<TagResponse> updateProjectTag(
             @PathVariable Long tagId,
-            @RequestBody CreateUpdateTagResponse request,
+            @RequestBody UpdateTagRequest request,
             @AuthenticationPrincipal JwtUser principal) {
 
         log.info("Request to update project tag with id: {}", tagId);
         TagResponse tag = tagService.updateProjectTag(
-                principal.userId(), request.projectId(),
-                tagId, request.name());
+                principal.userId(), tagId, request.name());
 
         log.info("Successfully update project tag {}", tagId);
         return ResponseEntity.ok(tag);
