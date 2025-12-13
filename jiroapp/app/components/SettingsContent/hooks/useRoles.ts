@@ -13,24 +13,10 @@ export const useRoles = (projectId: string) => {
             const response = await api.get(`/projects/${projectId}/roles`);
             const rolesData = response.data.roles || [];
 
-            const ownerRole = rolesData.find(role => role.name === 'Owner');
             const processedRoles = rolesData.map(role => ({
                 ...role,
                 isOwner: role.name === 'Owner'
             }));
-
-            if (!ownerRole) {
-                const ownerRoleData = {
-                    id: 'owner',
-                    name: 'Owner',
-                    description: 'Владелец проекта с полными правами',
-                    permissions: [],
-                    memberCount: 1,
-                    isDefault: true,
-                    isOwner: true
-                };
-                processedRoles.unshift(ownerRoleData);
-            }
 
             setRoles(processedRoles);
             return processedRoles;
@@ -43,18 +29,20 @@ export const useRoles = (projectId: string) => {
         }
     }, [projectId]);
 
-    const createRole = useCallback(async (roleData: Omit<Role, 'id'>) => {
+    const createRole = useCallback(async (roleData: Omit<Role, 'id' | 'memberCount'>) => {
         try {
             setLoading(true);
             const response = await api.post(`/projects/${projectId}/roles`, {
                 name: roleData.name,
+                description: roleData.description || '',
                 permissions: roleData.permissions,
-                ...(roleData.description && { description: roleData.description }),
-                ...(roleData.memberCount && { memberCount: roleData.memberCount }),
-                ...(roleData.isDefault && { isDefault: roleData.isDefault }),
-                isOwner: false
+                isDefault: roleData.isDefault || false
             });
-            const newRole = { ...response.data, isOwner: false };
+            const newRole = {
+                ...response.data,
+                isOwner: false,
+                memberCount: 0
+            };
             setRoles(prev => [...prev, newRole]);
             return newRole;
         } catch (err) {
@@ -70,15 +58,29 @@ export const useRoles = (projectId: string) => {
         try {
             setLoading(true);
             const roleToUpdate = roles.find(r => r.id === roleId);
+
             if (roleToUpdate?.isOwner) {
-                const { permissions, isOwner, ...allowedData } = roleData;
+                const { permissions, isOwner, memberCount, ...allowedData } = roleData;
                 const response = await api.patch(`/projects/${projectId}/roles/${roleId}`, allowedData);
-                const updatedRole = { ...response.data, isOwner: true, permissions: roleToUpdate.permissions };
+                const updatedRole = {
+                    ...response.data,
+                    isOwner: true,
+                    permissions: roleToUpdate.permissions,
+                    memberCount: roleToUpdate.memberCount
+                };
                 setRoles(prev => prev.map(role => role.id === roleId ? updatedRole : role));
                 return updatedRole;
             } else {
-                const response = await api.patch(`/projects/${projectId}/roles/${roleId}`, roleData);
-                const updatedRole = { ...response.data, isOwner: false };
+                const response = await api.patch(`/projects/${projectId}/roles/${roleId}`, {
+                    name: roleData.name,
+                    description: roleData.description,
+                    permissions: roleData.permissions
+                });
+                const updatedRole = {
+                    ...response.data,
+                    isOwner: false,
+                    memberCount: roleToUpdate?.memberCount || 0
+                };
                 setRoles(prev => prev.map(role => role.id === roleId ? updatedRole : role));
                 return updatedRole;
             }

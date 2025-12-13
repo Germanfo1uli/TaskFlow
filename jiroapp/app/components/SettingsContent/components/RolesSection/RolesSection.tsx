@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import {
     FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaUserShield,
     FaCheck, FaUserTag, FaLock, FaTasks, FaUsers, FaChartLine,
-    FaEye, FaEyeSlash, FaKey, FaCrown
+    FaEye, FaEyeSlash, FaKey, FaCrown, FaCode, FaBug,
+    FaClipboardList, FaTags, FaPaperclip, FaComment,
+    FaArrowRight, FaUserPlus, FaListAlt, FaHistory
 } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import styles from './RolesSection.module.css';
@@ -20,78 +22,34 @@ const RolesSection = ({ projectId }: RolesSectionProps) => {
     }, [fetchRoles]);
 
     const permissionsList: PermissionItem[] = [
-        {
-            key: 'viewTasks',
-            label: 'Просмотр задач',
-            description: 'Возможность просматривать все задачи проекта',
-            icon: <FaEye />,
-            category: 'Задачи',
-            entity: 'ISSUE',
-            action: 'VIEW'
-        },
-        {
-            key: 'createTasks',
-            label: 'Создание задач',
-            description: 'Возможность создавать новые задачи',
-            icon: <FaPlus />,
-            category: 'Задачи',
-            entity: 'ISSUE',
-            action: 'CREATE'
-        },
-        {
-            key: 'editTasks',
-            label: 'Редактирование задач',
-            description: 'Возможность редактировать существующие задачи',
-            icon: <FaEdit />,
-            category: 'Задачи',
-            entity: 'ISSUE',
-            action: 'UPDATE'
-        },
-        {
-            key: 'deleteTasks',
-            label: 'Удаление задач',
-            description: 'Возможность удалять задачи',
-            icon: <FaTrash />,
-            category: 'Задачи',
-            entity: 'ISSUE',
-            action: 'DELETE'
-        },
-        {
-            key: 'manageUsers',
-            label: 'Управление пользователями',
-            description: 'Добавление, удаление и редактирование участников',
-            icon: <FaUsers />,
-            category: 'Команда',
-            entity: 'USER',
-            action: 'MANAGE'
-        },
-        {
-            key: 'manageRoles',
-            label: 'Управление ролями',
-            description: 'Изменение ролей участников',
-            icon: <FaUserTag />,
-            category: 'Команда',
-            entity: 'ROLE',
-            action: 'MANAGE'
-        },
-        {
-            key: 'viewAnalytics',
-            label: 'Просмотр аналитики',
-            description: 'Доступ к статистике и отчетам',
-            icon: <FaChartLine />,
-            category: 'Аналитика',
-            entity: 'ANALYTICS',
-            action: 'VIEW'
-        },
-        {
-            key: 'editSettings',
-            label: 'Изменение настроек',
-            description: 'Изменение общих настроек проекта',
-            icon: <FaLock />,
-            category: 'Система',
-            entity: 'PROJECT',
-            action: 'UPDATE'
-        }
+        { key: 'issue_view', label: 'Просмотр задач', description: 'Просмотр всех задач проекта', icon: <FaEye />, category: 'Задачи', entity: 'ISSUE', action: 'VIEW' },
+        { key: 'issue_create', label: 'Создание задач', description: 'Создание новых задач', icon: <FaPlus />, category: 'Задачи', entity: 'ISSUE', action: 'CREATE' },
+        { key: 'issue_edit', label: 'Редактирование задач', description: 'Изменение существующих задач', icon: <FaEdit />, category: 'Задачи', entity: 'ISSUE', action: 'EDIT' },
+        { key: 'issue_delete', label: 'Удаление задач', description: 'Удаление задач', icon: <FaTrash />, category: 'Задачи', entity: 'ISSUE', action: 'DELETE' },
+        { key: 'issue_assign', label: 'Назначение задач', description: 'Назначение людей на задачи', icon: <FaUserPlus />, category: 'Задачи', entity: 'ISSUE', action: 'ASSIGN' },
+        { key: 'issue_take', label: 'Взять задачу', description: 'Стать ответственным за задачу', icon: <FaUserTag />, category: 'Задачи', entity: 'ISSUE', action: 'TAKE_ISSUE' },
+        { key: 'issue_create_subtask', label: 'Создание подзадач', description: 'Создание подзадач', icon: <FaListAlt />, category: 'Задачи', entity: 'ISSUE', action: 'CREATE_SUBTASK' },
+        { key: 'issue_transition_review', label: 'Перевод на ревью', description: 'Перевод задач из IN_PROGRESS в CODE_REVIEW и обратно', icon: <FaCode />, category: 'Задачи', entity: 'ISSUE', action: 'TRANSITION_CODE_REVIEW' },
+        { key: 'issue_transition_qa', label: 'Перевод на QA', description: 'Перевод задач из CODE_REVIEW в QA и обратно', icon: <FaBug />, category: 'Задачи', entity: 'ISSUE', action: 'TRANSITION_QA' },
+        { key: 'issue_transition_full', label: 'Полный перевод', description: 'Перевод задач между любыми статусами', icon: <FaArrowRight />, category: 'Задачи', entity: 'ISSUE', action: 'FULL_TRANSITION' },
+
+        { key: 'sprint_manage', label: 'Управление спринтами', description: 'Создание, изменение и управление спринтами', icon: <FaClipboardList />, category: 'Спринты', entity: 'SPRINT', action: 'MANAGE' },
+
+        { key: 'comment_create', label: 'Создание комментариев', description: 'Написание комментариев', icon: <FaComment />, category: 'Комментарии', entity: 'COMMENT', action: 'CREATE' },
+        { key: 'comment_edit_own', label: 'Редактирование своих', description: 'Редактирование своих комментариев', icon: <FaEdit />, category: 'Комментарии', entity: 'COMMENT', action: 'EDIT_OWN' },
+        { key: 'comment_delete_own', label: 'Удаление своих', description: 'Удаление своих комментариев', icon: <FaTrash />, category: 'Комментарии', entity: 'COMMENT', action: 'DELETE_OWN' },
+
+        { key: 'attachment_create', label: 'Загрузка файлов', description: 'Загрузка вложений', icon: <FaPaperclip />, category: 'Вложения', entity: 'ATTACHMENT', action: 'CREATE' },
+        { key: 'attachment_edit_own', label: 'Редактирование своих', description: 'Редактирование своих вложений', icon: <FaEdit />, category: 'Вложения', entity: 'ATTACHMENT', action: 'EDIT_OWN' },
+        { key: 'attachment_delete_own', label: 'Удаление своих', description: 'Удаление своих вложений', icon: <FaTrash />, category: 'Вложения', entity: 'ATTACHMENT', action: 'DELETE_OWN' },
+
+        { key: 'tag_create', label: 'Создание тегов', description: 'Создание новых тегов', icon: <FaPlus />, category: 'Теги', entity: 'TAG', action: 'CREATE' },
+        { key: 'tag_edit', label: 'Редактирование тегов', description: 'Изменение существующих тегов', icon: <FaEdit />, category: 'Теги', entity: 'TAG', action: 'EDIT' },
+        { key: 'tag_delete', label: 'Удаление тегов', description: 'Удаление тегов', icon: <FaTrash />, category: 'Теги', entity: 'TAG', action: 'DELETE' },
+        { key: 'tag_apply', label: 'Применение тегов', description: 'Добавление тегов к задачам', icon: <FaTags />, category: 'Теги', entity: 'TAG', action: 'APPLY' },
+
+        { key: 'dashboard_view', label: 'Просмотр дашбордов', description: 'Просмотр дашбордов проекта', icon: <FaChartLine />, category: 'Система', entity: 'DASHBOARD', action: 'VIEW' },
+        { key: 'logs_view', label: 'Просмотр логов', description: 'Просмотр истории действий проекта', icon: <FaHistory />, category: 'Система', entity: 'LOGS', action: 'VIEW' }
     ];
 
     const getPermissionFromItem = (item: PermissionItem) => ({
@@ -114,7 +72,7 @@ const RolesSection = ({ projectId }: RolesSectionProps) => {
             id: `temp_${Date.now()}`,
             name: 'Новая роль',
             description: 'Описание новой роли',
-            permissions: [getPermissionFromItem(permissionsList[0])],
+            permissions: [],
             memberCount: 0,
             isDefault: false,
             isOwner: false
@@ -133,7 +91,7 @@ const RolesSection = ({ projectId }: RolesSectionProps) => {
 
         try {
             if (isCreating) {
-                const { id, ...roleData } = editingRole;
+                const { id, memberCount, ...roleData } = editingRole;
                 await createRole(roleData);
             } else {
                 await updateRole(editingRole.id, editingRole);
@@ -587,18 +545,11 @@ const RolesSection = ({ projectId }: RolesSectionProps) => {
                                                         Права доступа для этой роли нельзя изменять.
                                                     </p>
                                                     <div className={styles.ownerPermissions}>
-                                                        <span className={styles.ownerPermission}>
-                                                            <FaCheck /> Полный доступ к задачам
-                                                        </span>
-                                                        <span className={styles.ownerPermission}>
-                                                            <FaCheck /> Управление командой
-                                                        </span>
-                                                        <span className={styles.ownerPermission}>
-                                                            <FaCheck /> Настройка проекта
-                                                        </span>
-                                                        <span className={styles.ownerPermission}>
-                                                            <FaCheck /> Доступ к аналитике
-                                                        </span>
+                                                        {permissionsList.map(permission => (
+                                                            <span key={permission.key} className={styles.ownerPermission}>
+                                                                <FaCheck /> {permission.label}
+                                                            </span>
+                                                        ))}
                                                     </div>
                                                 </div>
                                             </div>
@@ -616,12 +567,14 @@ const RolesSection = ({ projectId }: RolesSectionProps) => {
                                                         Права доступа для этой роли нельзя изменять.
                                                     </p>
                                                     <div className={styles.ownerPermissions}>
-                                                        <span className={styles.ownerPermission}>
-                                                            <FaCheck /> Базовый доступ к задачам
-                                                        </span>
-                                                        <span className={styles.ownerPermission}>
-                                                            <FaCheck /> Просмотр проекта
-                                                        </span>
+                                                        {permissionsList
+                                                            .filter(p => ['ISSUE_VIEW', 'COMMENT_CREATE', 'COMMENT_EDIT_OWN', 'COMMENT_DELETE_OWN', 'ATTACHMENT_CREATE', 'ATTACHMENT_EDIT_OWN', 'ATTACHMENT_DELETE_OWN', 'DASHBOARD_VIEW']
+                                                                .includes(`${p.entity}_${p.action}`))
+                                                            .map(permission => (
+                                                                <span key={permission.key} className={styles.ownerPermission}>
+                                                                    <FaCheck /> {permission.label}
+                                                                </span>
+                                                            ))}
                                                     </div>
                                                 </div>
                                             </div>
