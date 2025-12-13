@@ -3,6 +3,7 @@ package com.example.issueservice.controllers;
 import com.example.issueservice.dto.models.Attachment;
 import com.example.issueservice.dto.response.AttachmentResponse;
 import com.example.issueservice.repositories.AttachmentRepository;
+import com.example.issueservice.security.JwtUser;
 import com.example.issueservice.services.AttachmentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -40,9 +41,9 @@ public class AttachmentController {
     public ResponseEntity<AttachmentResponse> upload(
             @PathVariable Long issueId,
             @RequestParam("file") MultipartFile file,
-            @AuthenticationPrincipal Long userId) {
+            @AuthenticationPrincipal JwtUser principal) {
 
-        AttachmentResponse response = attachmentService.uploadAttachment(userId, issueId, file);
+        AttachmentResponse response = attachmentService.uploadAttachment(principal.userId(), issueId, file);
         return ResponseEntity.ok(response);
     }
 
@@ -54,9 +55,9 @@ public class AttachmentController {
     public ResponseEntity<byte[]> download(
             @PathVariable Long issueId,
             @PathVariable Long attachmentId,
-            @AuthenticationPrincipal Long userId) {
+            @AuthenticationPrincipal JwtUser principal) {
 
-        byte[] fileData = attachmentService.downloadAttachment(attachmentId, userId);
+        byte[] fileData = attachmentService.downloadAttachment(principal.userId(), attachmentId);
         Attachment attachment = attachmentRepository.findById(attachmentId).orElseThrow();
 
         return ResponseEntity.ok()
@@ -75,9 +76,9 @@ public class AttachmentController {
     public ResponseEntity<Void> delete(
             @PathVariable Long issueId,
             @PathVariable Long attachmentId,
-            @AuthenticationPrincipal Long userId) {
+            @AuthenticationPrincipal JwtUser principal) {
 
-        attachmentService.deleteAttachment(attachmentId, userId);
+        attachmentService.deleteAttachment(principal.userId(), attachmentId);
         return ResponseEntity.noContent().build();
     }
 }
