@@ -6,6 +6,8 @@ import com.example.issueservice.dto.models.enums.ActionType;
 import com.example.issueservice.dto.models.enums.EntityType;
 import com.example.issueservice.dto.response.CommentResponse;
 import com.example.issueservice.dto.response.PublicProfileResponse;
+import com.example.issueservice.dto.response.UserPermissionsResponse;
+import com.example.issueservice.exception.AccessDeniedException;
 import com.example.issueservice.exception.CommentNotFoundException;
 import com.example.issueservice.exception.IssueNotFoundException;
 import com.example.issueservice.dto.models.IssueComment;
@@ -59,20 +61,50 @@ public class IssueCommentService {
 
         return CommentResponse.from(savedComment, profile);
     }
-
+    
     @Transactional
-    public void deleteComment(Long commentId, Long requestingUserId) {
-        log.info("User {} is trying to delete comment {}", requestingUserId, commentId);
+    public CommentResponse updateComment(Long userId, Long commentId, String message) {
+
         IssueComment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new CommentNotFoundException("Comment with id " + commentId + " not found"));
 
-        // TODO: Добавить проверку прав. Удалять может только автор или администратор проекта.
-        // if (!comment.getUserId().equals(requestingUserId) && !isProjectAdmin(requestingUserId, comment.getIssue().getProjectId())) {
-        //     throw new AccessDeniedException("You do not have permission to delete this comment");
-        // }
+        authService.hasPermission(userId, comment.getIssue().getProjectId(), EntityType.COMMENT, ActionType.EDIT_OWN);
+
+        comment.setText(message);
+        commentRepository.save(comment);
+
+        return CommentResponse.from(comment, null);
+    }
+
+    @Transactional
+    public void deleteComment(Long userId, Long commentId) {
+
+        IssueComment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new CommentNotFoundException("Comment with id " + commentId + " not found"));
+
+        Long projectId = comment.getIssue().getProjectId();
+
+        log.info("User {} attempting to delete comment {} in project {}", userId, commentId, projectId);
+
+        boolean isCommentAuthor = comment.getUserId().equals(userId);
+
+        if (!isCommentAuthor) {
+            UserPermissionsResponse permissions = authService.getUserPermissions(userId, projectId);
+
+            if (!permissions.isOwner()) {
+                throw new AccessDeniedException(
+                        String.format("User %d cannot delete comment %d: not author and not project owner",
+                                userId, commentId)
+                );
+            }
+
+            log.info("User {} is project owner, granting permission to delete comment {}", userId, commentId);
+        } else {
+            authService.hasPermission(userId, projectId, EntityType.COMMENT, ActionType.DELETE_OWN);
+            log.info("User {} is author of comment {}, deletion permitted", userId, commentId);
+        }
 
         commentRepository.delete(comment);
         log.info("Successfully deleted comment {}", commentId);
-        // FUTURE: Публикация события 'issue.comment.deleted'
     }
 }

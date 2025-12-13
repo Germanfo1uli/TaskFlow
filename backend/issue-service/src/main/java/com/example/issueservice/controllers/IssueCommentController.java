@@ -1,6 +1,6 @@
 package com.example.issueservice.controllers;
 
-import com.example.issueservice.dto.request.CreateCommentRequest;
+import com.example.issueservice.dto.request.CreateUpdateCommentRequest;
 import com.example.issueservice.dto.response.CommentResponse;
 import com.example.issueservice.security.JwtUser;
 import com.example.issueservice.services.IssueCommentService;
@@ -14,11 +14,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
-import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/issues/{issueId}/comments")
+@RequestMapping("/api/issues")
 @RequiredArgsConstructor
 public class IssueCommentController {
 
@@ -28,28 +27,46 @@ public class IssueCommentController {
             summary = "Создание комментария",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @PostMapping
+    @PostMapping("/{issueId}/comments")
     public ResponseEntity<CommentResponse> createComment(
-            @Valid @RequestBody CreateCommentRequest request,
+            @Valid @RequestBody CreateUpdateCommentRequest request,
             @AuthenticationPrincipal JwtUser principal,
             @PathVariable Long issueId) {
 
         log.info("Request to create comment for issue {}", issueId);
 
-        CommentResponse createdComment = commentService.createComment(principal.userId(), issueId, request.message());
-        log.info("Successfully created comment with id: {}", createdComment.id());
-        return new ResponseEntity<>(createdComment, HttpStatus.CREATED);
+        CommentResponse response = commentService.createComment(principal.userId(), issueId, request.message());
+        log.info("Successfully created comment with id: {}", response.id());
+        return ResponseEntity.ok(response);
     }
 
-    // Удалить комментарий
-    @DeleteMapping("/{commentId}")
-    public ResponseEntity<Void> deleteComment(@PathVariable Long commentId) {
+    @Operation(
+            summary = "Создание комментария",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PatchMapping("/comments/{commentId}")
+    public ResponseEntity<CommentResponse> updateComment(
+            @Valid @RequestBody CreateUpdateCommentRequest request,
+            @AuthenticationPrincipal JwtUser principal,
+            @PathVariable Long commentId) {
+        log.info("Request to update comment with id: {}", commentId);
+
+        CommentResponse response = commentService.updateComment(principal.userId(), commentId, request.message());
+        log.info("Successfully update comment {}", commentId);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "Удаление комментария (Автором или Owner'ом)",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @DeleteMapping("/comments/{commentId}")
+    public ResponseEntity<Void> deleteComment(
+            @AuthenticationPrincipal JwtUser principal,
+            @PathVariable Long commentId) {
         log.info("Request to delete comment with id: {}", commentId);
 
-        // TODO: Взять ID пользователя, который пытается удалить, из JWT-токена
-        Long requestingUserId = 1L;
-
-        commentService.deleteComment(commentId, requestingUserId);
+        commentService.deleteComment(principal.userId(), commentId);
         log.info("Successfully deleted comment {}", commentId);
         return ResponseEntity.noContent().build();
     }

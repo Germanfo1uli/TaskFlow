@@ -15,14 +15,19 @@ public record CommentResponse (
         @Schema(description = "Данные об авторе комментария")
         PublicProfileResponse creator,
 
-        LocalDateTime createdAt
+        @Schema(description = "Дата создания комментария")
+        LocalDateTime createdAt,
+
+        @Schema(description = "Дата изменения комментария")
+        LocalDateTime updatedAt
 ) {
         public static CommentResponse from(IssueComment comment, PublicProfileResponse creator) {
                 return new CommentResponse(
                         comment.getId(),
                         comment.getText(),
                         creator,
-                        comment.getCreatedAt()
+                        comment.getCreatedAt(),
+                        comment.getUpdatedAt()
                 );
         }
 }
