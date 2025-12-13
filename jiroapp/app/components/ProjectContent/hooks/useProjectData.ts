@@ -1,15 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ProjectData, ProjectStats, ProjectActivity } from '../types/types';
+import { ProjectData, ProjectStats, ProjectActivity, ApiProjectResponse } from '../types/types';
 import { api } from '@/app/auth/hooks/useTokenRefresh';
-
-interface ApiProjectResponse {
-    projectId: number;
-    ownerId: number;
-    name: string;
-    description: string;
-    createdAt: string;
-    yourRole: string;
-}
 
 export const useProjectData = (projectId?: string) => {
     const [project, setProject] = useState<ProjectData | null>(null);

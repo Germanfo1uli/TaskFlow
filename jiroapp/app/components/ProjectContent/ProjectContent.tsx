@@ -8,50 +8,19 @@ import {
     FaComments, FaCog, FaEdit, FaShare, FaSignOutAlt
 } from 'react-icons/fa'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ProjectContentProps, ProjectData } from './types/types'
+import { ProjectContentProps } from './types/types'
+import { useProjectContent } from './hooks/useProjectContent'
 import styles from './ProjectContent.module.css'
 import confetti from 'canvas-confetti'
 import { api } from '@/app/auth/hooks/useTokenRefresh'
 
-interface ApiProjectResponse {
-    projectId: number
-    ownerId: number
-    name: string
-    description: string
-    createdAt: string
-    yourRole: string
-}
-
 const ProjectContent = ({ project: initialProject, onBackToDashboard }: ProjectContentProps) => {
-    const [project, setProject] = useState(initialProject)
-    const [isLoading, setIsLoading] = useState(false)
     const [hoveredCard, setHoveredCard] = useState<number | null>(null)
     const [showConfetti, setShowConfetti] = useState(false)
     const [showLeaveModal, setShowLeaveModal] = useState(false)
     const [isLeaving, setIsLeaving] = useState(false)
 
-    useEffect(() => {
-        const fetchProjectData = async () => {
-            setIsLoading(true)
-            try {
-                const response = await api.get<ApiProjectResponse>(`/projects/${initialProject.id}`)
-                const apiProject = response.data
-                const updatedProject: ProjectData = {
-                    ...initialProject,
-                    name: apiProject.name,
-                    description: apiProject.description,
-                    createdAt: apiProject.createdAt,
-                    yourRole: apiProject.yourRole
-                }
-                setProject(updatedProject)
-            } catch (error) {
-                console.error('Ошибка загрузки проекта:', error)
-            } finally {
-                setIsLoading(false)
-            }
-        }
-        if (initialProject?.id) fetchProjectData()
-    }, [initialProject])
+    const { project, isLoading, userRole } = useProjectContent(initialProject)
 
     useEffect(() => {
         if (project && project.progress === 100 && !showConfetti) {
@@ -147,8 +116,8 @@ const ProjectContent = ({ project: initialProject, onBackToDashboard }: ProjectC
                             </motion.p>
                             <motion.div className={styles.projectMeta} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
                                 <span className={styles.metaItem}><FaCalendar className={styles.metaIcon} />Создан {formatDate(project.createdAt)}</span>
-                                {project.owner && <span className={styles.metaItem}><FaUserCircle className={styles.metaIcon} />Владелец: {project.owner.name}</span>}
                                 {project.yourRole && <span className={styles.metaItem}><FaUserCircle className={styles.metaIcon} />Ваша роль: {project.yourRole}</span>}
+                                {userRole && <span className={styles.metaItem}><FaUserCircle className={styles.metaIcon} />Статус: {userRole.isOwner ? 'Владелец' : 'Участник'}</span>}
                             </motion.div>
                         </div>
                     </div>
@@ -247,15 +216,17 @@ const ProjectContent = ({ project: initialProject, onBackToDashboard }: ProjectC
                                         <FaUsers className={styles.actionBtnIcon} />Пригласить участника
                                     </motion.button>
 
-                                    <motion.button
-                                        className={styles.leaveProjectBtn}
-                                        onClick={() => setShowLeaveModal(true)}
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 100 } } }}
-                                    >
-                                        <FaSignOutAlt className={styles.actionBtnIcon} />Покинуть проект
-                                    </motion.button>
+                                    {!userRole?.isOwner && (
+                                        <motion.button
+                                            className={styles.leaveProjectBtn}
+                                            onClick={() => setShowLeaveModal(true)}
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
+                                            variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 100 } } }}
+                                        >
+                                            <FaSignOutAlt className={styles.actionBtnIcon} />Покинуть проект
+                                        </motion.button>
+                                    )}
                                 </motion.div>
                             </div>
                         </motion.div>

@@ -50,7 +50,22 @@ export interface ProjectContextType {
     refreshProject: () => Promise<void>;
 }
 
-export interface ProjectContentProps {
-    project: ProjectData;
-    onBackToDashboard: () => void;
+export interface ApiProjectResponse {
+    projectId: number;
+    ownerId: number;
+    name: string;
+    description: string;
+    createdAt: string;
+    yourRole: string;
+}
+
+export interface RoleResponse {
+    id: number;
+    name: string;
+    isOwner: boolean;
+    isDefault: boolean;
+    permissions: Array<{
+        entity: string;
+        action: string;
+    }>;
 }
