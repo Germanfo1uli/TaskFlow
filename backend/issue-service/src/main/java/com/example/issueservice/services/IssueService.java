@@ -55,7 +55,7 @@ public class IssueService {
         }
 
         Issue parentIssue = findAndValidateParentIssue(parentId, projectId);
-        Issue newIssue = buildAndSaveBaseIssue(userId, projectId, parentIssue, title, description, type, priority);
+        Issue newIssue = buildAndSaveBaseIssue(userId, projectId, assigneeId, parentIssue, title, description, type, priority);
 
         List<TagResponse> tags = (tagIds != null && !tagIds.isEmpty())
                 ? assignTagsToIssue(newIssue, tagIds, projectId, true)
@@ -169,12 +169,13 @@ public class IssueService {
     }
 
     private Issue buildAndSaveBaseIssue(
-            Long userId, Long projectId, Issue parentIssue,
+            Long userId, Long projectId, Long assigneeId, Issue parentIssue,
             String title, String description, IssueType type, Priority priority) {
 
         Issue newIssue = Issue.builder()
                 .projectId(projectId)
                 .creatorId(userId)
+                .assigneeId(assigneeId)
                 .title(title)
                 .description(description)
                 .type(type)
