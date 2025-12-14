@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { FaThLarge, FaChartBar, FaCog, FaUsers, FaProjectDiagram, FaHome, FaLightbulb } from 'react-icons/fa'
 import styles from './ControlPanel.module.css'
 
@@ -37,6 +38,19 @@ const ControlPanel = ({
                           userRole,
                           isLoadingRole = false
                       }: ControlPanelProps) => {
+    const [canViewDashboard, setCanViewDashboard] = useState(false)
+
+    useEffect(() => {
+        if (userRole) {
+            const hasLogsViewPermission = userRole.permissions.some(
+                p => p.entity === 'LOGS' && p.action === 'VIEW'
+            )
+            setCanViewDashboard(userRole.isOwner || hasLogsViewPermission)
+        } else {
+            setCanViewDashboard(false)
+        }
+    }, [userRole])
+
     const handleNavClick = (page: string) => {
         onPageChange(page)
     }
@@ -85,13 +99,15 @@ const ControlPanel = ({
 
                 {showFullMenu && (
                     <>
-                        <button
-                            className={`${styles.panelNavButton} ${activePage === 'dashboard' ? styles.active : ''}`}
-                            onClick={() => handleNavClick('dashboard')}
-                        >
-                            <FaThLarge className={styles.panelNavIcon} />
-                            <span className={styles.panelNavText}>Доска</span>
-                        </button>
+                        {canViewDashboard && (
+                            <button
+                                className={`${styles.panelNavButton} ${activePage === 'dashboard' ? styles.active : ''}`}
+                                onClick={() => handleNavClick('dashboard')}
+                            >
+                                <FaThLarge className={styles.panelNavIcon} />
+                                <span className={styles.panelNavText}>Доска</span>
+                            </button>
+                        )}
 
                         <button
                             className={`${styles.panelNavButton} ${activePage === 'reports' ? styles.active : ''}`}
