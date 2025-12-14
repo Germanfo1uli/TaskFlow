@@ -11,28 +11,33 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "attachments", schema = "issue_service_schema")
 @Data
-@Builder(toBuilder = true)
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Attachment {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "issue_id")
+    @JoinColumn(name = "issue_id", nullable = false)
     private Issue issue;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "comment_id")
-    private IssueComment comment;
+    @Column(nullable = false)
+    private String fileName;
+
+    @Lob
+    @Column(nullable = false)
+    private byte[] fileData;
 
     @Column(nullable = false)
-    private String name;
+    private Long fileSize;
 
     @Column(nullable = false)
-    private String path;
+    private String contentType;
+
+    @Column(name = "created_by", nullable = false)
+    private Long createdBy;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

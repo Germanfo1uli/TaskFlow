@@ -40,6 +40,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(body);
     }
 
+    // 400 ошибка загрузки файла
+    @ExceptionHandler(FileUploadException.class)
+    public ResponseEntity<Object> handleFileUpload(FileUploadException ex,
+                                                   HttpServletRequest request) {
+        log.warn("File upload failed for {} {}: {}",
+                request.getMethod(), request.getRequestURI(), ex.getMessage());
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
     // 400 ошибка валидации иерархии задач
     @ExceptionHandler(InvalidIssueHierarchyException.class)
     public ResponseEntity<Object> handleInvalidHierarchy(InvalidIssueHierarchyException ex,
@@ -119,6 +128,33 @@ public class GlobalExceptionHandler {
         log.warn("Comment not found for {} {}: {}",
                 request.getMethod(), request.getRequestURI(), ex.getMessage());
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    // 404 проект не найден
+    @ExceptionHandler(ProjectNotFoundException.class)
+    public ResponseEntity<Object> handleProjectNotFound(ProjectNotFoundException ex,
+                                                        HttpServletRequest request) {
+        log.warn("Project not found for {} {}: {}",
+                request.getMethod(), request.getRequestURI(), ex.getMessage());
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    // 404 файл не найден
+    @ExceptionHandler(AttachmentNotFoundException.class)
+    public ResponseEntity<Object> handleProjectNotFound(AttachmentNotFoundException ex,
+                                                        HttpServletRequest request) {
+        log.warn("Attachment not found for {} {}: {}",
+                request.getMethod(), request.getRequestURI(), ex.getMessage());
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    // 409 тег уже существует
+    @ExceptionHandler(TagAlreadyExistsException.class)
+    public ResponseEntity<Object> handleTagAlreadyExists(TagAlreadyExistsException ex,
+                                                        HttpServletRequest request) {
+        log.warn("Conflict for tag {} {}: {}",
+                request.getMethod(), request.getRequestURI(), ex.getMessage());
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
     // 503 сервис недоступен

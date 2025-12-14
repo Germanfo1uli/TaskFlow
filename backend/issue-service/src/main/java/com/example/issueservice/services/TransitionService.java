@@ -9,6 +9,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.Set;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -27,7 +30,21 @@ public class TransitionService {
         log.info("Owner transitioning issue {} from {} to {} by user {}",
                 issueId, issue.getStatus().name(), targetStatus.name(), userId);
 
+        if (issue.getAssigneeId() != null &&
+                (targetStatus == IssueStatus.SELECTED_FOR_DEVELOPMENT || targetStatus == IssueStatus.TO_DO)) {
+            throw new InvalidStatusTransitionException(
+                    "Cannot transition issue with assignee to " + targetStatus.name() + ". Issue is already in progress.");
+        }
+
         issue.setStatus(targetStatus);
+        boolean isCompletedStatus = Set.of(IssueStatus.STAGING, IssueStatus.DONE).contains(targetStatus);
+
+        if (isCompletedStatus && issue.getCompletedAt() == null) {
+            issue.setCompletedAt(LocalDateTime.now());
+        } else if (!isCompletedStatus) {
+            issue.setCompletedAt(null);
+        }
+
         issueRepository.save(issue);
 
         log.info("Successfully transitioned issue {} to status {} by owner", issueId, targetStatus.name());
@@ -52,6 +69,14 @@ public class TransitionService {
                 issueId, issue.getStatus().name(), targetStatus.name(), userId, assignmentType.name());
 
         issue.setStatus(targetStatus);
+        boolean isCompletedStatus = Set.of(IssueStatus.STAGING, IssueStatus.DONE).contains(targetStatus);
+
+        if (isCompletedStatus && issue.getCompletedAt() == null) {
+            issue.setCompletedAt(LocalDateTime.now());
+        } else if (!isCompletedStatus) {
+            issue.setCompletedAt(null);
+        }
+
         issueRepository.save(issue);
 
         log.info("Successfully transitioned issue {} to status {}", issueId, targetStatus.name());

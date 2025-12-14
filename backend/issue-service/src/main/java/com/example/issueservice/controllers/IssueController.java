@@ -1,7 +1,8 @@
 package com.example.issueservice.controllers;
 
-import com.example.issueservice.dto.request.AssignTagDto;
+import com.example.issueservice.dto.request.AssignTagsRequest;
 import com.example.issueservice.dto.request.CreateIssueRequest;
+import com.example.issueservice.dto.request.UpdateIssueRequest;
 import com.example.issueservice.dto.response.IssueDetailResponse;
 import com.example.issueservice.security.JwtUser;
 import com.example.issueservice.services.IssueService;
@@ -10,7 +11,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
@@ -30,7 +30,7 @@ public class IssueController {
     private final IssueService issueService;
 
     @Operation(
-            summary = "Создание задачи",
+            summary = "Создание задачи (Назначение тегов сразу)",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @PostMapping
@@ -40,9 +40,9 @@ public class IssueController {
 
         log.info("Request to create issue: {}", request.title());
         IssueDetailResponse response = issueService.createIssue(
-                principal.userId(), request.projectId(), request.parentId(),
-                request.title(), request.description(),
-                request.type(), request.priority());
+                principal.userId(), request.projectId(), request.assigneeId(),
+                request.parentId(), request.title(), request.description(),
+                request.type(), request.priority(), request.tagIds());
         return ResponseEntity.ok(response);
     }
 
@@ -76,28 +76,51 @@ public class IssueController {
         return ResponseEntity.ok(response);
     }
 
-    // --- Удаление задачи ---
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteIssue(@PathVariable Long id) {
-        log.info("Request to delete issue with id: {}", id);
-        // TODO: В сервисе нужно реализовать метод deleteIssue(id)
-        // issueService.deleteIssue(id);
-        // return ResponseEntity.noContent().build();
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+    @Operation(
+            summary = "Обновление задачи (в том числе вместе с тегами)",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PatchMapping("/{issueId}")
+    public ResponseEntity<IssueDetailResponse> updateIssue(
+            @AuthenticationPrincipal JwtUser principal,
+            @PathVariable Long issueId,
+            @Valid @RequestBody UpdateIssueRequest request) {
+
+        log.info("Request to update issue {}: {}", issueId, request);
+        IssueDetailResponse response = issueService.updateIssue(
+                principal.userId(), issueId,
+                request.title(), request.description(),
+                request.priority(), request.tagIds());
+        return ResponseEntity.ok(response);
     }
 
-    // --- Управление тегами (будет использовать TagService) ---
-    @PostMapping("/{issueId}/tags")
-    public ResponseEntity<Void> assignTagToIssue(@PathVariable Long issueId, @Valid @RequestBody AssignTagDto dto) {
-        log.info("Request to assign tag {} to issue {}", dto.getTagId(), issueId);
-        // tagService.assignTagToIssue(issueId, dto);
-        return ResponseEntity.ok().build();
-    }
+    @Operation(
+            summary = "Удаление задачи (каскадно - ОСТОРОЖНОЕ ИСПОЛЬЗОВАНИЕ, удалит все подзадачи, комменты и файлы)",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @DeleteMapping("/{issueId}")
+    public ResponseEntity<?> deleteIssue(
+            @AuthenticationPrincipal JwtUser principal,
+            @PathVariable Long issueId) {
 
-    @DeleteMapping("/{issueId}/tags/{tagId}")
-    public ResponseEntity<Void> removeTagFromIssue(@PathVariable Long issueId, @PathVariable Long tagId) {
-        log.info("Request to remove tag {} from issue {}", tagId, issueId);
-        // tagService.removeTagFromIssue(issueId, tagId);
+        log.info("Request to delete issue by id: {}", issueId);
+        issueService.deleteIssue(principal.userId(), issueId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+            summary = "Назначение тегов задаче (только assignee)",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PatchMapping("/{issueId}/tags")
+    public ResponseEntity<IssueDetailResponse> assignTagsBatch(
+            @AuthenticationPrincipal JwtUser principal,
+            @PathVariable Long issueId,
+            @Valid @RequestBody AssignTagsRequest request) {
+
+        log.info("Batch tag assignment request for issue {} by user {}", issueId, principal.userId());
+        IssueDetailResponse response = issueService.assignTagsToIssue(
+                principal.userId(), issueId, request.tagIds());
+        return ResponseEntity.ok(response);
     }
 }

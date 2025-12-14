@@ -6,13 +6,13 @@ import com.example.boardservice.dto.models.ProjectMember;
 import com.example.boardservice.dto.models.ProjectRole;
 import com.example.boardservice.dto.models.enums.ActionType;
 import com.example.boardservice.dto.models.enums.EntityType;
+import com.example.boardservice.dto.rabbit.ProjectCreatedEvent;
 import com.example.boardservice.dto.response.CreateProjectResponse;
 import com.example.boardservice.dto.response.GetProjectResponse;
 import com.example.boardservice.dto.response.InternalProjectResponse;
 import com.example.boardservice.dto.response.ProjectListItem;
 import com.example.boardservice.exception.AccessDeniedException;
 import com.example.boardservice.exception.ProjectNotFoundException;
-import com.example.boardservice.exception.UserNotFoundException;
 import com.example.boardservice.repository.ProjectMemberRepository;
 import com.example.boardservice.repository.ProjectRepository;
 import com.example.boardservice.repository.ProjectRoleRepository;
@@ -39,6 +39,7 @@ public class ProjectService {
     private final ProjectRoleService roleService;
     private final AuthService authService;
     private final RedisCacheService redisCacheService;
+    private final EventProducerService eventProducerService;
 
     @Transactional
     public CreateProjectResponse createProject(Long ownerId, String name, String description) {
@@ -53,6 +54,9 @@ public class ProjectService {
         ProjectRole ownerRole = roleService.createDefaultRoles(project.getId());
 
         memberService.addOwner(ownerId, project, ownerRole);
+
+        eventProducerService.sendProjectCreatedEvent(
+                ProjectCreatedEvent.fromProject(project));
 
         return new CreateProjectResponse(project.getId(), project.getName());
     }

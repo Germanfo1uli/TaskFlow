@@ -15,7 +15,8 @@ import org.springframework.context.annotation.Configuration;
                 description = "API для общего управления проектами"
         ),
         servers = {
-                @Server(url = "http://localhost:8000", description = "Docker Gateway")
+                @Server(url = "http://localhost:8000", description = "Local Development"),
+                @Server(url = "${RASPBERRY_PI_URL:http://26.35.172.29:8000}", description = "Raspberry Pi Network")
         }
 )
 @SecurityScheme(

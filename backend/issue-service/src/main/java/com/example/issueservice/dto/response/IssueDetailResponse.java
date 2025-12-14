@@ -7,6 +7,8 @@ import com.example.issueservice.dto.models.enums.Priority;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 
 @Schema(description = "Детальная информация о задаче с данными о пользователях")
 public record IssueDetailResponse(
@@ -16,8 +18,8 @@ public record IssueDetailResponse(
         @Schema(description = "ID проекта", example = "123")
         Long projectId,
 
-        @Schema(description = "ID родительской задачи", example = "123")
-        Long parentId,
+        @Schema(description = "Минимальная информация о родительской задаче")
+        ParentIssueResponse parent,
 
         @Schema(description = "Название задачи", example = "Сделать микросервисы")
         String title,
@@ -53,35 +55,25 @@ public record IssueDetailResponse(
         PublicProfileResponse reviewer,
 
         @Schema(description = "Данные о QA engineer")
-        PublicProfileResponse qa
-) {
-        public static IssueDetailResponse fromIssue(Issue issue) {
-                return new IssueDetailResponse(
-                        issue.getId(),
-                        issue.getProjectId(),
-                        issue.getParentIssue() != null ? issue.getParentIssue().getId() : null,
-                        issue.getTitle(),
-                        issue.getDescription(),
-                        issue.getStatus(),
-                        issue.getType(),
-                        issue.getPriority(),
-                        issue.getDeadline(),
-                        issue.getCreatedAt(),
-                        issue.getUpdatedAt(),
-                        null,
-                        null,
-                        null,
-                        null
-                );
-        }
+        PublicProfileResponse qa,
 
-        public static IssueDetailResponse withAssignee(
-                Issue issue,
+        @Schema(description = "Список тегов задачи")
+        List<TagResponse> tags,
+
+        @Schema(description = "Список комментариев")
+        List<CommentResponse> comments,
+
+        @Schema(description = "Список комментариев")
+        List<AttachmentResponse> attachments
+) {
+        public static IssueDetailResponse fromIssue(
+                Issue issue, List<TagResponse> tags,
                 PublicProfileResponse assignee) {
+
                 return new IssueDetailResponse(
                         issue.getId(),
                         issue.getProjectId(),
-                        issue.getParentIssue() != null ? issue.getParentIssue().getId() : null,
+                        ParentIssueResponse.from(issue.getParentIssue()),
                         issue.getTitle(),
                         issue.getDescription(),
                         issue.getStatus(),
@@ -93,6 +85,9 @@ public record IssueDetailResponse(
                         null,
                         assignee,
                         null,
+                        null,
+                        tags,
+                        null,
                         null
                 );
         }
@@ -102,11 +97,14 @@ public record IssueDetailResponse(
                 PublicProfileResponse creator,
                 PublicProfileResponse assignee,
                 PublicProfileResponse reviewer,
-                PublicProfileResponse qa) {
+                PublicProfileResponse qa,
+                List<TagResponse> tags,
+                List<CommentResponse> comments,
+                List<AttachmentResponse> attachments) {
                 return new IssueDetailResponse(
                         issue.getId(),
                         issue.getProjectId(),
-                        issue.getParentIssue() != null ? issue.getParentIssue().getId() : null,
+                        ParentIssueResponse.from(issue.getParentIssue()),
                         issue.getTitle(),
                         issue.getDescription(),
                         issue.getStatus(),
@@ -118,7 +116,10 @@ public record IssueDetailResponse(
                         creator,
                         assignee,
                         reviewer,
-                        qa
+                        qa,
+                        tags,
+                        comments,
+                        attachments
                 );
         }
 }

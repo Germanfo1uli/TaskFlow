@@ -251,6 +251,8 @@ services:
       RABBITMQ__PORT: 5672 
       RABBITMQ__USERNAME: ${RABBITMQ_USER:-admin}
       RABBITMQ__PASSWORD: ${RABBITMQ_PASS:-secret}
+    volumes:
+      - sprints-nuget-cache:/root/.nuget/packages
 
 
   dashboard-service:
@@ -292,6 +294,8 @@ services:
       RABBITMQ__PASSWORD: ${RABBITMQ_PASS:-secret}
       
       DOTNET_URLS: http://localhost:8085
+    volumes:
+      - dashboard-nuget-cache:/root/.nuget/packages
       
 
 volumes:

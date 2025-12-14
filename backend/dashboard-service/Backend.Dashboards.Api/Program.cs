@@ -9,6 +9,8 @@ using Microsoft.EntityFrameworkCore;
 using Refit;
 using Steeltoe.Discovery.Eureka;
 using Backend.Dashboard.Api.Messages;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,14 +39,14 @@ builder.Services.AddRefitClient<IProjectClient>()
 
 builder.Services.AddMassTransit(x =>
 {
-    // --- Регистрация потребителей из project-service ---
+    // --- Consumers from project-service ---
     x.AddConsumer<ProjectCreatedConsumer>();
     x.AddConsumer<ProjectUpdatedConsumer>();
     x.AddConsumer<ProjectDeletedConsumer>();
     x.AddConsumer<ProjectMemberAddedConsumer>();
     x.AddConsumer<ProjectMemberRemovedConsumer>();
 
-    // --- Регистрация потребителей из issue-service ---
+    // --- Consumers from issue-service ---
     x.AddConsumer<IssueCreatedConsumer>();
     x.AddConsumer<IssueDeletedConsumer>();
     x.AddConsumer<IssueUpdatedConsumer>();
@@ -59,7 +61,7 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<AttachmentCreatedConsumer>();
     x.AddConsumer<AttachmentDeletedConsumer>();
 
-    // --- Регистрация потребителей из sprints-service ---
+    // --- пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ sprints-service ---
     x.AddConsumer<SprintCreatedConsumer>();
     x.AddConsumer<SprintStartedConsumer>();
     x.AddConsumer<SprintCompletedConsumer>();
@@ -73,13 +75,24 @@ builder.Services.AddMassTransit(x =>
         var username = rabbitMqSettings["Username"];
         var password = rabbitMqSettings["Password"];
 
-        cfg.Host(host, "/", h => {
+        cfg.Host(host, "/", h =>
+        {
             h.Username(username);
             h.Password(password);
         });
 
         cfg.ReceiveEndpoint("dashboard.activity.queue", e =>
         {
+            e.ConfigureConsumeTopology = false;
+
+            e.Bind("activity.exchange", s =>
+            {
+                s.ExchangeType = "topic";
+                s.RoutingKey = "#";
+            });
+
+            e.UseRawJsonSerializer(isDefault: true);
+
             // Project consumers
             e.ConfigureConsumer<ProjectCreatedConsumer>(context);
             e.ConfigureConsumer<ProjectUpdatedConsumer>(context);

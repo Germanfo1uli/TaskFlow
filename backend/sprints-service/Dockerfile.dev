@@ -4,8 +4,15 @@ WORKDIR /src
 
 COPY . .
 
-RUN apk add --no-cache curl
+RUN apk update && apk add --no-cache curl ca-certificates
 
+# Переходим в dashboard-service, где лежит sln
+WORKDIR /src/sprints-service
+
+# Restore на уровне sln с детализацией (для отладки)
+RUN dotnet restore Backend.Sprints.sln --verbosity detailed --force
+
+# Переходим в папку с проектом API
 WORKDIR /src/sprints-service/Backend.Sprints.Api
 
 CMD ["sh", "-c", "\

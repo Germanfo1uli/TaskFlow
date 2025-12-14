@@ -48,7 +48,7 @@ public class TransitionController {
     @Operation(
             summary = "Перевести задачу в статус как назначенный исполнитель",
             description = """
-            Доступные переходы (в скобках название строка для targetStatus):
+            Доступные переходы (в скобках строка для targetStatus):
             - Developer (ASSIGNEE): IN_PROGRESS → CODE_REVIEW
             - Reviewer (CODE_REVIEWER): CODE_REVIEW → QA или IN_PROGRESS
             - QA (QA_ENGINEER): QA → STAGING или IN_PROGRESS

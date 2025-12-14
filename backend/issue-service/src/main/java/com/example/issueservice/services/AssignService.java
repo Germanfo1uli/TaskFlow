@@ -5,6 +5,7 @@ import com.example.issueservice.dto.models.Issue;
 import com.example.issueservice.dto.models.enums.ActionType;
 import com.example.issueservice.dto.models.enums.AssignmentType;
 import com.example.issueservice.dto.models.enums.EntityType;
+import com.example.issueservice.dto.models.enums.IssueStatus;
 import com.example.issueservice.exception.IssueNotFoundException;
 import com.example.issueservice.exception.UserNotFoundException;
 import com.example.issueservice.repositories.IssueRepository;
@@ -53,6 +54,12 @@ public class AssignService {
 
         assignHelper.validateRoleAvailable(issue, userId, type);
         assignHelper.setAssignee(issue, type, userId);
+
+        if (type == AssignmentType.ASSIGNEE && issue.getStatus() == IssueStatus.SELECTED_FOR_DEVELOPMENT) {
+            issue.setStatus(IssueStatus.IN_PROGRESS);
+            log.info("Changed status of issue {} from SELECTED_FOR_DEVELOPMENT to IN_PROGRESS due to self-assignment", issueId);
+        }
+
         issueRepository.save(issue);
 
         log.info("Successfully self-assigned user {} as {} to issue {}", userId, type.name(), issueId);

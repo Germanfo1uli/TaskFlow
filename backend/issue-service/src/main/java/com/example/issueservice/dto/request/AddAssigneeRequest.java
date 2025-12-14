@@ -9,7 +9,7 @@ public record AddAssigneeRequest(
         @NotNull
         Long userId,
 
-        @Schema(description = "Тип назначаемого ", example = "ASSIGNEE")
+        @Schema(description = "Тип назначаемого пользователя", example = "ASSIGNEE")
         @NotNull
         AssignmentType type
 ) {}
