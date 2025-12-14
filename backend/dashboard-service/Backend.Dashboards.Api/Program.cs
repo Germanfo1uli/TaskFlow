@@ -39,98 +39,40 @@ builder.Services.AddRefitClient<IProjectClient>()
 
 builder.Services.AddMassTransit(x =>
 {
-    // --- Consumers from project-service ---
-    x.AddConsumer<ProjectCreatedConsumer>();
-    x.AddConsumer<ProjectUpdatedConsumer>();
-    x.AddConsumer<ProjectDeletedConsumer>();
-    x.AddConsumer<ProjectMemberAddedConsumer>();
-    x.AddConsumer<ProjectMemberRemovedConsumer>();
-
-    // --- Consumers from issue-service ---
-    x.AddConsumer<IssueCreatedConsumer>();
-    x.AddConsumer<IssueDeletedConsumer>();
-    x.AddConsumer<IssueUpdatedConsumer>();
-    x.AddConsumer<IssueStatusChangedConsumer>();
-    x.AddConsumer<IssueTypeChangedConsumer>();
-    x.AddConsumer<IssuePriorityChangedConsumer>();
-    x.AddConsumer<IssueAssigneeAddedConsumer>();
-    x.AddConsumer<IssueAssigneeRemovedConsumer>();
-    x.AddConsumer<IssueCommentCreatedConsumer>();
-    x.AddConsumer<IssueCommentUpdatedConsumer>();
-    x.AddConsumer<IssueCommentDeletedConsumer>();
-    x.AddConsumer<AttachmentCreatedConsumer>();
-    x.AddConsumer<AttachmentDeletedConsumer>();
-
-    // --- sprints-service ---
-    x.AddConsumer<SprintCreatedConsumer>();
-    x.AddConsumer<SprintStartedConsumer>();
-    x.AddConsumer<SprintCompletedConsumer>();
-    x.AddConsumer<SprintIssueAddedConsumer>();
-    x.AddConsumer<SprintIssueRemovedConsumer>();
+    x.AddConsumers(typeof(ProjectCreatedConsumer).Assembly);
 
     x.UsingRabbitMq((context, cfg) =>
     {
         var rabbitMqSettings = context.GetRequiredService<IConfiguration>().GetSection("RabbitMq");
-        var host = rabbitMqSettings["Host"];
-        var username = rabbitMqSettings["Username"];
-        var password = rabbitMqSettings["Password"];
 
-        cfg.Host(host, "/", h =>
+        cfg.Host(rabbitMqSettings["Host"], "/", h =>
         {
-            h.Username(username);
-            h.Password(password);
+            h.Username(rabbitMqSettings["Username"]);
+            h.Password(rabbitMqSettings["Password"]);
         });
 
-        cfg.ReceiveEndpoint("dashboard.activity.queue", e =>
+        cfg.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(2)));
+        cfg.UseInMemoryOutbox();
+        cfg.UseInstrumentation();
+
+        
+
+        cfg.ReceiveEndpoint("activity.all", e =>
         {
             e.ConfigureConsumeTopology = false;
-
-            e.Bind("activity.exchange", s =>
-            {
-                s.ExchangeType = "topic";
-                s.RoutingKey = "#";
-            });
-
+            e.ClearSerialization();
             e.UseRawJsonSerializer(isDefault: true);
 
-            // Project consumers
-            e.ConfigureConsumer<ProjectCreatedConsumer>(context);
-            e.ConfigureConsumer<ProjectUpdatedConsumer>(context);
-            e.ConfigureConsumer<ProjectDeletedConsumer>(context);
-            e.ConfigureConsumer<ProjectMemberAddedConsumer>(context);
-            e.ConfigureConsumer<ProjectMemberRemovedConsumer>(context);
-
-            // Issue consumers
-            e.ConfigureConsumer<IssueCreatedConsumer>(context);
-            e.ConfigureConsumer<IssueDeletedConsumer>(context);
-            e.ConfigureConsumer<IssueUpdatedConsumer>(context);
-            e.ConfigureConsumer<IssueStatusChangedConsumer>(context);
-            e.ConfigureConsumer<IssueTypeChangedConsumer>(context);
-            e.ConfigureConsumer<IssuePriorityChangedConsumer>(context);
-            e.ConfigureConsumer<IssueAssigneeAddedConsumer>(context);
-            e.ConfigureConsumer<IssueAssigneeRemovedConsumer>(context);
-            e.ConfigureConsumer<IssueCommentCreatedConsumer>(context);
-            e.ConfigureConsumer<IssueCommentUpdatedConsumer>(context);
-            e.ConfigureConsumer<IssueCommentDeletedConsumer>(context);
-            e.ConfigureConsumer<AttachmentCreatedConsumer>(context);
-            e.ConfigureConsumer<AttachmentDeletedConsumer>(context);
-
-            // Sprints consumers
-            e.ConfigureConsumer<SprintCreatedConsumer>(context);
-            e.ConfigureConsumer<SprintStartedConsumer>(context);
-            e.ConfigureConsumer<SprintCompletedConsumer>(context);
-            e.ConfigureConsumer<SprintIssueAddedConsumer>(context);
-            e.ConfigureConsumer<SprintIssueRemovedConsumer>(context);
-
-            e.Bind("activity.exchange", s =>
+            e.Bind("activity.exchange", bind =>
             {
-                s.ExchangeType = "topic";
-                s.RoutingKey = "project.*";
+                bind.RoutingKey = "#";
+                bind.ExchangeType = "topic";
             });
+
+            e.ConfigureConsumers(context);
         });
     });
 });
-
 
 builder.Services.AddDbContext<DashboardDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default"),
