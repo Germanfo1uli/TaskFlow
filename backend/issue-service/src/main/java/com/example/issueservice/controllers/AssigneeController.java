@@ -1,6 +1,5 @@
 package com.example.issueservice.controllers;
 
-import com.example.issueservice.dto.models.enums.AssignmentType;
 import com.example.issueservice.dto.request.AddAssigneeRequest;
 import com.example.issueservice.dto.request.AssigneeRequest;
 import com.example.issueservice.security.JwtUser;

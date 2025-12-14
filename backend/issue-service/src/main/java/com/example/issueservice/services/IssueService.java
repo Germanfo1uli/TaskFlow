@@ -2,6 +2,7 @@ package com.example.issueservice.services;
 
 import com.example.issueservice.client.BoardServiceClient;
 import com.example.issueservice.client.UserServiceClient;
+import com.example.issueservice.dto.data.IssueBatchRequest;
 import com.example.issueservice.dto.data.UserBatchRequest;
 import com.example.issueservice.dto.models.IssueComment;
 import com.example.issueservice.dto.models.ProjectTag;
@@ -55,7 +56,7 @@ public class IssueService {
         }
 
         Issue parentIssue = findAndValidateParentIssue(parentId, projectId);
-        Issue newIssue = buildAndSaveBaseIssue(userId, projectId, parentIssue, title, description, type, priority);
+        Issue newIssue = buildAndSaveBaseIssue(userId, projectId, assigneeId, parentIssue, title, description, type, priority);
 
         List<TagResponse> tags = (tagIds != null && !tagIds.isEmpty())
                 ? assignTagsToIssue(newIssue, tagIds, projectId, true)
@@ -74,7 +75,7 @@ public class IssueService {
             Long userId, Long issueId, String title, String description,
             Priority priority, List<Long> tagIds) {
 
-        Issue issue = issueRepository.findWithTagsById(issueId)
+        Issue issue = issueRepository.findWithFieldsById(issueId)
                 .orElseThrow(() -> new IssueNotFoundException("Issue with id " + issueId + " not found"));
 
         authService.hasPermission(userId, issue.getProjectId(), EntityType.ISSUE, ActionType.EDIT);
@@ -103,7 +104,7 @@ public class IssueService {
     @Transactional
     public IssueDetailResponse assignTagsToIssue(Long userId, Long issueId, List<Long> tagIds) {
 
-        Issue issue = issueRepository.findWithTagsById(issueId)
+        Issue issue = issueRepository.findWithFieldsById(issueId)
                 .orElseThrow(() -> new IssueNotFoundException("Issue with id " + issueId + " not found"));
 
         authService.hasPermission(userId, issue.getProjectId(), EntityType.TAG, ActionType.APPLY);
@@ -169,12 +170,13 @@ public class IssueService {
     }
 
     private Issue buildAndSaveBaseIssue(
-            Long userId, Long projectId, Issue parentIssue,
+            Long userId, Long projectId, Long assigneeId, Issue parentIssue,
             String title, String description, IssueType type, Priority priority) {
 
         Issue newIssue = Issue.builder()
                 .projectId(projectId)
                 .creatorId(userId)
+                .assigneeId(assigneeId)
                 .title(title)
                 .description(description)
                 .type(type)
@@ -191,7 +193,7 @@ public class IssueService {
     @Transactional(readOnly = true)
     public IssueDetailResponse getIssueById(Long userId, Long issueId) {
 
-        Issue issue = issueRepository.findWithTagsById(issueId)
+        Issue issue = issueRepository.findWithFieldsById(issueId)
                 .orElseThrow(() -> new IssueNotFoundException("Issue with id " + issueId + " not found"));
 
         authService.hasPermission(userId, issue.getProjectId(), EntityType.ISSUE, ActionType.VIEW);
@@ -227,6 +229,33 @@ public class IssueService {
                 comments,
                 attachments
         );
+    }
+
+    public InternalIssueResponse getIssueInternal(Long issueId) {
+        Issue issue = issueRepository.findById(issueId)
+                .orElseThrow(() -> new IssueNotFoundException("Issue with id " + issueId + " not found"));
+
+        try {
+            boardClient.getProjectById(issue.getProjectId());
+        } catch (Exception e) {
+            throw new ProjectNotFoundException(issue.getProjectId());
+        }
+
+        return InternalIssueResponse.from(issue);
+    }
+
+    public List<InternalIssueResponse> getIssuesInternal(Long projectId) {
+        List<Issue> issues = issueRepository.findAllByProjectId(projectId);
+
+        try {
+            boardClient.getProjectById(projectId);
+        } catch (Exception e) {
+            throw new ProjectNotFoundException(projectId);
+        }
+
+        return issues.stream()
+                .map(InternalIssueResponse::from)
+                .collect(Collectors.toList());
     }
 
     private List<CommentResponse> getCommentsForIssue(Long userId, Long projectId, Long issueId) {
@@ -328,5 +357,11 @@ public class IssueService {
         authService.hasPermission(userId, issue.getProjectId(), EntityType.ISSUE, ActionType.DELETE);
 
         issueRepository.deleteById(issueId);
+    }
+
+    @Transactional
+    public List<InternalIssueResponse> startSprint(Long projectId, IssueBatchRequest issuesIds) {
+
+        return null;
     }
 }

@@ -18,8 +18,8 @@ public record IssueDetailResponse(
         @Schema(description = "ID проекта", example = "123")
         Long projectId,
 
-        @Schema(description = "ID родительской задачи", example = "123")
-        Long parentId,
+        @Schema(description = "Минимальная информация о родительской задаче")
+        ParentIssueResponse parent,
 
         @Schema(description = "Название задачи", example = "Сделать микросервисы")
         String title,
@@ -73,7 +73,7 @@ public record IssueDetailResponse(
                 return new IssueDetailResponse(
                         issue.getId(),
                         issue.getProjectId(),
-                        issue.getParentIssue() != null ? issue.getParentIssue().getId() : null,
+                        ParentIssueResponse.from(issue.getParentIssue()),
                         issue.getTitle(),
                         issue.getDescription(),
                         issue.getStatus(),
@@ -104,7 +104,7 @@ public record IssueDetailResponse(
                 return new IssueDetailResponse(
                         issue.getId(),
                         issue.getProjectId(),
-                        issue.getParentIssue() != null ? issue.getParentIssue().getId() : null,
+                        ParentIssueResponse.from(issue.getParentIssue()),
                         issue.getTitle(),
                         issue.getDescription(),
                         issue.getStatus(),

@@ -4,11 +4,11 @@ import com.example.issueservice.dto.models.enums.IssueStatus;
 import com.example.issueservice.dto.models.enums.IssueType;
 import com.example.issueservice.dto.models.enums.Priority;
 import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Table;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.*;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -52,6 +52,7 @@ public class Issue {
     private List<IssueComment> comments = new ArrayList<>();
 
     @OneToMany(mappedBy = "issue", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 20)
     @Builder.Default
     private List<Attachment> attachments = new ArrayList<>();
 

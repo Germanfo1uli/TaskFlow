@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -32,7 +33,29 @@ public class AttachmentService {
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new IssueNotFoundException("Issue not found"));
 
-        authService.hasPermission(userId, issue.getProjectId(), EntityType.ATTACHMENT, ActionType.CREATE);
+        log.info("Uploading file to issue {} by user {}", issueId, userId);
+
+        boolean isAssignedAuthor =
+                Objects.equals(issue.getAssigneeId(), userId) ||
+                Objects.equals(issue.getCreatorId(), userId) ||
+                Objects.equals(issue.getCodeReviewerId(), userId) ||
+                Objects.equals(issue.getQaEngineerId(), userId);
+
+        if (!isAssignedAuthor) {
+            UserPermissionsResponse permissions = authService.getUserPermissions(userId, issue.getProjectId());
+
+            if (!permissions.isOwner()) {
+                throw new AccessDeniedException(
+                        String.format("User %d cannot upload file to issue %d: not author and not project owner",
+                                userId, issueId)
+                );
+            }
+
+            log.info("User {} is project owner, granting permission to upload file to issue {}", userId, issueId);
+        } else {
+            authService.hasPermission(userId, issue.getProjectId(), EntityType.ATTACHMENT, ActionType.CREATE);
+            log.info("User {} is assigned for issue {}, upload permitted", userId, issueId);
+        }
 
         try {
             Attachment attachment = Attachment.builder()
@@ -60,9 +83,10 @@ public class AttachmentService {
         Attachment attachment = attachmentRepository.findById(attachmentId)
                 .orElseThrow(() -> new AttachmentNotFoundException("Attachment not found"));
 
-        authService.hasPermission(userId, attachment.getIssue().getProjectId(), EntityType.ATTACHMENT, ActionType.CREATE);
+        log.info("Downloading file by user {}", userId);
 
         Long projectId = attachment.getIssue().getProjectId();
+
         authService.hasPermission(userId, projectId, EntityType.ISSUE, ActionType.VIEW);
 
         log.info("User {} downloaded attachment {}", userId, attachmentId);
@@ -75,14 +99,13 @@ public class AttachmentService {
         Attachment attachment = attachmentRepository.findById(attachmentId)
                 .orElseThrow(() -> new AttachmentNotFoundException("Attachment not found"));
 
+        log.info("Delete file by user {}", userId);
+
         Long projectId = attachment.getIssue().getProjectId();
         boolean isAuthor = attachment.getCreatedBy().equals(userId);
 
         if (!isAuthor) {
-            UserPermissionsResponse permissions = authService.getUserPermissions(userId, projectId);
-            if (!permissions.isOwner()) {
-                throw new AccessDeniedException("Not author and not project owner");
-            }
+            authService.hasPermission(userId, projectId, EntityType.ATTACHMENT, ActionType.DELETE);
         } else {
             authService.hasPermission(userId, projectId, EntityType.ATTACHMENT, ActionType.DELETE_OWN);
         }
