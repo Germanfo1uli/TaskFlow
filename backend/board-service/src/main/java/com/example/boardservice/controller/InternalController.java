@@ -1,6 +1,5 @@
 package com.example.boardservice.controller;
 
-import com.example.boardservice.dto.models.ProjectMember;
 import com.example.boardservice.dto.response.InternalProjectResponse;
 import com.example.boardservice.dto.response.MemberExistResponse;
 import com.example.boardservice.dto.response.UserPermissionsResponse;
