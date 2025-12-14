@@ -61,7 +61,7 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<AttachmentCreatedConsumer>();
     x.AddConsumer<AttachmentDeletedConsumer>();
 
-    // --- ����������� ������������ �� sprints-service ---
+    // --- sprints-service ---
     x.AddConsumer<SprintCreatedConsumer>();
     x.AddConsumer<SprintStartedConsumer>();
     x.AddConsumer<SprintCompletedConsumer>();
