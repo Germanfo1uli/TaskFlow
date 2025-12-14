@@ -117,6 +117,10 @@ public class AttachmentService {
             authService.hasPermission(userId, projectId, EntityType.ATTACHMENT, ActionType.DELETE_OWN);
         }
 
+        eventPublisher.publishEvent(
+                AttachmentCreatedEvent.from(attachment, userId)
+        );
+
         attachmentRepository.delete(attachment);
         log.info("User {} deleted attachment {}", userId, attachmentId);
     }

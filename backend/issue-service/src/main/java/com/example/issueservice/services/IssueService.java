@@ -7,6 +7,10 @@ import com.example.issueservice.dto.data.UserBatchRequest;
 import com.example.issueservice.dto.models.IssueComment;
 import com.example.issueservice.dto.models.ProjectTag;
 import com.example.issueservice.dto.models.enums.*;
+import com.example.issueservice.dto.rabbit.AttachmentCreatedEvent;
+import com.example.issueservice.dto.rabbit.IssueCreatedEvent;
+import com.example.issueservice.dto.rabbit.IssueDeletedEvent;
+import com.example.issueservice.dto.rabbit.IssueUpdatedEvent;
 import com.example.issueservice.dto.response.*;
 import com.example.issueservice.exception.*;
 import com.example.issueservice.dto.models.Issue;
@@ -15,6 +19,7 @@ import com.example.issueservice.repositories.IssueRepository;
 import com.example.issueservice.repositories.ProjectTagRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +40,7 @@ public class IssueService {
     private final AuthService authService;
     private final UserServiceClient userClient;
     private final BoardServiceClient boardClient;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public IssueDetailResponse createIssue(
@@ -61,6 +67,10 @@ public class IssueService {
         List<TagResponse> tags = (tagIds != null && !tagIds.isEmpty())
                 ? assignTagsToIssue(newIssue, tagIds, projectId, true)
                 : List.of();
+
+        eventPublisher.publishEvent(
+                IssueCreatedEvent.from(newIssue)
+        );
 
         log.info("Successfully created issue with id: {}, level: {}", newIssue.getId(), newIssue.getLevel());
         return IssueDetailResponse.fromIssue(
@@ -95,6 +105,10 @@ public class IssueService {
             assignTagsToIssue(issue, tagIds, issue.getProjectId(), false);
         }
 
+        eventPublisher.publishEvent(
+                IssueUpdatedEvent.from(issue, userId)
+        );
+
         issueRepository.save(issue);
         log.info("Successfully updated issue with id: {}", issue.getId());
 
@@ -119,6 +133,10 @@ public class IssueService {
         log.info("Assigning tags {} to issue {} by user {}", tagIds, issueId, userId);
 
         assignTagsToIssue(issue, tagIds, issue.getProjectId(), false);
+
+        eventPublisher.publishEvent(
+                IssueUpdatedEvent.from(issue, userId)
+        );
 
         issueRepository.save(issue);
 
@@ -359,6 +377,10 @@ public class IssueService {
                 .orElseThrow(() -> new IssueNotFoundException("Issue with id " + issueId + " not found"));
 
         authService.hasPermission(userId, issue.getProjectId(), EntityType.ISSUE, ActionType.DELETE);
+
+        eventPublisher.publishEvent(
+                IssueDeletedEvent.from(issue, userId)
+        );
 
         issueRepository.deleteById(issueId);
     }
