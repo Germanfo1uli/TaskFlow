@@ -31,13 +31,11 @@ import {
     FaEyeSlash,
     FaExternalLinkAlt,
     FaShare,
-    FaBookmark,
-    FaRegBookmark,
     FaStar,
     FaRegStar
 } from 'react-icons/fa'
-import { motion, AnimatePresence } from 'framer-motion'
 import styles from './TreeViewModal.module.css'
+import { api } from '@/app/auth/hooks/useTokenRefresh'
 
 type Priority = 'low' | 'medium' | 'high'
 
@@ -49,6 +47,15 @@ interface Author {
     email: string
 }
 
+interface Attachment {
+    id: number
+    fileName: string
+    fileSize: number
+    contentType: string
+    createdAt: string
+    createdBy: number
+}
+
 interface Card {
     id: number
     title: string
@@ -56,12 +63,13 @@ interface Card {
     priority: Priority
     priorityLevel: number
     author: Author
+    assignees?: Author[]
     tags: string[]
     progress: number
     comments: number
     attachments: number
+    attachmentsList?: Attachment[]
     createdAt: string
-    dueDate?: string
     status: 'todo' | 'in-progress' | 'review' | 'done'
 }
 
@@ -70,8 +78,6 @@ interface Board {
     title: string
     color: string
     cards: Card[]
-    description?: string
-    createdAt: string
 }
 
 interface TreeViewModalProps {
@@ -86,9 +92,8 @@ interface TreeNode {
     name: string
     type: 'board' | 'card' | 'file' | 'folder'
     children?: TreeNode[]
-    data?: Card | Board | any
+    data?: Card | Board | Attachment
     expanded?: boolean
-    icon?: JSX.Element
     badge?: {
         count: number
         color: string
@@ -101,6 +106,14 @@ interface SearchResult {
     matchScore: number
 }
 
+const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`
+}
+
 const TreeViewModal = ({ isOpen, onClose, boards, getPriorityColor }: TreeViewModalProps) => {
     const [treeData, setTreeData] = useState<TreeNode[]>([])
     const [searchQuery, setSearchQuery] = useState('')
@@ -111,83 +124,11 @@ const TreeViewModal = ({ isOpen, onClose, boards, getPriorityColor }: TreeViewMo
     const [isLoading, setIsLoading] = useState(false)
     const [showEmpty, setShowEmpty] = useState(false)
     const [favoriteNodes, setFavoriteNodes] = useState<Set<string>>(new Set())
+    const [cardAttachments, setCardAttachments] = useState<Map<number, Attachment[]>>(new Map())
+    const [loadingAttachments, setLoadingAttachments] = useState<Set<number>>(new Set())
 
     useEffect(() => {
         const generateTreeData = () => {
-            const generateFiles = (cardId: number) => [
-                {
-                    id: `${cardId}-1`,
-                    name: 'Техническое задание.docx',
-                    size: '2.4 MB',
-                    type: 'word',
-                    uploadedAt: '2024-01-15',
-                    uploadedBy: 'Алексей Петров'
-                },
-                {
-                    id: `${cardId}-2`,
-                    name: 'Дизайн макет.sketch',
-                    size: '5.1 MB',
-                    type: 'design',
-                    uploadedAt: '2024-01-16',
-                    uploadedBy: 'Мария Иванова'
-                },
-                {
-                    id: `${cardId}-3`,
-                    name: 'requirements.pdf',
-                    size: '1.2 MB',
-                    type: 'pdf',
-                    uploadedAt: '2024-01-14',
-                    uploadedBy: 'Иван Сидоров'
-                },
-                {
-                    id: `${cardId}-4`,
-                    name: 'api-specification.json',
-                    size: '0.8 MB',
-                    type: 'code',
-                    uploadedAt: '2024-01-17',
-                    uploadedBy: 'Елена Козлова'
-                },
-                {
-                    id: `${cardId}-5`,
-                    name: 'project-timeline.xlsx',
-                    size: '1.5 MB',
-                    type: 'excel',
-                    uploadedAt: '2024-01-18',
-                    uploadedBy: 'Алексей Петров'
-                }
-            ]
-
-            const generateFolders = (cardId: number) => [
-                {
-                    id: `${cardId}-docs`,
-                    name: 'Документация',
-                    type: 'folder',
-                    expanded: false,
-                    children: [
-                        { id: `${cardId}-1`, name: 'ТЗ.docx', type: 'word', data: generateFiles(cardId)[0] },
-                        { id: `${cardId}-3`, name: 'requirements.pdf', type: 'pdf', data: generateFiles(cardId)[2] }
-                    ]
-                },
-                {
-                    id: `${cardId}-design`,
-                    name: 'Дизайн',
-                    type: 'folder',
-                    expanded: false,
-                    children: [
-                        { id: `${cardId}-2`, name: 'Макеты.sketch', type: 'design', data: generateFiles(cardId)[1] }
-                    ]
-                },
-                {
-                    id: `${cardId}-code`,
-                    name: 'Исходный код',
-                    type: 'folder',
-                    expanded: false,
-                    children: [
-                        { id: `${cardId}-4`, name: 'API спецификация.json', type: 'code', data: generateFiles(cardId)[3] }
-                    ]
-                }
-            ]
-
             return boards.map(board => ({
                 id: `board-${board.id}`,
                 name: board.title,
@@ -207,31 +148,47 @@ const TreeViewModal = ({ isOpen, onClose, boards, getPriorityColor }: TreeViewMo
                     badge: {
                         count: card.attachments,
                         color: getPriorityColor(card.priority)
-                    },
-                    children: [
-                        {
-                            id: `${card.id}-folders`,
-                            name: 'Файлы',
-                            type: 'folder',
-                            expanded: false,
-                            children: generateFolders(card.id)
-                        }
-                    ]
+                    }
                 }))
             }))
         }
 
         if (isOpen) {
             setIsLoading(true)
-            setTimeout(() => {
-                setTreeData(generateTreeData())
-                setIsLoading(false)
+            setTreeData(generateTreeData())
+            setIsLoading(false)
 
-                const initialExpanded = new Set(['board-1', 'board-2'])
-                setExpandedNodes(initialExpanded)
-            }, 300)
+            const initialExpanded = new Set(['board-1', 'board-2'])
+            setExpandedNodes(initialExpanded)
         }
     }, [isOpen, boards, getPriorityColor])
+
+    const loadCardAttachments = useCallback(async (cardId: number) => {
+        if (loadingAttachments.has(cardId) || cardAttachments.has(cardId)) return
+
+        setLoadingAttachments(prev => new Set(prev).add(cardId))
+
+        try {
+            const response = await api.get(`/issues/${cardId}`)
+            const issue = response.data
+
+            if (issue.attachments && issue.attachments.length > 0) {
+                setCardAttachments(prev => {
+                    const newMap = new Map(prev)
+                    newMap.set(cardId, issue.attachments)
+                    return newMap
+                })
+            }
+        } catch (error) {
+            console.error('Ошибка при загрузке файлов карточки:', error)
+        } finally {
+            setLoadingAttachments(prev => {
+                const newSet = new Set(prev)
+                newSet.delete(cardId)
+                return newSet
+            })
+        }
+    }, [loadingAttachments, cardAttachments])
 
     const toggleNode = useCallback((nodeId: string) => {
         setExpandedNodes(prev => {
@@ -265,14 +222,16 @@ const TreeViewModal = ({ isOpen, onClose, boards, getPriorityColor }: TreeViewMo
 
     const getFileIcon = useCallback((fileType: string) => {
         const iconProps = { className: styles.fileIcon }
-        switch (fileType) {
-            case 'pdf': return <FaFilePdf {...iconProps} style={{ color: '#ef4444' }} />
-            case 'word': return <FaFileWord {...iconProps} style={{ color: '#2563eb' }} />
-            case 'excel': return <FaFileExcel {...iconProps} style={{ color: '#16a34a' }} />
-            case 'code': return <FaCode {...iconProps} style={{ color: '#7c3aed' }} />
-            case 'design': return <FaImage {...iconProps} style={{ color: '#ec4899' }} />
-            default: return <FaFile {...iconProps} style={{ color: '#64748b' }} />
-        }
+        const lowerType = fileType.toLowerCase()
+
+        if (lowerType.includes('pdf')) return <FaFilePdf {...iconProps} style={{ color: '#ef4444' }} />
+        if (lowerType.includes('word') || lowerType.includes('doc')) return <FaFileWord {...iconProps} style={{ color: '#2563eb' }} />
+        if (lowerType.includes('excel') || lowerType.includes('xls')) return <FaFileExcel {...iconProps} style={{ color: '#16a34a' }} />
+        if (lowerType.includes('json') || lowerType.includes('js') || lowerType.includes('ts') ||
+            lowerType.includes('xml') || lowerType.includes('code')) return <FaCode {...iconProps} style={{ color: '#7c3aed' }} />
+        if (lowerType.includes('image') || lowerType.includes('jpg') || lowerType.includes('png') ||
+            lowerType.includes('gif') || lowerType.includes('svg')) return <FaImage {...iconProps} style={{ color: '#ec4899' }} />
+        return <FaFile {...iconProps} style={{ color: '#64748b' }} />
     }, [])
 
     const getPriorityLabel = useCallback((priority: Priority) => {
@@ -288,7 +247,7 @@ const TreeViewModal = ({ isOpen, onClose, boards, getPriorityColor }: TreeViewMo
         switch (status) {
             case 'done': return <FaCheckCircle style={{ color: '#10b981' }} />
             case 'in-progress': return <FaClock style={{ color: '#f59e0b' }} />
-            case 'review': return <FaEye style={{ color: '#3b82f6' }} />
+            case 'review': return <FaExclamationTriangle style={{ color: '#3b82f6' }} />
             case 'todo': return <FaExclamationTriangle style={{ color: '#64748b' }} />
             default: return <FaClock style={{ color: '#64748b' }} />
         }
@@ -305,6 +264,25 @@ const TreeViewModal = ({ isOpen, onClose, boards, getPriorityColor }: TreeViewMo
             return newSet
         })
     }, [])
+
+    const handleDownload = async (attachment: Attachment, cardId: number) => {
+        try {
+            const response = await api.get(`/issues/${cardId}/attachments/${attachment.id}`, {
+                responseType: 'blob'
+            })
+
+            const url = window.URL.createObjectURL(new Blob([response.data]))
+            const link = document.createElement('a')
+            link.href = url
+            link.setAttribute('download', attachment.fileName)
+            document.body.appendChild(link)
+            link.click()
+            link.remove()
+            window.URL.revokeObjectURL(url)
+        } catch (error) {
+            console.error('Ошибка при скачивании файла:', error)
+        }
+    }
 
     const searchResults = useMemo(() => {
         if (!searchQuery.trim()) return []
@@ -323,13 +301,13 @@ const TreeViewModal = ({ isOpen, onClose, boards, getPriorityColor }: TreeViewMo
             }
 
             if (node.data) {
-                if (node.data.title?.toLowerCase().includes(searchQuery.toLowerCase())) {
+                if ((node.data as Card).title?.toLowerCase().includes(searchQuery.toLowerCase())) {
                     matchScore += 80
                 }
-                if (node.data.description?.toLowerCase().includes(searchQuery.toLowerCase())) {
+                if ((node.data as Card).description?.toLowerCase().includes(searchQuery.toLowerCase())) {
                     matchScore += 30
                 }
-                if (node.data.tags?.some((tag: string) =>
+                if ((node.data as Card).tags?.some((tag: string) =>
                     tag.toLowerCase().includes(searchQuery.toLowerCase()))) {
                     matchScore += 40
                 }
@@ -392,10 +370,18 @@ const TreeViewModal = ({ isOpen, onClose, boards, getPriorityColor }: TreeViewMo
         const isFolder = node.type === 'folder'
 
         const handleClick = () => {
-            if (hasChildren) {
-                toggleNode(node.id)
+            if (isCard) {
+                const card = node.data as Card
+                setSelectedNode(node)
+                if (!cardAttachments.has(card.id) && !loadingAttachments.has(card.id)) {
+                    loadCardAttachments(card.id)
+                }
+            } else {
+                if (hasChildren) {
+                    toggleNode(node.id)
+                }
+                setSelectedNode(node)
             }
-            setSelectedNode(node)
         }
 
         const handleFavorite = (e: React.MouseEvent) => {
@@ -429,7 +415,7 @@ const TreeViewModal = ({ isOpen, onClose, boards, getPriorityColor }: TreeViewMo
                 )
             }
             if (isFile) {
-                return getFileIcon(node.data?.type)
+                return getFileIcon((node.data as Attachment).contentType)
             }
             return null
         }
@@ -468,29 +454,13 @@ const TreeViewModal = ({ isOpen, onClose, boards, getPriorityColor }: TreeViewMo
                     >
                         <FaCopy />
                     </button>
-                    {isFile && (
-                        <button
-                            className={styles.treeNodeAction}
-                            title="Скачать файл"
-                            onClick={(e) => {
-                                e.stopPropagation()
-                            }}
-                        >
-                            <FaDownload />
-                        </button>
-                    )}
                 </div>
             )
         }
 
         return (
-            <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.2, delay: level * 0.05 }}
-                className={styles.treeNode}
-            >
-                <motion.div
+            <div className={styles.treeNode}>
+                <div
                     className={`${styles.treeNodeHeader} ${
                         isBoard ? styles.boardNode :
                             isCard ? styles.cardNode :
@@ -501,18 +471,15 @@ const TreeViewModal = ({ isOpen, onClose, boards, getPriorityColor }: TreeViewMo
                         paddingLeft: `${level * 24 + 16}px`,
                     }}
                     onClick={handleClick}
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.99 }}
                 >
                     <div className={styles.treeNodeLeft}>
                         {hasChildren && (
-                            <motion.span
+                            <span
                                 className={styles.treeExpandIcon}
-                                animate={{ rotate: isExpanded ? 90 : 0 }}
-                                transition={{ duration: 0.2 }}
+                                style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
                             >
                                 <FaChevronRight />
-                            </motion.span>
+                            </span>
                         )}
 
                         {!hasChildren && !isFile && (
@@ -541,37 +508,23 @@ const TreeViewModal = ({ isOpen, onClose, boards, getPriorityColor }: TreeViewMo
                             </div>
                         )}
 
-                        {isFile && (
-                            <span className={styles.fileSize} title="Размер файла">
-                                {node.data?.size}
-                            </span>
-                        )}
-
                         {renderNodeActions()}
                     </div>
-                </motion.div>
+                </div>
 
-                <AnimatePresence>
-                    {isExpanded && hasChildren && (
-                        <motion.div
-                            className={styles.treeChildren}
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            {node.children!.map(child => (
-                                <TreeNode
-                                    key={child.id}
-                                    node={child}
-                                    level={level + 1}
-                                    path={[...path, node.name]}
-                                />
-                            ))}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </motion.div>
+                {isExpanded && hasChildren && (
+                    <div className={styles.treeChildren}>
+                        {node.children!.map(child => (
+                            <TreeNode
+                                key={child.id}
+                                node={child}
+                                level={level + 1}
+                                path={[...path, node.name]}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
         )
     }
 
@@ -597,7 +550,7 @@ const TreeViewModal = ({ isOpen, onClose, boards, getPriorityColor }: TreeViewMo
     const projectStats = useMemo(() => {
         const totalCards = boards.reduce((acc, board) => acc + board.cards.length, 0)
         const totalAttachments = boards.reduce((acc, board) =>
-            acc + board.cards.reduce((cardAcc, card) => cardAcc + card.attachments, 0), 0
+            acc + board.cards.reduce((cardAcc, card) => cardAcc + (card.attachments || 0), 0), 0
         )
         const completedCards = boards.reduce((acc, board) =>
             acc + board.cards.filter(card => card.status === 'done').length, 0
@@ -616,23 +569,16 @@ const TreeViewModal = ({ isOpen, onClose, boards, getPriorityColor }: TreeViewMo
         }
     }, [boards])
 
+    const selectedCard = selectedNode?.type === 'card' ? selectedNode.data as Card : null
+    const selectedCardAttachments = selectedCard ? cardAttachments.get(selectedCard.id) : null
+
     if (!isOpen) return null
 
     return (
-        <motion.div
-            className={styles.modalOverlay}
-            onClick={onClose}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-        >
-            <motion.div
+        <div className={styles.modalOverlay} onClick={onClose}>
+            <div
                 className={styles.treeModal}
                 onClick={(e) => e.stopPropagation()}
-                initial={{ scale: 0.9, y: 20 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, y: 20 }}
-                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             >
                 <div className={styles.modalHeader}>
                     <div className={styles.modalHeaderLeft}>
@@ -653,14 +599,12 @@ const TreeViewModal = ({ isOpen, onClose, boards, getPriorityColor }: TreeViewMo
                             <FaShare />
                             Экспорт
                         </button>
-                        <motion.button
+                        <button
                             className={styles.closeButton}
                             onClick={onClose}
-                            whileHover={{ scale: 1.1, rotate: 90 }}
-                            whileTap={{ scale: 0.9 }}
                         >
                             <FaTimes />
-                        </motion.button>
+                        </button>
                     </div>
                 </div>
 
@@ -778,41 +722,27 @@ const TreeViewModal = ({ isOpen, onClose, boards, getPriorityColor }: TreeViewMo
                             </div>
 
                             <div className={styles.treeWrapper}>
-                                <AnimatePresence mode="wait">
-                                    {isLoading ? (
-                                        <motion.div
-                                            key="loading"
-                                            className={styles.loadingContainer}
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
-                                        >
-                                            {[1, 2, 3, 4, 5].map(i => (
-                                                <div key={i} className={styles.skeletonNode} />
-                                            ))}
-                                        </motion.div>
-                                    ) : (
-                                        <motion.div
-                                            key="tree"
-                                            className={styles.tree}
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
-                                        >
-                                            {filteredTreeData.length === 0 ? (
-                                                <div className={styles.emptyState}>
-                                                    <FaDatabase className={styles.emptyIcon} />
-                                                    <h4>Нет данных для отображения</h4>
-                                                    <p>Данные проекта не найдены</p>
-                                                </div>
-                                            ) : (
-                                                filteredTreeData.map(node => (
-                                                    <TreeNode key={node.id} node={node} />
-                                                ))
-                                            )}
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
+                                {isLoading ? (
+                                    <div className={styles.loadingContainer}>
+                                        {[1, 2, 3, 4, 5].map(i => (
+                                            <div key={i} className={styles.skeletonNode} />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className={styles.tree}>
+                                        {filteredTreeData.length === 0 ? (
+                                            <div className={styles.emptyState}>
+                                                <FaDatabase className={styles.emptyIcon} />
+                                                <h4>Нет данных для отображения</h4>
+                                                <p>Данные проекта не найдены</p>
+                                            </div>
+                                        ) : (
+                                            filteredTreeData.map(node => (
+                                                <TreeNode key={node.id} node={node} />
+                                            ))
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -823,11 +753,7 @@ const TreeViewModal = ({ isOpen, onClose, boards, getPriorityColor }: TreeViewMo
                                     {selectedNode ? 'Детали' : 'Обзор проекта'}
                                 </h3>
                                 {selectedNode && (
-                                    <button
-                                        className={styles.externalLink}
-                                        onClick={() => {
-                                        }}
-                                    >
+                                    <button className={styles.externalLink}>
                                         <FaExternalLinkAlt />
                                     </button>
                                 )}
@@ -845,8 +771,6 @@ const TreeViewModal = ({ isOpen, onClose, boards, getPriorityColor }: TreeViewMo
                                                     />
                                                 ) : selectedNode.type === 'card' ? (
                                                     <FaFolderOpen className={styles.cardIconLarge} />
-                                                ) : selectedNode.type === 'file' ? (
-                                                    getFileIcon(selectedNode.data?.type)
                                                 ) : (
                                                     <FaFolderOpen className={styles.folderIconLarge} />
                                                 )}
@@ -855,8 +779,7 @@ const TreeViewModal = ({ isOpen, onClose, boards, getPriorityColor }: TreeViewMo
                                                 <h4 className={styles.nodeTitle}>{selectedNode.name}</h4>
                                                 <span className={styles.nodeType}>
                                                     Тип: {selectedNode.type === 'board' ? 'Доска' :
-                                                    selectedNode.type === 'card' ? 'Задача' :
-                                                        selectedNode.type === 'file' ? 'Файл' : 'Папка'}
+                                                    selectedNode.type === 'card' ? 'Задача' : 'Папка'}
                                                 </span>
                                                 {selectedNode.data?.createdAt && (
                                                     <span className={styles.nodeDate}>
@@ -866,65 +789,92 @@ const TreeViewModal = ({ isOpen, onClose, boards, getPriorityColor }: TreeViewMo
                                             </div>
                                         </div>
 
-                                        {selectedNode.type === 'card' && selectedNode.data && (
+                                        {selectedNode.type === 'card' && selectedCard && (
                                             <div className={styles.cardDetails}>
                                                 <div className={styles.detailRow}>
                                                     <span className={styles.detailLabel}>Приоритет:</span>
                                                     <div className={styles.detailValue}>
                                                         <div
                                                             className={styles.priorityIndicator}
-                                                            style={{ backgroundColor: getPriorityColor(selectedNode.data.priority) }}
+                                                            style={{ backgroundColor: getPriorityColor(selectedCard.priority) }}
                                                         />
-                                                        {getPriorityLabel(selectedNode.data.priority)}
+                                                        {getPriorityLabel(selectedCard.priority)}
                                                     </div>
                                                 </div>
                                                 <div className={styles.detailRow}>
                                                     <span className={styles.detailLabel}>Статус:</span>
                                                     <div className={styles.detailValue}>
-                                                        {getStatusIcon(selectedNode.data.status)}
-                                                        {selectedNode.data.status === 'done' ? 'Завершено' :
-                                                            selectedNode.data.status === 'in-progress' ? 'В работе' :
-                                                                selectedNode.data.status === 'review' ? 'На проверке' : 'К выполнению'}
+                                                        {getStatusIcon(selectedCard.status)}
+                                                        {selectedCard.status === 'done' ? 'Завершено' :
+                                                            selectedCard.status === 'in-progress' ? 'В работе' :
+                                                                selectedCard.status === 'review' ? 'На проверке' : 'К выполнению'}
                                                     </div>
                                                 </div>
                                                 <div className={styles.detailRow}>
-                                                    <span className={styles.detailLabel}>Прогресс:</span>
-                                                    <div className={styles.progressBar}>
-                                                        <div
-                                                            className={styles.progressFill}
-                                                            style={{ width: `${selectedNode.data.progress}%` }}
-                                                        />
-                                                        <span className={styles.progressText}>
-                                                            {selectedNode.data.progress}%
-                                                        </span>
+                                                    <span className={styles.detailLabel}>Исполнители:</span>
+                                                    <div className={styles.assigneesContainer}>
+                                                        {(selectedCard.assignees || [selectedCard.author]).map((assignee, index) => (
+                                                            <div key={index} className={styles.assigneeItem}>
+                                                                <div className={styles.assigneeAvatar}>
+                                                                    {assignee.avatar ? (
+                                                                        <img src={assignee.avatar} alt={assignee.name} />
+                                                                    ) : (
+                                                                        <FaUserCircle />
+                                                                    )}
+                                                                </div>
+                                                                <div className={styles.assigneeInfo}>
+                                                                    <span className={styles.assigneeName}>{assignee.name}</span>
+                                                                    <span className={styles.assigneeRole}>{assignee.role}</span>
+                                                                </div>
+                                                            </div>
+                                                        ))}
                                                     </div>
                                                 </div>
                                                 <div className={styles.detailRow}>
                                                     <span className={styles.detailLabel}>Теги:</span>
                                                     <div className={styles.tagsContainer}>
-                                                        {selectedNode.data.tags?.map((tag: string, index: number) => (
+                                                        {selectedCard.tags?.map((tag: string, index: number) => (
                                                             <span key={index} className={styles.tag}>
                                                                 {tag}
                                                             </span>
                                                         ))}
                                                     </div>
                                                 </div>
-                                            </div>
-                                        )}
-
-                                        {selectedNode.type === 'file' && selectedNode.data && (
-                                            <div className={styles.fileDetails}>
                                                 <div className={styles.detailRow}>
-                                                    <span className={styles.detailLabel}>Размер:</span>
-                                                    <span className={styles.detailValue}>{selectedNode.data.size}</span>
-                                                </div>
-                                                <div className={styles.detailRow}>
-                                                    <span className={styles.detailLabel}>Загружено:</span>
-                                                    <span className={styles.detailValue}>{selectedNode.data.uploadedAt}</span>
-                                                </div>
-                                                <div className={styles.detailRow}>
-                                                    <span className={styles.detailLabel}>Автор:</span>
-                                                    <span className={styles.detailValue}>{selectedNode.data.uploadedBy}</span>
+                                                    <span className={styles.detailLabel}>Файлы:</span>
+                                                    <div className={styles.attachmentsContainer}>
+                                                        {loadingAttachments.has(selectedCard.id) ? (
+                                                            <div className={styles.loadingFiles}>
+                                                                Загрузка файлов...
+                                                            </div>
+                                                        ) : selectedCardAttachments && selectedCardAttachments.length > 0 ? (
+                                                            selectedCardAttachments.map((file) => (
+                                                                <div key={file.id} className={styles.fileItem}>
+                                                                    <div className={styles.fileIcon}>
+                                                                        {getFileIcon(file.contentType)}
+                                                                    </div>
+                                                                    <div className={styles.fileInfo}>
+                                                                        <span className={styles.fileName} title={file.fileName}>
+                                                                            {file.fileName}
+                                                                        </span>
+                                                                        <span className={styles.fileSize}>{formatFileSize(file.fileSize)}</span>
+                                                                    </div>
+                                                                    <button
+                                                                        className={styles.downloadButton}
+                                                                        onClick={() => handleDownload(file, selectedCard.id)}
+                                                                        title="Скачать"
+                                                                    >
+                                                                        <FaDownload />
+                                                                    </button>
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <div className={styles.noFiles}>
+                                                                <FaPaperclip />
+                                                                <span>Нет прикрепленных файлов</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         )}
@@ -961,45 +911,14 @@ const TreeViewModal = ({ isOpen, onClose, boards, getPriorityColor }: TreeViewMo
                                                 </div>
                                             </div>
                                         </div>
-
-                                        <div className={styles.teamSection}>
-                                            <h4 className={styles.sectionSubtitle}>
-                                                <FaUsers className={styles.subsectionIcon} />
-                                                Команда проекта
-                                            </h4>
-                                            <div className={styles.teamGrid}>
-                                                {[
-                                                    { id: 1, name: 'Алексей Петров', role: 'Team Lead', avatar: null },
-                                                    { id: 2, name: 'Мария Иванова', role: 'Backend Developer', avatar: null },
-                                                    { id: 3, name: 'Иван Сидоров', role: 'DevOps', avatar: null },
-                                                    { id: 4, name: 'Елена Козлова', role: 'QA Engineer', avatar: null },
-                                                    { id: 5, name: 'Дмитрий Смирнов', role: 'Frontend Developer', avatar: null },
-                                                    { id: 6, name: 'Ольга Новикова', role: 'UI/UX Designer', avatar: null }
-                                                ].map(member => (
-                                                    <div key={member.id} className={styles.teamMember}>
-                                                        <div className={styles.memberAvatar}>
-                                                            {member.avatar ? (
-                                                                <img src={member.avatar} alt={member.name} />
-                                                            ) : (
-                                                                <FaUserCircle />
-                                                            )}
-                                                        </div>
-                                                        <div className={styles.memberInfo}>
-                                                            <span className={styles.memberName}>{member.name}</span>
-                                                            <span className={styles.memberRole}>{member.role}</span>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
                                     </div>
                                 )}
                             </div>
                         </div>
                     </div>
                 </div>
-            </motion.div>
-        </motion.div>
+            </div>
+        </div>
     )
 }
 

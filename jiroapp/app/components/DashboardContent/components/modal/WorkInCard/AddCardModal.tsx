@@ -10,7 +10,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { addCardSchema, AddCardFormData } from './validation/schemas'
 import { boardToStatusMap, priorityToApiMap, typeDisplayNames } from './hooks/utils'
-import { Board, Author, Tag, UploadedFile } from './types/types'
+import { Board, Author, Tag } from './types/types'
 import TagSelector from './components/TagSelector'
 import FileUploadArea from './components/FileUploadArea'
 import BoardSelector from './components/BoardSelector'
@@ -192,8 +192,6 @@ export default function AddCardModal({
                 })
 
                 if (issueId && typeof issueId === 'number') {
-                    await handleUploadFiles(issueId)
-
                     const selectedBoardObj = boards.find(board => board.id === data.selectedBoard)
                     if (selectedBoardObj && isOwner) {
                         const targetStatus = boardToStatusMap[selectedBoardObj.title]
@@ -201,6 +199,11 @@ export default function AddCardModal({
                             await moveCard(issueId, targetStatus)
                             await refreshIssues()
                         }
+                    }
+
+                    // Upload files after card creation
+                    if (uploadedFiles.length > 0) {
+                        await handleUploadFiles(issueId)
                     }
                 }
 

@@ -81,4 +81,3 @@ export interface IssueTag {
     projectId: number
     name: string
 }
-

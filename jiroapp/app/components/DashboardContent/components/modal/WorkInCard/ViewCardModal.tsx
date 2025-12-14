@@ -437,13 +437,6 @@ const ViewCardModal = ({ isOpen, onClose, card, board, getPriorityColor, onAddCo
                 </div>
 
                 <div className={styles.modalFooter}>
-                    <button className={styles.editButton} onClick={handleEditClick}>
-                        <FaEdit />
-                        Редактировать
-                    </button>
-                    <button className={styles.closeModalBtn} onClick={onClose}>
-                        Закрыть
-                    </button>
                 </div>
             </motion.div>
         </motion.div>

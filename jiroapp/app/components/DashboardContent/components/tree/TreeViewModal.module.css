@@ -11,18 +11,6 @@
     justify-content: center;
     z-index: 9999;
     padding: 2rem;
-    animation: overlayFadeIn 0.3s ease;
-}
-
-@keyframes overlayFadeIn {
-    from {
-        opacity: 0;
-        backdrop-filter: blur(0px);
-    }
-    to {
-        opacity: 1;
-        backdrop-filter: blur(12px);
-    }
 }
 
 .treeModal {
@@ -41,18 +29,6 @@
     flex-direction: column;
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    animation: modalSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes modalSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(40px) scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
 }
 
 .modalHeader {
@@ -683,7 +659,6 @@
     font-size: 0.95rem;
 }
 
-/* Детальная панель */
 .detailsSection {
     width: 450px;
     display: flex;
@@ -830,8 +805,9 @@
 
 .detailRow {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 1.25rem;
+    gap: 1rem;
 }
 
 .detailRow:last-child {
@@ -844,6 +820,7 @@
     color: #64748b;
     font-weight: 500;
     flex-shrink: 0;
+    padding-top: 0.25rem;
 }
 
 .detailValue {
@@ -854,6 +831,7 @@
     font-size: 0.95rem;
     font-weight: 600;
     color: #1e293b;
+    flex-wrap: wrap;
 }
 
 .priorityIndicator {
@@ -895,6 +873,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+    margin-top: 0.25rem;
 }
 
 .tag {
@@ -911,6 +890,163 @@
 .tag:hover {
     background: rgba(139, 92, 246, 0.2);
     transform: translateY(-1px);
+}
+
+.assigneesContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    margin-top: 0.25rem;
+}
+
+.assigneeItem {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    background: rgba(248, 250, 252, 0.8);
+    border-radius: 8px;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    transition: all 0.2s ease;
+}
+
+.assigneeItem:hover {
+    border-color: rgba(139, 92, 246, 0.3);
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.assigneeAvatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1rem;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.assigneeAvatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.assigneeInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.assigneeName {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.assigneeRole {
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.attachmentsContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    margin-top: 0.25rem;
+}
+
+.fileItem {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: white;
+    border-radius: 10px;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    transition: all 0.2s ease;
+}
+
+.fileItem:hover {
+    border-color: rgba(139, 92, 246, 0.3);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.1);
+}
+
+.fileIcon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.fileInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.fileName {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fileSize {
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.downloadButton {
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    color: #8b5cf6;
+    padding: 0.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
+.downloadButton:hover {
+    background: rgba(139, 92, 246, 0.2);
+    transform: translateY(-1px);
+}
+
+.downloadButtonLarge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    color: #8b5cf6;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.downloadButtonLarge:hover {
+    background: rgba(139, 92, 246, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
 }
 
 .projectOverview {
@@ -1056,14 +1192,12 @@
     color: #64748b;
 }
 
-/* Иконки файлов */
 .fileIcon {
     font-size: 1rem;
     flex-shrink: 0;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
-/* Адаптивность */
 @media (max-width: 1200px) {
     .treeModal {
         width: 98%;
@@ -1244,4 +1378,31 @@
         padding-left: 0.75rem;
         padding-right: 0.75rem;
     }
+}
+.loadingFiles {
+    padding: 1rem;
+    text-align: center;
+    color: #64748b;
+    font-size: 0.9rem;
+    background: rgba(248, 250, 252, 0.8);
+    border-radius: 8px;
+    border: 1px dashed rgba(226, 232, 240, 0.8);
+}
+
+.noFiles {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    background: rgba(248, 250, 252, 0.8);
+    border-radius: 8px;
+    border: 1px dashed rgba(226, 232, 240, 0.8);
+}
+
+.noFiles svg {
+    font-size: 1.5rem;
+    opacity: 0.5;
 }
