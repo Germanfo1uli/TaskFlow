@@ -31,7 +31,7 @@ public class IssueCommentService {
     @Transactional
     public CommentResponse createComment(Long userId, Long issueId, String message) {
 
-        Issue issue = issueRepository.findWithTagsById(issueId)
+        Issue issue = issueRepository.findWithFieldsById(issueId)
                 .orElseThrow(() -> new IssueNotFoundException("Issue with id " + issueId + " not found"));
 
         authService.hasPermission(userId, issue.getProjectId(), EntityType.COMMENT, ActionType.CREATE);

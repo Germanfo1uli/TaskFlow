@@ -74,7 +74,7 @@ public class IssueService {
             Long userId, Long issueId, String title, String description,
             Priority priority, List<Long> tagIds) {
 
-        Issue issue = issueRepository.findWithTagsById(issueId)
+        Issue issue = issueRepository.findWithFieldsById(issueId)
                 .orElseThrow(() -> new IssueNotFoundException("Issue with id " + issueId + " not found"));
 
         authService.hasPermission(userId, issue.getProjectId(), EntityType.ISSUE, ActionType.EDIT);
@@ -103,7 +103,7 @@ public class IssueService {
     @Transactional
     public IssueDetailResponse assignTagsToIssue(Long userId, Long issueId, List<Long> tagIds) {
 
-        Issue issue = issueRepository.findWithTagsById(issueId)
+        Issue issue = issueRepository.findWithFieldsById(issueId)
                 .orElseThrow(() -> new IssueNotFoundException("Issue with id " + issueId + " not found"));
 
         authService.hasPermission(userId, issue.getProjectId(), EntityType.TAG, ActionType.APPLY);
@@ -192,7 +192,7 @@ public class IssueService {
     @Transactional(readOnly = true)
     public IssueDetailResponse getIssueById(Long userId, Long issueId) {
 
-        Issue issue = issueRepository.findWithTagsById(issueId)
+        Issue issue = issueRepository.findWithFieldsById(issueId)
                 .orElseThrow(() -> new IssueNotFoundException("Issue with id " + issueId + " not found"));
 
         authService.hasPermission(userId, issue.getProjectId(), EntityType.ISSUE, ActionType.VIEW);
