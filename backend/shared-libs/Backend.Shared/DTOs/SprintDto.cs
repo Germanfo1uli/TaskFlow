@@ -11,6 +11,16 @@ public class SprintDto
 	public SprintStatus Status { get; set; }
 }
 
+public class RemoveIssuesRequestDto
+{
+    public List<long> IssueIds { get; set; } = new();
+}
+
+public class AddIssueRequest
+{
+    public long IssueId { get; set; }
+}
+
 public enum SprintStatus
 {
     Planned,

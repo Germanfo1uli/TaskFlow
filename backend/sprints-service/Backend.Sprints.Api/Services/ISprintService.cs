@@ -5,6 +5,7 @@ namespace Backend.Sprints.Api.Services;
 
 public interface ISprintService
 {
+    // Существующие методы
     Task<Sprint> CreateSprintAsync(long projectId, string name, string? goal, DateTime startDate, DateTime endDate);
     Task<Sprint?> GetSprintByIdAsync(long id);
     Task<List<Sprint>> GetSprintsByProjectIdAsync(long projectId);
@@ -13,4 +14,10 @@ public interface ISprintService
     Task CompleteSprintAsync(long sprintId);
     Task<SprintBoardDto> GetSprintBoardAsync(long sprintId);
     Task<bool> HasDateOverlapAsync(long projectId, DateTime startDate, DateTime endDate, long? excludeSprintId = null);
+
+    // Новые методы для обновленных требований
+    Task<Sprint> CreateSprintWithIssuesAsync(long projectId, CreateSprintRequestDto request);
+    Task AddIssuesToSprintAsync(long sprintId, List<long> issueIds);
+    Task StartSprintAsync(long sprintId);
+    Task<ProjectSprintsDto> GetProjectSprintsWithIssuesAsync(long projectId);
 }

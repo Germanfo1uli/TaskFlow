@@ -20,6 +20,25 @@ public class SprintIssueService : ISprintIssueService
         await _sprintIssueRepository.AddIssueToSprintAsync(sprintId, issueId);
     }
 
+    // Новый метод для батч добавления
+    public async Task AddIssuesToSprintAsync(long sprintId, List<long> issueIds)
+    {
+        foreach (var issueId in issueIds)
+        {
+            await AddIssueToSprintAsync(sprintId, issueId);
+        }
+    }
+
+    // Новый метод для батч удаления
+    public async Task RemoveIssuesFromSprintAsync(long sprintId, List<long> issueIds)
+    {
+        foreach (var issueId in issueIds)
+        {
+            await _sprintIssueRepository.RemoveIssueFromSprintAsync(sprintId, issueId);
+        }
+    }
+
+    // Остальные методы остаются без изменений
     public async Task RemoveIssueFromSprintAsync(long sprintId, long issueId)
     {
         await _sprintIssueRepository.RemoveIssueFromSprintAsync(sprintId, issueId);

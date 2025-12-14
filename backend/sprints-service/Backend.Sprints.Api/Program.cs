@@ -16,6 +16,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<SprintRepository>();
 builder.Services.AddScoped<SprintIssueRepository>();
+
 builder.Services.AddScoped<ISprintService, SprintService>();
 builder.Services.AddScoped<ISprintIssueService, SprintIssueService>();
 
@@ -33,12 +34,18 @@ builder.Services.AddRefitClient<IUserClient>()
     })
     .AddHttpMessageHandler<InternalAuthHandler>();
 
+builder.Services.AddRefitClient<IIssueClient>()
+    .ConfigureHttpClient(client =>
+    {
+        client.BaseAddress = new Uri("http://issue-service:8083");
+    })
+    .AddHttpMessageHandler<InternalAuthHandler>();
+
 builder.Services.AddDbContext<SprintsDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default"),
         npgsqlOptions => npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "sprints_service_schema")));
 
 var app = builder.Build();
-
 
 if (app.Environment.IsDevelopment())
 {

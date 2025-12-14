@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Backend.Sprints.Api.Services;
+using Backend.Shared.DTOs;
 
 namespace Backend.Sprints.Api.Controllers;
 
@@ -28,11 +29,41 @@ public class SprintIssuesController : ControllerBase
         }
     }
 
+    // Новый эндпоинт для батч добавления
+    [HttpPost("batch")]
+    public async Task<IActionResult> AddIssuesToSprint(long sprintId, [FromBody] AddIssuesRequestDto request)
+    {
+        try
+        {
+            await _sprintIssueService.AddIssuesToSprintAsync(sprintId, request.IssueIds);
+            return Ok(new { message = $"Added {request.IssueIds.Count} issues to sprint successfully" });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
     [HttpDelete("{issueId}")]
     public async Task<IActionResult> RemoveIssueFromSprint(long sprintId, long issueId)
     {
         await _sprintIssueService.RemoveIssueFromSprintAsync(sprintId, issueId);
         return NoContent();
+    }
+
+    // Новый эндпоинт для батч удаления
+    [HttpDelete("batch")]
+    public async Task<IActionResult> RemoveIssuesFromSprint(long sprintId, [FromBody] RemoveIssuesRequestDto request)
+    {
+        try
+        {
+            await _sprintIssueService.RemoveIssuesFromSprintAsync(sprintId, request.IssueIds);
+            return Ok(new { message = $"Removed {request.IssueIds.Count} issues from sprint" });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpGet]
@@ -41,9 +72,4 @@ public class SprintIssuesController : ControllerBase
         var issueIds = await _sprintIssueService.GetIssueIdsBySprintIdAsync(sprintId);
         return Ok(new { SprintId = sprintId, IssueIds = issueIds });
     }
-}
-
-public class AddIssueRequest
-{
-    public long IssueId { get; set; }
 }
