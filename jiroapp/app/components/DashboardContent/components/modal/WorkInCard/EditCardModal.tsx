@@ -25,9 +25,9 @@ import {
     FaPlus
 } from 'react-icons/fa'
 import styles from './ModalStyles.module.css'
+import { useCardMove } from '../../../hooks/useCardMove'
 
 type Priority = 'low' | 'medium' | 'high'
-type TaskType = 'TASK' | 'BUG' | 'EPIC' | 'STORY'
 
 interface Author {
     name: string
@@ -38,6 +38,19 @@ interface Board {
     id: number
     title: string
     color: string
+}
+
+interface Card {
+    id: number
+    title: string
+    description: string
+    priority: Priority
+    priorityLevel: number
+    author: Author
+    tags: string[]
+    progress: number
+    comments: number
+    attachments: number
 }
 
 interface UploadedFile {
@@ -58,44 +71,59 @@ interface Tag {
 const schema = z.object({
     title: z.string().min(1, 'Название задачи обязательно').max(200, 'Слишком длинное название'),
     description: z.string().max(2000, 'Описание слишком длинное').optional(),
-    type: z.enum(['TASK', 'BUG', 'EPIC', 'STORY']),
     priority: z.enum(['low', 'medium', 'high']),
     authorId: z.string().optional(),
     tags: z.array(z.string()).max(10, 'Максимум 10 тегов'),
-    selectedBoards: z.array(z.number()).min(1, 'Выберите хотя бы одну доску'),
+    selectedBoard: z.number().min(1, 'Выберите доску'),
 })
 
 type FormData = z.infer<typeof schema>
 
-interface AddCardModalProps {
+const boardToStatusMap: Record<string, string> = {
+    'TO DO': 'TO_DO',
+    'SELECTED FOR DEVELOPMENT': 'SELECTED_FOR_DEVELOPMENT',
+    'IN PROGRESS': 'IN_PROGRESS',
+    'CODE REVIEW': 'CODE_REVIEW',
+    'QA': 'QA',
+    'STAGING': 'STAGING',
+    'DONE': 'DONE'
+};
+
+interface EditCardModalProps {
     isOpen: boolean
     onClose: () => void
     onSave: (data: {
-        projectId: number
-        title: string
-        description: string
-        type: TaskType
-        priority: string
-        tagIds: number[]
-        tagNames: string[]
-    }) => void
+        issueId: number;
+        title: string;
+        description: string;
+        priority: string;
+        tagIds: number[];
+        tagNames: string[];
+    }) => Promise<void>
+    card: Card | null
     boards: Board[]
     authors: Author[]
+    currentBoardId: number
     projectId: number | null
     availableTags: Tag[]
     onTagCreate: (tagName: string) => Promise<Tag | null>
+    refreshIssues: () => Promise<void>
 }
 
-export default function AddCardModal({
-                                         isOpen,
-                                         onClose,
-                                         onSave,
-                                         boards,
-                                         authors,
-                                         projectId,
-                                         availableTags,
-                                         onTagCreate
-                                     }: AddCardModalProps) {
+export default function EditCardModal({
+                                          isOpen,
+                                          onClose,
+                                          onSave,
+                                          card,
+                                          boards,
+                                          authors,
+                                          currentBoardId,
+                                          projectId,
+                                          availableTags,
+                                          onTagCreate,
+                                          refreshIssues
+                                      }: EditCardModalProps) {
+    const { isOwner, isLoading: isMoveLoading, moveCard } = useCardMove(projectId);
     const {
         register,
         handleSubmit,
@@ -109,44 +137,39 @@ export default function AddCardModal({
         defaultValues: {
             title: '',
             description: '',
-            type: 'TASK',
             priority: 'medium',
             authorId: '',
             tags: [],
-            selectedBoards: [],
+            selectedBoard: currentBoardId,
         },
     })
 
+    const [showNewTagInput, setShowNewTagInput] = useState(false)
+    const [newTagInput, setNewTagInput] = useState('')
+
     useEffect(() => {
-        if (isOpen) {
+        if (card && isOpen) {
             reset({
-                title: '',
-                description: '',
-                type: 'TASK',
-                priority: 'medium',
-                authorId: '',
-                tags: [],
-                selectedBoards: [],
+                title: card.title,
+                description: card.description,
+                priority: card.priority,
+                authorId: card.author.name || '',
+                tags: [...card.tags],
+                selectedBoard: currentBoardId,
             })
-            setUploadedFiles([])
-            setShowNewTagInput(false)
-            setNewTagInput('')
         }
-    }, [isOpen, authors, reset])
+    }, [card, currentBoardId, isOpen, reset])
 
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && isOpen) {
-                onClose()
-            }
+            if (e.key === 'Escape' && isOpen) onClose()
         }
         window.addEventListener('keydown', handleEsc)
         return () => window.removeEventListener('keydown', handleEsc)
     }, [isOpen, onClose])
 
     const tags = watch('tags')
-    const [showNewTagInput, setShowNewTagInput] = useState(false)
-    const [newTagInput, setNewTagInput] = useState('')
+    const selectedBoard = watch('selectedBoard')
 
     const handleAddExistingTag = useCallback((tagName: string) => {
         if (tags.includes(tagName)) {
@@ -274,37 +297,15 @@ export default function AddCardModal({
         return <FaFile className={styles.fileIconDefault} />
     }, [])
 
-    const selectedBoards = watch('selectedBoards')
-
-    const handleBoardToggle = useCallback(
-        (boardId: number) => {
-            const newSelection = selectedBoards.includes(boardId)
-                ? selectedBoards.filter((id) => id !== boardId)
-                : [...selectedBoards, boardId]
-            setValue('selectedBoards', newSelection, { shouldDirty: true, shouldValidate: true })
-        },
-        [selectedBoards, setValue]
-    )
-
     const priorityToApiMap: Record<string, string> = {
         'low': 'LOW',
         'medium': 'MEDIUM',
         'high': 'HIGH'
     }
 
-    const typeDisplayNames: Record<TaskType, string> = {
-        'TASK': 'Задача',
-        'BUG': 'Ошибка',
-        'EPIC': 'Эпик',
-        'STORY': 'История'
-    }
-
     const onSubmit = useCallback(
-        (data: FormData) => {
-            if (!projectId) {
-                toast.error('Не выбран проект')
-                return
-            }
+        async (data: FormData) => {
+            if (!card) return
 
             const existingTagIds: number[] = []
             const newTagNames: string[] = []
@@ -318,24 +319,42 @@ export default function AddCardModal({
                 }
             })
 
-            onSave({
-                projectId,
-                title: data.title,
-                description: data.description || '',
-                type: data.type,
-                priority: priorityToApiMap[data.priority] || 'MEDIUM',
-                tagIds: existingTagIds,
-                tagNames: newTagNames
-            })
+            try {
+                // 1. Обновляем задачу
+                await onSave({
+                    issueId: card.id,
+                    title: data.title,
+                    description: data.description || '',
+                    priority: priorityToApiMap[data.priority] || 'MEDIUM',
+                    tagIds: existingTagIds,
+                    tagNames: newTagNames
+                });
 
-            if (uploadedFiles.length > 0) {
-                toast.info(`Загружено ${uploadedFiles.length} файл(ов) (заглушка)`)
+                // 2. Если владелец и доска изменилась - перемещаем задачу
+                if (isOwner && data.selectedBoard !== currentBoardId) {
+                    const selectedBoardObj = boards.find(board => board.id === data.selectedBoard);
+                    if (selectedBoardObj) {
+                        const targetStatus = boardToStatusMap[selectedBoardObj.title];
+                        if (targetStatus) {
+                            const moved = await moveCard(card.id, targetStatus);
+                            if (moved) {
+                                await refreshIssues();
+                            }
+                        }
+                    }
+                }
+
+                toast.success('Карточка успешно обновлена');
+                onClose();
+            } catch (error) {
+                console.error('Ошибка при обновлении карточки:', error);
+                toast.error('Не удалось обновить карточку');
             }
         },
-        [projectId, availableTags, uploadedFiles, onSave]
+        [card, availableTags, onSave, isOwner, currentBoardId, boards, moveCard, refreshIssues, onClose]
     )
 
-    if (!isOpen) return null
+    if (!isOpen || !card) return null
 
     return (
         <>
@@ -360,7 +379,7 @@ export default function AddCardModal({
                         >
                             <div className={styles.modalHeader}>
                                 <h2 id="modal-title" className={styles.modalTitle}>
-                                    Создать новую карточку
+                                    Редактировать карточку
                                 </h2>
                                 <motion.button
                                     className={styles.closeButton}
@@ -420,21 +439,6 @@ export default function AddCardModal({
                                         </label>
                                     </div>
 
-                                    <div className={styles.formSection}>
-                                        <label className={styles.formLabel}>
-                                            <span className={styles.labelText}>Тип задачи</span>
-                                            <select className={styles.select} {...register('type')}>
-                                                {Object.entries(typeDisplayNames).map(([value, label]) => (
-                                                    <option key={value} value={value}>
-                                                        {label}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div className={styles.formRow}>
                                     <div className={styles.formSection}>
                                         <label className={styles.formLabel}>
                                             <span className={styles.labelText}>
@@ -631,40 +635,49 @@ export default function AddCardModal({
 
                                 <div className={styles.formSection}>
                                     <label className={styles.formLabel}>
-                                        <span className={styles.labelText}>Разместить на досках *</span>
-                                        <Controller
-                                            name="selectedBoards"
-                                            control={control}
-                                            render={({ field }) => (
-                                                <>
-                                                    <div className={styles.boardsGrid}>
-                                                        {boards.map((board) => (
-                                                            <motion.label
-                                                                key={board.id}
-                                                                className={styles.boardCheckboxLabel}
-                                                                style={{ '--board-color': board.color } as React.CSSProperties}
-                                                                whileHover={{ y: -2 }}
-                                                                whileTap={{ scale: 0.98 }}
-                                                            >
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={field.value.includes(board.id)}
-                                                                    onChange={() => handleBoardToggle(board.id)}
-                                                                    className={styles.boardCheckbox}
-                                                                />
-                                                                <span className={styles.boardCheckboxCustom}></span>
-                                                                <span className={styles.boardTitle}>{board.title}</span>
-                                                            </motion.label>
-                                                        ))}
-                                                    </div>
-                                                    {errors.selectedBoards && (
-                                                        <span className={styles.errorText}>
-                                                            {errors.selectedBoards.message}
+                                        <span className={styles.labelText}>Доска *</span>
+                                        <div className={styles.boardsRadioGroup}>
+                                            {boards.map((board) => (
+                                                <motion.label
+                                                    key={board.id}
+                                                    className={styles.boardRadioLabel}
+                                                    style={{ '--board-color': board.color } as React.CSSProperties}
+                                                    whileHover={{ y: -2 }}
+                                                    whileTap={{ scale: 0.98 }}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        value={board.id}
+                                                        checked={selectedBoard === board.id}
+                                                        onChange={(e) => setValue('selectedBoard', parseInt(e.target.value), { shouldDirty: true })}
+                                                        className={styles.boardRadio}
+                                                        disabled={!isOwner && isMoveLoading}
+                                                    />
+                                                    <span className={styles.boardRadioCustom}></span>
+                                                    <span className={styles.boardTitle}>{board.title}</span>
+                                                    {!isOwner && selectedBoard === board.id && (
+                                                        <span className={styles.boardCurrentInfo}>
+                                                            (текущая доска)
                                                         </span>
                                                     )}
-                                                </>
-                                            )}
-                                        />
+                                                    {!isOwner && selectedBoard !== board.id && (
+                                                        <span className={styles.boardLockedInfo}>
+                                                            (только для владельца)
+                                                        </span>
+                                                    )}
+                                                </motion.label>
+                                            ))}
+                                        </div>
+                                        {errors.selectedBoard && (
+                                            <span className={styles.errorText}>
+                                                {errors.selectedBoard.message}
+                                            </span>
+                                        )}
+                                        {!isOwner && (
+                                            <div className={styles.permissionNote}>
+                                                <FaExclamationTriangle /> Только владелец проекта может перемещать задачи между досками
+                                            </div>
+                                        )}
                                     </label>
                                 </div>
 
@@ -681,12 +694,12 @@ export default function AddCardModal({
                                     <motion.button
                                         type="submit"
                                         className={styles.saveButton}
-                                        disabled={isSubmitting || (!isDirty && uploadedFiles.length === 0)}
+                                        disabled={isSubmitting || isMoveLoading || (!isDirty && uploadedFiles.length === 0)}
                                         whileHover={{ y: -2 }}
                                         whileTap={{ scale: 0.98 }}
                                     >
                                         <FaSave className={styles.saveIcon} />
-                                        {isSubmitting ? 'Создание...' : 'Создать карточку'}
+                                        {isSubmitting || isMoveLoading ? 'Сохранение...' : 'Сохранить изменения'}
                                     </motion.button>
                                 </div>
                             </form>

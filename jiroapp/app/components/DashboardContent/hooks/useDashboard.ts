@@ -472,7 +472,7 @@ export const useDashboard = (projectId: number | null) => {
             await fetchProjectTags();
             toast.success('Карточка успешно создана');
             closeAddCardModal();
-            return true;
+            return newIssue.id;
         } catch (error) {
             console.error('Ошибка при создании задачи:', error);
             toast.error('Не удалось создать карточку');
@@ -721,6 +721,7 @@ export const useDashboard = (projectId: number | null) => {
         filterAndSortCards,
         getAvailableBoardTitles,
         getBoardByCardId,
+        fetchIssues,
         refreshIssues: fetchIssues,
         createTag
     };

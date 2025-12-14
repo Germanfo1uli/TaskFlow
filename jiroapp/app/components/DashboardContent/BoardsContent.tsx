@@ -7,11 +7,11 @@ import { DashboardHeader } from './dashboardComponent/DashboardHeader'
 import { ControlsSection } from './dashboardComponent/ControlsSection'
 import { BoardsGrid } from './dashboardComponent/BoardsGrid'
 import TreeViewModal from './components/tree/TreeViewModal'
-import AddCardModal from './components/modal/AddCardModal'
+import AddCardModal from './components/modal/WorkInCard/AddCardModal'
 import ConfirmationModal from './components/modal/ConfirmationModal'
 import BoardManagerModal from './components/modal/BoardManagerModal'
-import EditCardModal from './components/modal/EditCardModal'
-import ViewCardModal from './components/modal/ViewCardModal'
+import EditCardModal from './components/modal/WorkInCard/EditCardModal'
+import ViewCardModal from './components/modal/WorkInCard/ViewCardModal'
 import { useEffect } from 'react'
 
 interface BoardsContentProps {
@@ -52,7 +52,7 @@ const BoardsContent = ({ projectId }: BoardsContentProps) => {
         filterAndSortCards,
         getAvailableBoardTitles,
         getBoardByCardId,
-        refreshIssues,
+        fetchIssues, // Изменено с refreshIssues на fetchIssues
         createTag
     } = useDashboard(projectId)
 
@@ -199,6 +199,7 @@ const BoardsContent = ({ projectId }: BoardsContentProps) => {
                         projectId={projectId}
                         availableTags={availableTags}
                         onTagCreate={createTag}
+                        refreshIssues={fetchIssues} // Исправлено: добавлен fetchIssues
                     />
                 )}
             </AnimatePresence>
@@ -242,6 +243,7 @@ const BoardsContent = ({ projectId }: BoardsContentProps) => {
                         projectId={projectId}
                         availableTags={availableTags}
                         onTagCreate={createTag}
+                        refreshIssues={fetchIssues}
                     />
                 )}
             </AnimatePresence>

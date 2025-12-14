@@ -26,7 +26,7 @@ import {
     FaUsers,
     FaBriefcase
 } from 'react-icons/fa'
-import { Card, Board, Comment, Author } from '../../types/dashboard.types'
+import { Card, Board, Comment, Author } from '../../../types/dashboard.types'
 import styles from './ViewCardModal.module.css'
 
 interface ViewCardModalProps {
