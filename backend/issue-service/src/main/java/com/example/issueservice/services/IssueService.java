@@ -361,7 +361,48 @@ public class IssueService {
 
     @Transactional
     public List<InternalIssueResponse> startSprint(Long projectId, IssueBatchRequest issuesIds) {
+        log.info("Starting sprint for project {} with issues: {}", projectId, issuesIds);
 
-        return null;
+        try {
+            boardClient.getProjectById(projectId);
+        } catch (Exception e) {
+            throw new ProjectNotFoundException(projectId);
+        }
+
+        List<Long> issueIdsList = issuesIds.issuesIds();
+        if (issueIdsList == null || issueIdsList.isEmpty()) {
+            log.warn("No issues provided for sprint start in project {}", projectId);
+            return Collections.emptyList();
+        }
+
+        List<Issue> issues = issueRepository.findAllById(issueIdsList);
+        if (issues.size() != issueIdsList.size()) {
+            throw new IssueNotFoundException("One or more issues not found for IDs: " + issueIdsList);
+        }
+
+        boolean allInProject = issues.stream().allMatch(issue -> issue.getProjectId().equals(projectId));
+        if (!allInProject) {
+            throw new IssueNotInProjectException("Some issues do not belong to project " + projectId);
+        }
+
+        for (Issue issue : issues) {
+            if (issue.getStatus() == IssueStatus.TO_DO) {
+                if (issue.getAssigneeId() == null) {
+                    issue.setStatus(IssueStatus.SELECTED_FOR_DEVELOPMENT);
+                    log.info("Changed status of issue {} to SELECTED_FOR_DEVELOPMENT (no assignee)", issue.getId());
+                } else {
+                    issue.setStatus(IssueStatus.IN_PROGRESS);
+                    log.info("Changed status of issue {} to IN_PROGRESS (has assignee {})", issue.getId(), issue.getAssigneeId());
+                }
+            } else {
+                log.warn("Issue {} is not in TO_DO status (current: {}), skipping status change", issue.getId(), issue.getStatus());
+            }
+        }
+
+        issueRepository.saveAll(issues);
+
+        return issues.stream()
+                .map(InternalIssueResponse::from)
+                .collect(Collectors.toList());
     }
 }
