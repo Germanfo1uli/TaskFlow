@@ -1,15 +1,22 @@
 package com.example.boardservice.dto.rabbit;
 
-import lombok.Getter;
-import lombok.Setter;
+import com.example.boardservice.dto.models.ProjectMember;
 
 import java.time.Instant;
 
-@Setter
-@Getter
-public class ProjectMemberAddedEvent {
-    private long projectId;
-    private long addedUserId;
-    private long addedByUserId;
-    private Instant addedAtUtc = Instant.now();
+public record ProjectMemberAddedEvent(
+        long projectId,
+        long addedUserId,
+        long addedByUserId,
+        Instant addedAtUtc
+) {
+    public static ProjectMemberAddedEvent fromProject(ProjectMember member, long addedBy) {
+
+        return new ProjectMemberAddedEvent(
+                member.getProject().getId(),
+                member.getUserId(),
+                addedBy,
+                Instant.now()
+        );
+    }
 }

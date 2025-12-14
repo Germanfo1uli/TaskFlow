@@ -1,14 +1,20 @@
 package com.example.boardservice.dto.rabbit;
 
-import lombok.Getter;
-import lombok.Setter;
+import com.example.boardservice.dto.models.Project;
 
 import java.time.Instant;
 
-@Setter
-@Getter
-public class ProjectDeletedEvent {
-    private long projectId;
-    private long deleterId;
-    private Instant deletedAtUtc = Instant.now();
+public record ProjectDeletedEvent (
+        long projectId,
+        long deleterId,
+        Instant deletedAtUtc
+) {
+    public static ProjectDeletedEvent fromProject(Project project) {
+
+        return new ProjectDeletedEvent(
+                project.getId(),
+                project.getOwnerId(),
+                Instant.now()
+        );
+    }
 }

@@ -1,14 +1,20 @@
 package com.example.boardservice.dto.rabbit;
 
-import lombok.Getter;
-import lombok.Setter;
+import com.example.boardservice.dto.models.Project;
 
 import java.time.Instant;
 
-@Setter
-@Getter
-public class ProjectUpdatedEvent {
-    private long projectId;
-    private long updaterId;
-    private Instant updatedAtUtc = Instant.now();
+public record ProjectUpdatedEvent (
+        long projectId,
+        long updaterId,
+        Instant updatedAtUtc
+) {
+    public static ProjectUpdatedEvent fromProject(Project project, long updatedBy) {
+
+        return new ProjectUpdatedEvent(
+                project.getId(),
+                updatedBy,
+                Instant.now()
+        );
+    }
 }
