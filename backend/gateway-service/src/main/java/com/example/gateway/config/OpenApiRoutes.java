@@ -30,7 +30,7 @@ public class OpenApiRoutes {
                         .uri("lb://sprints-service"))
                 .route("dashboard-service-docs", r -> r
                         .path("/v3/api-docs/dashboard-service")
-                        .filters(f -> f.rewritePath("/v3/api-docs/dashboard-service", "/v3/api-docs"))
+                        .filters(f -> f.rewritePath("/v3/api-docs/dashboard-service", "/v3/api-docs/v1"))
                         .uri("lb://dashboard-service"))
                 // Individual swaggers
                 .route("user-service-swagger", r -> r
@@ -50,8 +50,8 @@ public class OpenApiRoutes {
                         .filters(f -> f.rewritePath("/api/sprints/swagger-ui/(?<path>.*)", "/swagger-ui/${path}"))
                         .uri("lb://sprints-service"))
                 .route("dashboard-service-swagger", r -> r
-                        .path("/api/dashboard/swagger-ui/**")
-                        .filters(f -> f.rewritePath("/api/dashboard/swagger-ui/(?<path>.*)", "/swagger-ui/${path}"))
+                        .path("/api/dashboards/swagger-ui/**")
+                        .filters(f -> f.rewritePath("/api/dashboards/swagger-ui/(?<path>.*)", "/swagger-ui/${path}"))
                         .uri("lb://dashboard-service"))
                 .build();
     }
