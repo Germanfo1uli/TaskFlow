@@ -1,15 +1,30 @@
 package com.example.boardservice.dto.rabbit;
 
-import lombok.Getter;
-import lombok.Setter;
+import com.example.boardservice.dto.models.Project;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
-@Setter
-@Getter
-public class ProjectCreatedEvent {
-    private long projectId;
-    private String projectName = "";
-    private long creatorId;
-    private Instant createdAtUtc = Instant.now();
+public record ProjectCreatedEvent (
+        long projectId,
+        String projectName,
+        long creatorId,
+        Instant createdAtUtc
+) {
+    public static ProjectCreatedEvent fromProject(Project project) {
+
+        LocalDateTime projectCreatedAt = project.getCreatedAt();
+
+        Instant createdAtInstant = (projectCreatedAt != null)
+                ? projectCreatedAt.atZone(ZoneId.of("UTC")).toInstant()
+                : Instant.now();
+
+        return new ProjectCreatedEvent(
+                project.getId(),
+                project.getName(),
+                project.getOwnerId(),
+                createdAtInstant
+        );
+    }
 }
