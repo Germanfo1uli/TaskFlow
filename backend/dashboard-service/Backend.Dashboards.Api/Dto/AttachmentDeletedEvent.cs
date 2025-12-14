@@ -16,6 +16,6 @@ public class AttachmentDeletedEvent
     [JsonPropertyName("deleterId")]
     public long DeleterId { get; set; }
 
-    [JsonPropertyName("DeletedAtUtc")]
+    [JsonPropertyName("deletedAtUtc")]
     public DateTimeOffset DeletedAtUtc { get; set; } = DateTimeOffset.UtcNow;
 }

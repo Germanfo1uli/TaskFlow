@@ -47,4 +47,52 @@ public class EventProducerService {
     public void sendAttachmentCreatedEvent(AttachmentCreatedEvent event) {
         sendEvent(event, "project.created");
     }
+
+    public void sendAttachmentDeletedEvent(AttachmentDeletedEvent event) {
+        sendEvent(event, "project.deleted");
+    }
+
+    public void sendIssueCreatedEvent(IssueCreatedEvent event) {
+        sendEvent(event, "issue.created");
+    }
+
+    public void sendIssueDeletedEvent(IssueDeletedEvent event) {
+        sendEvent(event, "issue.deleted");
+    }
+
+    public void sendIssueUpdatedEvent(IssueUpdatedEvent event) {
+        sendEvent(event, "issue.updated");
+    }
+
+    public void sendIssuePriorityChangedEvent(IssuePriorityChangedEvent event) {
+        sendEvent(event, "issue.priority.changed");
+    }
+
+    public void sendIssueStatusChangedEvent(IssueStatusChangedEvent event) {
+        sendEvent(event, "issue.status.changed");
+    }
+
+    public void sendIssueTypeChangedEvent(IssueTypeChangedEvent event) {
+        sendEvent(event, "issue.type.changed");
+    }
+
+    public void sendIssueAssigneeAddedEvent(IssueAssigneeAddedEvent event) {
+        sendEvent(event, "issue.assignee.added");
+    }
+
+    public void sendIssueAssigneeRemovedEvent(IssueAssigneeRemovedEvent event) {
+        sendEvent(event, "issue.assignee.removed");
+    }
+
+    public void sendIssueCommentCreatedEvent(IssueCommentCreatedEvent event) {
+        sendEvent(event, "issue.comment.created");
+    }
+
+    public void sendIssueCommentDeletedEvent(IssueCommentDeletedEvent event) {
+        sendEvent(event, "issue.comment.deleted");
+    }
+
+    public void sendIssueCommentUpdatedEvent(IssueCommentUpdatedEvent event) {
+        sendEvent(event, "issue.comment.updated");
+    }
 }
