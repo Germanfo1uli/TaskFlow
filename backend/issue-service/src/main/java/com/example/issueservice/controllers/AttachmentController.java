@@ -37,7 +37,7 @@ public class AttachmentController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<AttachmentResponse> upload(
             @PathVariable Long issueId,
-            @RequestParam("file") MultipartFile file,
+            @RequestPart("file") MultipartFile file,
             @AuthenticationPrincipal JwtUser principal) {
 
         AttachmentResponse response = attachmentService.uploadAttachment(principal.userId(), issueId, file);
