@@ -16,6 +16,23 @@ interface IssueTag {
     name: string;
 }
 
+interface IssueAttachment {
+    id: number;
+    fileName: string;
+    fileSize: number;
+    contentType: string;
+    createdAt: string;
+    createdBy: number;
+}
+
+interface IssueComment {
+    id: number;
+    text: string;
+    creator: IssueUser;
+    createdAt: string;
+    updatedAt: string;
+}
+
 interface IssueResponse {
     id: number;
     projectId: number;
@@ -33,6 +50,8 @@ interface IssueResponse {
     reviewer: IssueUser | null;
     qa: IssueUser | null;
     tags: IssueTag[];
+    comments: IssueComment[];
+    attachments: IssueAttachment[];
 }
 
 const initialBoards: Board[] = [
@@ -97,6 +116,14 @@ const priorityLevelMap: Record<string, number> = {
     'LOW': 1,
     'MEDIUM': 2,
     'HIGH': 3
+};
+
+const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 };
 
 export const useDashboard = (projectId: number | null) => {
@@ -182,6 +209,26 @@ export const useDashboard = (projectId: number | null) => {
 
         const tags = issue.tags?.map(tag => tag.name) || [];
 
+        const attachmentsList: Attachment[] = issue.attachments?.map(attach => ({
+            id: attach.id.toString(),
+            name: attach.fileName,
+            size: formatFileSize(attach.fileSize),
+            type: attach.contentType,
+            url: `/issues/${issue.id}/attachments/${attach.id}`,
+            uploadedAt: new Date(attach.createdAt).toLocaleString('ru-RU')
+        })) || [];
+
+        const commentsList: Comment[] = issue.comments?.map(comment => ({
+            id: comment.id,
+            author: {
+                name: comment.creator.username,
+                avatar: null,
+                role: 'Участник'
+            },
+            content: comment.text,
+            createdAt: new Date(comment.createdAt).toLocaleString('ru-RU')
+        })) || [];
+
         return {
             id: issue.id,
             title: issue.title,
@@ -192,10 +239,10 @@ export const useDashboard = (projectId: number | null) => {
             assignees: assignees.length > 0 ? assignees : undefined,
             tags: tags,
             progress: 0,
-            comments: 0,
-            attachments: 0,
-            attachmentsList: [],
-            commentsList: [],
+            comments: issue.comments?.length || 0,
+            attachments: issue.attachments?.length || 0,
+            attachmentsList: attachmentsList,
+            commentsList: commentsList,
             createdAt: issue.createdAt ? new Date(issue.createdAt).toLocaleDateString('ru-RU') : 'Дата не указана'
         };
     };
@@ -292,22 +339,26 @@ export const useDashboard = (projectId: number | null) => {
         tagNames: string[];
     }) => {
         try {
-            const newTagPromises = data.tagNames.map(tagName =>
-                api.post('/tags', {
-                    projectId,
-                    name: tagName
-                }).catch(err => {
-                    console.error('Ошибка при создании тега:', err);
-                    return null;
-                })
-            );
+            let allTagIds = [...data.tagIds];
 
-            const newTagResponses = await Promise.all(newTagPromises);
-            const newTagIds = newTagResponses
-                .filter(response => response !== null && response.data?.id)
-                .map(response => response.data.id);
+            if (data.tagNames.length > 0) {
+                const newTagPromises = data.tagNames.map(tagName =>
+                    api.post('/tags', {
+                        projectId,
+                        name: tagName
+                    }).catch(err => {
+                        console.error('Ошибка при создании тега:', err);
+                        return null;
+                    })
+                );
 
-            const allTagIds = [...data.tagIds, ...newTagIds];
+                const newTagResponses = await Promise.all(newTagPromises);
+                const newTagIds = newTagResponses
+                    .filter(response => response !== null && response.data?.id)
+                    .map(response => response.data.id);
+
+                allTagIds = [...allTagIds, ...newTagIds];
+            }
 
             await api.patch(`/issues/${issueId}`, {
                 title: data.title,
@@ -320,6 +371,40 @@ export const useDashboard = (projectId: number | null) => {
         } catch (error) {
             console.error('Ошибка при обновлении задачи:', error);
             throw error;
+        }
+    };
+
+    const uploadFiles = async (issueId: number, files: File[]) => {
+        if (files.length === 0) return [];
+
+        const uploadPromises = files.map(async (file) => {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await api.post(`/issues/${issueId}/attachments`, formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                });
+                return response.data;
+            } catch (error) {
+                console.error('Ошибка при загрузке файла:', error);
+                return null;
+            }
+        });
+
+        const results = await Promise.all(uploadPromises);
+        return results.filter(result => result !== null);
+    };
+
+    const deleteAttachment = async (issueId: number, attachmentId: number): Promise<boolean> => {
+        try {
+            await api.delete(`/issues/${issueId}/attachments/${attachmentId}`);
+            return true;
+        } catch (error) {
+            console.error('Ошибка при удалении файла:', error);
+            return false;
         }
     };
 
@@ -723,6 +808,8 @@ export const useDashboard = (projectId: number | null) => {
         getBoardByCardId,
         fetchIssues,
         refreshIssues: fetchIssues,
-        createTag
+        createTag,
+        uploadFiles,
+        deleteAttachment
     };
 };

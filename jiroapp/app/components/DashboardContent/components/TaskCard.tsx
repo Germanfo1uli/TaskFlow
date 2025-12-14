@@ -82,7 +82,6 @@ const TaskCard = ({ card, getPriorityColor, getPriorityBgColor, onEdit, onDelete
                     {card.description}
                 </p>
 
-                {/* Теги отображаются здесь */}
                 {card.tags && card.tags.length > 0 && (
                     <div className={styles.cardTags}>
                         {card.tags.map((tag, index) => (

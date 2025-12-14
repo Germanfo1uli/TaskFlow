@@ -10,10 +10,11 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { addCardSchema, AddCardFormData } from './validation/schemas'
 import { boardToStatusMap, priorityToApiMap, typeDisplayNames } from './hooks/utils'
-import { Board, Author, Tag } from './types/types'
+import { Board, Author, Tag, UploadedFile } from './types/types'
 import TagSelector from './components/TagSelector'
 import FileUploadArea from './components/FileUploadArea'
 import BoardSelector from './components/BoardSelector'
+import { api } from '@/app/auth/hooks/useTokenRefresh'
 
 interface AddCardModalProps {
     isOpen: boolean
@@ -97,7 +98,7 @@ export default function AddCardModal({
 
     const [showNewTagInput, setShowNewTagInput] = useState(false)
     const [newTagInput, setNewTagInput] = useState('')
-    const [uploadedFiles, setUploadedFiles] = useState<any[]>([])
+    const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
 
     const tags = watch('tags')
     const selectedBoard = watch('selectedBoard')
@@ -122,14 +123,43 @@ export default function AddCardModal({
         )
     }, [tags, setValue])
 
-    const handleRemoveFile = useCallback((fileId: string) => {
+    const handleRemoveFile = useCallback((fileIndex: number) => {
         setUploadedFiles((prev) => {
-            const file = prev.find((f) => f.id === fileId)
-            if (file?.url) URL.revokeObjectURL(file.url)
-            return prev.filter((f) => f.id !== fileId)
+            const newFiles = [...prev]
+            newFiles.splice(fileIndex, 1)
+            return newFiles
         })
         toast.success('Файл удален')
     }, [])
+
+    const handleUploadFiles = async (issueId: number) => {
+        if (uploadedFiles.length === 0) return
+
+        const uploadPromises = uploadedFiles.map(async (file) => {
+            const formData = new FormData()
+            formData.append('file', file)
+
+            try {
+                const response = await api.post(`/issues/${issueId}/attachments`, formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                })
+                return response.data
+            } catch (error) {
+                console.error('Ошибка при загрузке файла:', error)
+                toast.error(`Не удалось загрузить файл ${file.name}`)
+                return null
+            }
+        })
+
+        const results = await Promise.all(uploadPromises)
+        const successfulUploads = results.filter(result => result !== null)
+
+        if (successfulUploads.length > 0) {
+            toast.success(`Загружено ${successfulUploads.length} файл(ов)`)
+        }
+    }
 
     const onSubmit = useCallback(
         async (data: AddCardFormData) => {
@@ -162,6 +192,8 @@ export default function AddCardModal({
                 })
 
                 if (issueId && typeof issueId === 'number') {
+                    await handleUploadFiles(issueId)
+
                     const selectedBoardObj = boards.find(board => board.id === data.selectedBoard)
                     if (selectedBoardObj && isOwner) {
                         const targetStatus = boardToStatusMap[selectedBoardObj.title]
@@ -170,10 +202,6 @@ export default function AddCardModal({
                             await refreshIssues()
                         }
                     }
-                }
-
-                if (uploadedFiles.length > 0) {
-                    toast.info(`Загружено ${uploadedFiles.length} файл(ов) (заглушка)`)
                 }
 
                 toast.success('Карточка успешно создана')

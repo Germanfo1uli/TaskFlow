@@ -26,8 +26,9 @@ import {
     FaUsers,
     FaBriefcase
 } from 'react-icons/fa'
-import { Card, Board, Comment, Author } from '../../../types/dashboard.types'
+import { Card, Board, Comment, Author, Attachment } from '../../../types/dashboard.types'
 import styles from './ViewCardModal.module.css'
+import { api } from '@/app/auth/hooks/useTokenRefresh'
 
 interface ViewCardModalProps {
     isOpen: boolean
@@ -44,8 +45,6 @@ const ViewCardModal = ({ isOpen, onClose, card, board, getPriorityColor, onAddCo
     const [isSubmitting, setIsSubmitting] = useState(false)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const modalContentRef = useRef<HTMLDivElement>(null)
-    const mainContentRef = useRef<HTMLDivElement>(null)
-    const sidebarRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         const handleWheel = (e: WheelEvent) => {
@@ -81,25 +80,34 @@ const ViewCardModal = ({ isOpen, onClose, card, board, getPriorityColor, onAddCo
         }
     }
 
-    const getFileIcon = (type: string) => {
-        switch (type) {
-            case 'pdf':
-                return <FaFilePdf className={styles.fileTypeIcon} style={{ color: '#ef4444' }} />
-            case 'figma':
-                return <FaFileImage className={styles.fileTypeIcon} style={{ color: '#8b5cf6' }} />
-            case 'yaml':
-                return <FaFileCode className={styles.fileTypeIcon} style={{ color: '#3b82f6' }} />
-            case 'markdown':
-                return <FaFileAlt className={styles.fileTypeIcon} style={{ color: '#64748b' }} />
-            case 'sql':
-                return <FaDatabase className={styles.fileTypeIcon} style={{ color: '#10b981' }} />
-            default:
-                return <FaFileAlt className={styles.fileTypeIcon} style={{ color: '#6b7280' }} />
-        }
+    const getFileIcon = (fileType: string) => {
+        if (fileType.includes('pdf')) return <FaFilePdf className={styles.fileTypeIcon} style={{ color: '#ef4444' }} />
+        if (fileType.includes('image')) return <FaFileImage className={styles.fileTypeIcon} style={{ color: '#8b5cf6' }} />
+        if (fileType.includes('yaml') || fileType.includes('json') || fileType.includes('xml'))
+            return <FaFileCode className={styles.fileTypeIcon} style={{ color: '#3b82f6' }} />
+        if (fileType.includes('markdown') || fileType.includes('text'))
+            return <FaFileAlt className={styles.fileTypeIcon} style={{ color: '#64748b' }} />
+        if (fileType.includes('sql')) return <FaDatabase className={styles.fileTypeIcon} style={{ color: '#10b981' }} />
+        return <FaFileAlt className={styles.fileTypeIcon} style={{ color: '#6b7280' }} />
     }
 
-    const handleDownload = (url: string, name: string) => {
-        console.log(`Downloading ${name} from ${url}`)
+    const handleDownload = async (attachment: Attachment) => {
+        try {
+            const response = await api.get(attachment.url, {
+                responseType: 'blob'
+            })
+
+            const url = window.URL.createObjectURL(new Blob([response.data]))
+            const link = document.createElement('a')
+            link.href = url
+            link.setAttribute('download', attachment.name)
+            document.body.appendChild(link)
+            link.click()
+            link.remove()
+            window.URL.revokeObjectURL(url)
+        } catch (error) {
+            console.error('Ошибка при скачивании файла:', error)
+        }
     }
 
     const handleAddComment = async () => {
@@ -212,7 +220,7 @@ const ViewCardModal = ({ isOpen, onClose, card, board, getPriorityColor, onAddCo
 
                 <div className={styles.modalBody}>
                     <div className={styles.contentGrid}>
-                        <div ref={mainContentRef} className={styles.mainContent}>
+                        <div className={styles.mainContent}>
                             <div className={styles.section}>
                                 <h3 className={styles.sectionTitle}>Описание</h3>
                                 <div className={styles.descriptionBox}>
@@ -314,7 +322,7 @@ const ViewCardModal = ({ isOpen, onClose, card, board, getPriorityColor, onAddCo
                             </div>
                         </div>
 
-                        <div ref={sidebarRef} className={styles.sidebar}>
+                        <div className={styles.sidebar}>
                             <div className={styles.sidebarSection}>
                                 <h3 className={styles.sidebarTitle}>
                                     <FaUsers className={styles.sidebarIcon} />
@@ -367,7 +375,7 @@ const ViewCardModal = ({ isOpen, onClose, card, board, getPriorityColor, onAddCo
                                                 </div>
                                                 <button
                                                     className={styles.downloadButtonCompact}
-                                                    onClick={() => handleDownload(file.url, file.name)}
+                                                    onClick={() => handleDownload(file)}
                                                     title="Скачать"
                                                 >
                                                     <FaDownload />

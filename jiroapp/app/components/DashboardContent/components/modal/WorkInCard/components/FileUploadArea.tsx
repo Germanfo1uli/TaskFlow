@@ -4,44 +4,66 @@ import { useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { FaCloudUploadAlt, FaTrash } from 'react-icons/fa'
+import { FaCloudUploadAlt, FaTrash, FaFile, FaFilePdf, FaFileWord, FaFileExcel, FaCode, FaImage } from 'react-icons/fa'
 import styles from '../ModalStyles.module.css'
-import { formatFileSize, getFileIcon } from '../hooks/utils'
-import { UploadedFile } from '../types/types'
+import { formatFileSize } from '../hooks/utils'
 
 interface FileUploadAreaProps {
-    uploadedFiles: UploadedFile[]
-    onFilesChange: (files: UploadedFile[]) => void
-    onRemoveFile: (fileId: string) => void
+    uploadedFiles: File[]
+    onFilesChange: (files: File[]) => void
+    onRemoveFile: (fileIndex: number) => void
+}
+
+const getFileIcon = (fileType: string) => {
+    if (fileType.includes('pdf')) return <FaFilePdf className="fileIconPdf" />
+    if (fileType.includes('word') || fileType.includes('document'))
+        return <FaFileWord className="fileIconWord" />
+    if (fileType.includes('excel') || fileType.includes('spreadsheet'))
+        return <FaFileExcel className="fileIconExcel" />
+    if (fileType.includes('zip') || fileType.includes('archive'))
+        return <FaFile className="fileIconDefault" />
+    if (fileType.includes('image')) return <FaImage className="fileIconDesign" />
+    if (
+        fileType.includes('text') ||
+        fileType.includes('json') ||
+        fileType.includes('xml') ||
+        fileType.includes('html') ||
+        fileType.includes('css') ||
+        fileType.includes('javascript')
+    )
+        return <FaCode className="fileIconCode" />
+    return <FaFile className="fileIconDefault" />
 }
 
 export default function FileUploadArea({ uploadedFiles = [], onFilesChange, onRemoveFile }: FileUploadAreaProps) {
     const onDrop = useCallback((acceptedFiles: File[]) => {
-        const newFiles: UploadedFile[] = acceptedFiles.map((file) => {
-            const fileId = Math.random().toString(36).substring(2, 11)
-            const fileUrl = URL.createObjectURL(file)
-            return {
-                id: fileId,
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                url: fileUrl,
-                preview: file.type.startsWith('image/') ? fileUrl : undefined,
-            }
-        })
-        onFilesChange([...uploadedFiles, ...newFiles])
-        toast.success(`Добавлено ${newFiles.length} файл(ов)`)
+        const totalFiles = uploadedFiles.length + acceptedFiles.length
+        if (totalFiles > 10) {
+            toast.error('Максимум 10 файлов')
+            return
+        }
+
+        const oversizedFiles = acceptedFiles.filter(file => file.size > 50 * 1024 * 1024)
+        if (oversizedFiles.length > 0) {
+            toast.error('Некоторые файлы превышают лимит 50MB')
+            return
+        }
+
+        onFilesChange([...uploadedFiles, ...acceptedFiles])
+        toast.success(`Добавлено ${acceptedFiles.length} файл(ов)`)
     }, [uploadedFiles, onFilesChange])
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
-        maxFiles: 10,
+        maxFiles: 10 - uploadedFiles.length,
         maxSize: 50 * 1024 * 1024,
         onDropRejected: (fileRejections) => {
             fileRejections.forEach((rejection) => {
                 rejection.errors.forEach((error) => {
                     if (error.code === 'file-too-large') {
                         toast.error('Файл слишком большой (макс. 50MB)')
+                    } else if (error.code === 'too-many-files') {
+                        toast.error('Максимум 10 файлов')
                     } else {
                         toast.error(error.message)
                     }
@@ -86,7 +108,7 @@ export default function FileUploadArea({ uploadedFiles = [], onFilesChange, onRe
                         <div className={styles.filesList}>
                             {uploadedFiles.map((file, index) => (
                                 <motion.div
-                                    key={file.id}
+                                    key={`${file.name}-${index}`}
                                     className={styles.fileItem}
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
@@ -103,7 +125,7 @@ export default function FileUploadArea({ uploadedFiles = [], onFilesChange, onRe
                                     <motion.button
                                         type="button"
                                         className={styles.removeFileButton}
-                                        onClick={() => onRemoveFile(file.id)}
+                                        onClick={() => onRemoveFile(index)}
                                         whileHover={{ scale: 1.1, rotate: 90 }}
                                         whileTap={{ scale: 0.9 }}
                                     >

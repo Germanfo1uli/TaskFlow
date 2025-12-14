@@ -3,7 +3,7 @@
 import { useEffect, useCallback, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { FaTimes, FaSave, FaUserCircle, FaExclamationTriangle } from 'react-icons/fa'
+import { FaTimes, FaSave, FaUserCircle, FaExclamationTriangle, FaTrash, FaFile, FaFilePdf, FaFileWord, FaFileExcel, FaCode, FaImage } from 'react-icons/fa'
 import styles from './ModalStyles.module.css'
 import { useCardMove } from '../../../hooks/useCardMove'
 import { useForm } from 'react-hook-form'
@@ -14,6 +14,7 @@ import { Card, Board, Author, Tag } from './types/types'
 import TagSelector from './components/TagSelector'
 import FileUploadArea from './components/FileUploadArea'
 import BoardSelector from './components/BoardSelector'
+import { api } from '@/app/auth/hooks/useTokenRefresh'
 
 interface EditCardModalProps {
     isOpen: boolean
@@ -34,6 +35,25 @@ interface EditCardModalProps {
     availableTags: Tag[]
     onTagCreate: (tagName: string) => Promise<Tag | null>
     refreshIssues: () => Promise<void>
+}
+
+const getFileIcon = (fileType: string) => {
+    if (fileType.includes('pdf')) return <FaFilePdf className={styles.fileIconPdf} />
+    if (fileType.includes('word') || fileType.includes('document'))
+        return <FaFileWord className={styles.fileIconWord} />
+    if (fileType.includes('excel') || fileType.includes('spreadsheet'))
+        return <FaFileExcel className={styles.fileIconExcel} />
+    if (fileType.includes('image')) return <FaImage className={styles.fileIconDesign} />
+    if (
+        fileType.includes('text') ||
+        fileType.includes('json') ||
+        fileType.includes('xml') ||
+        fileType.includes('html') ||
+        fileType.includes('css') ||
+        fileType.includes('javascript')
+    )
+        return <FaCode className={styles.fileIconCode} />
+    return <FaFile className={styles.fileIconDefault} />
 }
 
 export default function EditCardModal({
@@ -72,7 +92,8 @@ export default function EditCardModal({
 
     const [showNewTagInput, setShowNewTagInput] = useState(false)
     const [newTagInput, setNewTagInput] = useState('')
-    const [uploadedFiles, setUploadedFiles] = useState<any[]>([])
+    const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
+    const [existingAttachments, setExistingAttachments] = useState<any[]>([])
 
     useEffect(() => {
         if (card && isOpen) {
@@ -84,6 +105,7 @@ export default function EditCardModal({
                 tags: [...card.tags],
                 selectedBoard: currentBoardId,
             })
+            setExistingAttachments(card.attachmentsList || [])
         }
     }, [card, currentBoardId, isOpen, reset])
 
@@ -118,14 +140,56 @@ export default function EditCardModal({
         )
     }, [tags, setValue])
 
-    const handleRemoveFile = useCallback((fileId: string) => {
+    const handleRemoveFile = useCallback((fileIndex: number) => {
         setUploadedFiles((prev) => {
-            const file = prev.find((f) => f.id === fileId)
-            if (file?.url) URL.revokeObjectURL(file.url)
-            return prev.filter((f) => f.id !== fileId)
+            const newFiles = [...prev]
+            newFiles.splice(fileIndex, 1)
+            return newFiles
         })
         toast.success('Файл удален')
     }, [])
+
+    const handleRemoveExistingAttachment = useCallback(async (attachmentId: string) => {
+        if (!card) return
+
+        try {
+            await api.delete(`/issues/${card.id}/attachments/${attachmentId}`)
+            setExistingAttachments(prev => prev.filter(att => att.id !== attachmentId))
+            toast.success('Файл удален')
+        } catch (error) {
+            console.error('Ошибка при удалении файла:', error)
+            toast.error('Не удалось удалить файл')
+        }
+    }, [card])
+
+    const handleUploadFiles = async (issueId: number) => {
+        if (uploadedFiles.length === 0) return
+
+        const uploadPromises = uploadedFiles.map(async (file) => {
+            const formData = new FormData()
+            formData.append('file', file)
+
+            try {
+                const response = await api.post(`/issues/${issueId}/attachments`, formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                })
+                return response.data
+            } catch (error) {
+                console.error('Ошибка при загрузке файла:', error)
+                toast.error(`Не удалось загрузить файл ${file.name}`)
+                return null
+            }
+        })
+
+        const results = await Promise.all(uploadPromises)
+        const successfulUploads = results.filter(result => result !== null)
+
+        if (successfulUploads.length > 0) {
+            toast.success(`Загружено ${successfulUploads.length} файл(ов)`)
+        }
+    }
 
     const onSubmit = useCallback(
         async (data: EditCardFormData) => {
@@ -153,6 +217,10 @@ export default function EditCardModal({
                     tagNames: newTagNames
                 })
 
+                if (uploadedFiles.length > 0) {
+                    await handleUploadFiles(card.id)
+                }
+
                 if (isOwner && data.selectedBoard !== currentBoardId) {
                     const selectedBoardObj = boards.find(board => board.id === data.selectedBoard)
                     if (selectedBoardObj) {
@@ -173,7 +241,7 @@ export default function EditCardModal({
                 toast.error('Не удалось обновить карточку')
             }
         },
-        [card, availableTags, onSave, isOwner, currentBoardId, boards, moveCard, refreshIssues, onClose]
+        [card, availableTags, uploadedFiles, onSave, isOwner, currentBoardId, boards, moveCard, refreshIssues, onClose]
     )
 
     if (!isOpen || !card) return null
@@ -297,6 +365,36 @@ export default function EditCardModal({
                                     onRemoveFile={handleRemoveFile}
                                 />
 
+                                {existingAttachments.length > 0 && (
+                                    <div className={styles.formSection}>
+                                        <label className={styles.formLabel}>
+                                            <span className={styles.labelText}>Существующие файлы</span>
+                                            <div className={styles.filesList}>
+                                                {existingAttachments.map((file, index) => (
+                                                    <div key={file.id} className={styles.fileItem}>
+                                                        <div className={styles.fileInfo}>
+                                                            <div className={styles.fileIcon}>{getFileIcon(file.type)}</div>
+                                                            <div className={styles.fileDetails}>
+                                                                <span className={styles.fileName}>{file.name}</span>
+                                                                <span className={styles.fileSize}>{file.size}</span>
+                                                            </div>
+                                                        </div>
+                                                        <motion.button
+                                                            type="button"
+                                                            className={styles.removeFileButton}
+                                                            onClick={() => handleRemoveExistingAttachment(file.id)}
+                                                            whileHover={{ scale: 1.1, rotate: 90 }}
+                                                            whileTap={{ scale: 0.9 }}
+                                                        >
+                                                            <FaTrash />
+                                                        </motion.button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </label>
+                                    </div>
+                                )}
+
                                 <BoardSelector
                                     boards={boards}
                                     selectedBoard={selectedBoard}
@@ -318,7 +416,7 @@ export default function EditCardModal({
                                     <motion.button
                                         type="submit"
                                         className={styles.saveButton}
-                                        disabled={isSubmitting || isMoveLoading || (!isDirty && uploadedFiles.length === 0)}
+                                        disabled={isSubmitting || isMoveLoading}
                                         whileHover={{ y: -2 }}
                                         whileTap={{ scale: 0.98 }}
                                     >

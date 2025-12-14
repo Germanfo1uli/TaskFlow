@@ -52,7 +52,7 @@ const BoardsContent = ({ projectId }: BoardsContentProps) => {
         filterAndSortCards,
         getAvailableBoardTitles,
         getBoardByCardId,
-        fetchIssues, // Изменено с refreshIssues на fetchIssues
+        fetchIssues,
         createTag
     } = useDashboard(projectId)
 
@@ -199,7 +199,7 @@ const BoardsContent = ({ projectId }: BoardsContentProps) => {
                         projectId={projectId}
                         availableTags={availableTags}
                         onTagCreate={createTag}
-                        refreshIssues={fetchIssues} // Исправлено: добавлен fetchIssues
+                        refreshIssues={fetchIssues}
                     />
                 )}
             </AnimatePresence>
