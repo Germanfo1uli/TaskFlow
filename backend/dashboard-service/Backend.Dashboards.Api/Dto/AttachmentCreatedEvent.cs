@@ -10,9 +10,6 @@ public class AttachmentCreatedEvent
     [JsonPropertyName("issueId")]
     public long IssueId { get; set; }
 
-    [JsonPropertyName("commentId")]
-    public long? CommentId { get; set; }
-
     [JsonPropertyName("attachmentId")]
     public long AttachmentId { get; set; }
 
