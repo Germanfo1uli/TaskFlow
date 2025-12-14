@@ -2,7 +2,6 @@ package com.example.issueservice.services;
 
 import com.example.issueservice.dto.models.Issue;
 import com.example.issueservice.dto.models.enums.*;
-import com.example.issueservice.dto.rabbit.IssueCommentUpdatedEvent;
 import com.example.issueservice.dto.rabbit.IssueStatusChangedEvent;
 import com.example.issueservice.exception.*;
 import com.example.issueservice.repositories.IssueRepository;

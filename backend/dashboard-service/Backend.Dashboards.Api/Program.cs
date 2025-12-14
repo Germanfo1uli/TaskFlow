@@ -11,12 +11,52 @@ using Steeltoe.Discovery.Eureka;
 using Backend.Dashboard.Api.Messages;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Dashboard API",
+        Version = "v1.0",
+        Description = "API для дашборда проектов"
+    });
+
+    options.AddSecurityDefinition("bearerAuth", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "Введите JWT токен:",
+        In = ParameterLocation.Header
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "bearerAuth"
+                }
+            },
+            new string[] {}
+        }
+    });
+
+    var swaggerSettings = builder.Configuration.GetSection("Swagger");
+    var servers = swaggerSettings.GetSection("Servers").Get<List<OpenApiServer>>();
+    foreach (var server in servers)
+    {
+        options.AddServer(server);
+    }
+});
 
 builder.Services.AddScoped<DashboardSnapshotRepository>();
 builder.Services.AddScoped<ActivityLogRepository>();
@@ -97,17 +137,22 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseRouting();
 
-app.MapHealthChecks("/healthz");
+app.MapSwagger("/v3/api-docs/{documentName}").AllowAnonymous();
+app.MapHealthChecks("/healthz").AllowAnonymous();
 
 app.UseGatewayAuthentication();
-
 app.UseAuthorization();
+
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/v3/api-docs/v1", "Dashboard API v1");
+    options.RoutePrefix = "swagger";
+    options.DocumentTitle = "Dashboard API";
+});
+
 app.MapControllers();
 
 app.Run();
