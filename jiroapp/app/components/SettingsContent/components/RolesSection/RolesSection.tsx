@@ -48,7 +48,7 @@ const RolesSection = ({ projectId }: RolesSectionProps) => {
         { key: 'tag_delete', label: 'Удаление тегов', description: 'Удаление тегов', icon: <FaTrash />, category: 'Теги', entity: 'TAG', action: 'DELETE' },
         { key: 'tag_apply', label: 'Применение тегов', description: 'Добавление тегов к задачам', icon: <FaTags />, category: 'Теги', entity: 'TAG', action: 'APPLY' },
 
-        { key: 'dashboard_view', label: 'Просмотр дашбордов', description: 'Просмотр дашбордов проекта', icon: <FaChartLine />, category: 'Система', entity: 'ANALYTICS', action: 'VIEW' },
+        { key: 'analytics_view', label: 'Просмотр дашбордов', description: 'Просмотр дашбордов проекта', icon: <FaChartLine />, category: 'Система', entity: 'ANALYTICS', action: 'VIEW' },
         { key: 'logs_view', label: 'Просмотр логов', description: 'Просмотр истории действий проекта', icon: <FaHistory />, category: 'Система', entity: 'LOGS', action: 'VIEW' }
     ];
 

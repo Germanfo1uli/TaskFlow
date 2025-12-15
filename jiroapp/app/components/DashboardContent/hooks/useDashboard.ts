@@ -152,10 +152,35 @@ export const useDashboard = (projectId: number | null) => {
 
     const [availableTags, setAvailableTags] = useState<IssueTag[]>([]);
     const [authors, setAuthors] = useState<Author[]>([]);
+    const [currentUser, setCurrentUser] = useState<Author | null>(null);
 
     const updateState = (updates: Partial<DashboardState>) => {
         setState(prev => ({ ...prev, ...updates }));
     };
+
+    const fetchCurrentUser = useCallback(async (): Promise<Author | null> => {
+        try {
+            const response = await api.get<IssueUser>('/users/me');
+            const userData = response.data;
+            const user: Author = {
+                name: userData.username || 'Текущий пользователь',
+                avatar: null,
+                role: 'Пользователь'
+            };
+            setCurrentUser(user);
+            return user;
+        } catch (error) {
+            console.error('Ошибка при получении текущего пользователя:', error);
+            // Создаем fallback пользователя
+            const fallbackUser: Author = {
+                name: 'Текущий пользователь',
+                avatar: null,
+                role: 'Пользователь'
+            };
+            setCurrentUser(fallbackUser);
+            return fallbackUser;
+        }
+    }, []);
 
     const fetchProjectTags = useCallback(async () => {
         if (!projectId) return;
@@ -306,10 +331,12 @@ export const useDashboard = (projectId: number | null) => {
     useEffect(() => {
         if (projectId) {
             fetchIssues();
+            fetchCurrentUser();
         } else {
             setBoards(initialBoards);
+            fetchCurrentUser();
         }
-    }, [projectId, fetchIssues]);
+    }, [projectId, fetchIssues, fetchCurrentUser]);
 
     const fetchIssueById = async (issueId: number): Promise<Card | null> => {
         try {
@@ -779,6 +806,7 @@ export const useDashboard = (projectId: number | null) => {
         updateState,
         authors,
         availableTags,
+        currentUser,
         isLoading,
         getPriorityColor,
         getPriorityBgColor,
@@ -810,6 +838,7 @@ export const useDashboard = (projectId: number | null) => {
         refreshIssues: fetchIssues,
         createTag,
         uploadFiles,
-        deleteAttachment
+        deleteAttachment,
+        fetchCurrentUser
     };
 };

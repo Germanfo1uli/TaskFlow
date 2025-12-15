@@ -24,11 +24,14 @@ import {
     FaClock,
     FaPaperPlane,
     FaUsers,
-    FaBriefcase
+    FaBriefcase,
+    FaTrash
 } from 'react-icons/fa'
 import { Card, Board, Comment, Author, Attachment } from '../../../types/dashboard.types'
 import styles from './ViewCardModal.module.css'
 import { api } from '@/app/auth/hooks/useTokenRefresh'
+import { useComments } from '../../../hooks/useComments'
+import toast from 'react-hot-toast'
 
 interface ViewCardModalProps {
     isOpen: boolean
@@ -38,13 +41,31 @@ interface ViewCardModalProps {
     getPriorityColor: (priority: string) => string
     onAddComment?: (cardId: number, comment: Comment) => void
     assignees?: Author[]
+    currentUser?: Author | null
 }
 
-const ViewCardModal = ({ isOpen, onClose, card, board, getPriorityColor, onAddComment, assignees }: ViewCardModalProps) => {
+const ViewCardModal = ({
+                           isOpen,
+                           onClose,
+                           card,
+                           board,
+                           getPriorityColor,
+                           onAddComment,
+                           assignees,
+                           currentUser
+                       }: ViewCardModalProps) => {
     const [newComment, setNewComment] = useState('')
-    const [isSubmitting, setIsSubmitting] = useState(false)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const modalContentRef = useRef<HTMLDivElement>(null)
+
+    const {
+        comments,
+        isLoading: isLoadingComments,
+        isSubmitting,
+        addComment,
+        deleteComment,
+        refreshComments
+    } = useComments(card.id)
 
     useEffect(() => {
         const handleWheel = (e: WheelEvent) => {
@@ -60,6 +81,8 @@ const ViewCardModal = ({ isOpen, onClose, card, board, getPriorityColor, onAddCo
 
         if (isOpen) {
             document.addEventListener('wheel', handleWheel, { passive: false })
+            // Загружаем комментарии при открытии модального окна
+            refreshComments()
         }
 
         return () => {
@@ -107,36 +130,50 @@ const ViewCardModal = ({ isOpen, onClose, card, board, getPriorityColor, onAddCo
             window.URL.revokeObjectURL(url)
         } catch (error) {
             console.error('Ошибка при скачивании файла:', error)
+            toast.error('Не удалось скачать файл')
         }
     }
 
     const handleAddComment = async () => {
-        if (!newComment.trim() || isSubmitting) return
-
-        setIsSubmitting(true)
-
-        const newCommentObj: Comment = {
-            id: Date.now(),
-            author: { name: 'Текущий пользователь', avatar: null, role: 'Пользователь' },
-            content: newComment.trim(),
-            createdAt: new Date().toLocaleString('ru-RU', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            })
+        if (!newComment.trim() || isSubmitting || !currentUser) {
+            if (!currentUser) {
+                toast.error('Войдите в систему, чтобы оставлять комментарии')
+            }
+            return
         }
 
-        if (onAddComment) {
+        const result = await addComment(newComment, currentUser)
+
+        if (result && onAddComment) {
+            // Преобразуем API комментарий в Comment
+            const newCommentObj: Comment = {
+                id: result.id,
+                author: currentUser,
+                content: newComment.trim(),
+                createdAt: new Date(result.createdAt).toLocaleString('ru-RU', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })
+            }
+
+            // Уведомляем родительский компонент
             onAddComment(card.id, newCommentObj)
         }
 
         setNewComment('')
-        setIsSubmitting(false)
 
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto'
+        }
+    }
+
+    const handleDeleteComment = async (commentId: number) => {
+        if (window.confirm('Вы уверены, что хотите удалить этот комментарий?')) {
+            await deleteComment(commentId)
+            // Также уведомляем родительский компонент при необходимости
         }
     }
 
@@ -158,6 +195,8 @@ const ViewCardModal = ({ isOpen, onClose, card, board, getPriorityColor, onAddCo
     }
 
     const displayAssignees = assignees || [card.author]
+    // Используем комментарии из хука или из карточки
+    const displayedComments = comments.length > 0 ? comments : (card.commentsList || [])
 
     if (!isOpen) return null
 
@@ -202,7 +241,7 @@ const ViewCardModal = ({ isOpen, onClose, card, board, getPriorityColor, onAddCo
                             </div>
                             <div className={styles.metaItem}>
                                 <FaRegComment className={styles.metaIcon} />
-                                <span className={styles.metaText}>{card.comments} комментариев</span>
+                                <span className={styles.metaText}>{displayedComments.length} комментариев</span>
                             </div>
                             <div className={styles.metaItem}>
                                 <FaPaperclip className={styles.metaIcon} />
@@ -243,12 +282,17 @@ const ViewCardModal = ({ isOpen, onClose, card, board, getPriorityColor, onAddCo
                             <div className={styles.section}>
                                 <h3 className={styles.sectionTitle}>
                                     <FaRegComment className={styles.sectionIcon} />
-                                    Комментарии ({card.comments})
+                                    Комментарии ({displayedComments.length})
                                 </h3>
                                 <div className={styles.commentsSection}>
                                     <div className={styles.commentsList}>
-                                        {card.commentsList && card.commentsList.length > 0 ? (
-                                            card.commentsList.map((comment) => (
+                                        {isLoadingComments ? (
+                                            <div className={styles.loadingComments}>
+                                                <FaClock className={styles.loadingIcon} />
+                                                <span>Загрузка комментариев...</span>
+                                            </div>
+                                        ) : displayedComments.length > 0 ? (
+                                            displayedComments.map((comment) => (
                                                 <div key={comment.id} className={styles.commentItem}>
                                                     <div className={styles.commentHeader}>
                                                         <div className={styles.commentAuthor}>
@@ -273,6 +317,15 @@ const ViewCardModal = ({ isOpen, onClose, card, board, getPriorityColor, onAddCo
                                                                 <span className={styles.commentDate}>{comment.createdAt}</span>
                                                             </div>
                                                         </div>
+                                                        {currentUser && comment.author.name === currentUser.name && (
+                                                            <button
+                                                                className={styles.deleteCommentButton}
+                                                                onClick={() => handleDeleteComment(comment.id)}
+                                                                title="Удалить комментарий"
+                                                            >
+                                                                <FaTrash />
+                                                            </button>
+                                                        )}
                                                     </div>
                                                     <div className={styles.commentContent}>
                                                         <p>{comment.content}</p>
@@ -292,28 +345,29 @@ const ViewCardModal = ({ isOpen, onClose, card, board, getPriorityColor, onAddCo
                                             <textarea
                                                 ref={textareaRef}
                                                 className={styles.commentInput}
-                                                placeholder="Напишите комментарий..."
+                                                placeholder={currentUser ? "Напишите комментарий..." : "Войдите в систему, чтобы оставлять комментарии"}
                                                 value={newComment}
                                                 onChange={handleTextareaChange}
                                                 onKeyPress={handleKeyPress}
                                                 rows={3}
                                                 maxLength={1000}
+                                                disabled={!currentUser || isSubmitting}
                                             />
                                             <div className={styles.commentActions}>
                                                 <span className={styles.charCount}>
                                                     {newComment.length}/1000
                                                 </span>
                                                 <button
-                                                    className={`${styles.sendButton} ${!newComment.trim() || isSubmitting ? styles.disabled : ''}`}
+                                                    className={`${styles.sendButton} ${!newComment.trim() || isSubmitting || !currentUser ? styles.disabled : ''}`}
                                                     onClick={handleAddComment}
-                                                    disabled={!newComment.trim() || isSubmitting}
+                                                    disabled={!newComment.trim() || isSubmitting || !currentUser}
                                                 >
                                                     {isSubmitting ? (
                                                         <FaClock className={styles.sendIcon} />
                                                     ) : (
                                                         <FaPaperPlane className={styles.sendIcon} />
                                                     )}
-                                                    Отправить
+                                                    {!currentUser ? 'Войдите в систему' : 'Отправить'}
                                                 </button>
                                             </div>
                                         </div>
@@ -437,6 +491,10 @@ const ViewCardModal = ({ isOpen, onClose, card, board, getPriorityColor, onAddCo
                 </div>
 
                 <div className={styles.modalFooter}>
+                    <button className={styles.editButton} onClick={handleEditClick}>
+                        <FaEdit />
+                        Редактировать
+                    </button>
                 </div>
             </motion.div>
         </motion.div>

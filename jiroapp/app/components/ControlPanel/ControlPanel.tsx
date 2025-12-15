@@ -43,7 +43,7 @@ const ControlPanel = ({
     useEffect(() => {
         if (userRole) {
             const hasLogsViewPermission = userRole.permissions.some(
-                p => p.entity === 'LOGS' && p.action === 'VIEW'
+                p => p.entity === 'ANALYTICS' && p.action === 'VIEW'
             )
             setCanViewDashboard(userRole.isOwner || hasLogsViewPermission)
         } else {
