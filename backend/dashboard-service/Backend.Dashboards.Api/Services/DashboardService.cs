@@ -24,22 +24,16 @@ public class DashboardService : IDashboardService
         _logger = logger;
     }
 
+   
     public async Task<DashboardSnapshot> CreateSnapshotAsync(long projectId, string metricName, decimal metricValue, DateTime snapshotDate)
     {
-        var snapshot = new DashboardSnapshot
-        {
-            ProjectId = projectId,
-            MetricName = metricName,
-            MetricValue = metricValue,
-            SnapshotDate = snapshotDate
-        };
-
+        var snapshot = new DashboardSnapshot { ProjectId = projectId, MetricName = metricName, MetricValue = metricValue, SnapshotDate = snapshotDate };
         return await _snapshotRepository.CreateAsync(snapshot);
     }
 
-    public async Task<DashboardEfficiencyDto> GetDashboardDataAsync(long projectId, DateTime? fromDate = null, DateTime? toDate = null)
+    public async Task<DashboardEfficiencyDto> CalculateAndSaveDashboardDataAsync(long projectId)
     {
-        _logger.LogInformation("Getting real-time dashboard data for ProjectId: {ProjectId}", projectId);
+        _logger.LogInformation("Calculating and saving dashboard data for ProjectId: {ProjectId}", projectId);
 
         ProjectDto project;
         try
@@ -59,25 +53,31 @@ public class DashboardService : IDashboardService
         }
 
         var dashboardData = new DashboardEfficiencyDto { ProjectId = projectId };
+        var now = DateTime.UtcNow;
 
-        var issueIds = await _activityLogRepository.GetEntityIdsByTypeAsync(projectId, "Issue", "Created");
+        var createdIssueIds = await _activityLogRepository.GetEntityIdsByTypeAsync(projectId, "Issue", "Created");
 
-        if (!issueIds.Any())
+        var deletedIssueIds = await _activityLogRepository.GetDeletedEntityIdsAsync(projectId, "Issue");
+        var activeIssueIds = createdIssueIds.Except(deletedIssueIds).ToList();
+
+        if (!activeIssueIds.Any())
         {
-            _logger.LogInformation("No issues found for ProjectId: {ProjectId}. All metrics are 0.", projectId);
+            _logger.LogInformation("No active issues found for ProjectId: {ProjectId}. All metrics are 0.", projectId);
+            await SaveAllMetrics(projectId, 0, 0, 0, 0, now);
             SetZeroMetrics(dashboardData);
             return dashboardData;
         }
 
-        var latestStatuses = await _activityLogRepository.GetLatestStatusForIssuesAsync(projectId, issueIds);
+        var latestStatuses = await _activityLogRepository.GetLatestStatusForIssuesAsync(projectId, activeIssueIds);
+        var issueCreators = await _activityLogRepository.GetIssueCreatorsAsync(projectId, activeIssueIds);
 
-        var issueCreators = await _activityLogRepository.GetIssueCreatorsAsync(projectId);
-
-        var totalIssuesCount = issueIds.Count;
+        var totalIssuesCount = activeIssueIds.Count;
         var completedIssuesCount = latestStatuses.Values.Count(status => status == "DONE");
         var todoIssuesCount = latestStatuses.Values.Count(status => status == "TO_DO");
         var inProgressIssuesCount = latestStatuses.Values.Count(status => status == "IN_PROGRESS");
         var completionRate = totalIssuesCount > 0 ? (decimal)completedIssuesCount / totalIssuesCount * 100 : 0;
+
+        await SaveAllMetrics(projectId, totalIssuesCount, completedIssuesCount, todoIssuesCount, inProgressIssuesCount, now);
 
         dashboardData.CurrentMetrics["total_issues"] = totalIssuesCount;
         dashboardData.CurrentMetrics["completed_issues"] = completedIssuesCount;
@@ -87,19 +87,17 @@ public class DashboardService : IDashboardService
 
         CalculateUserEfficiency(latestStatuses, issueCreators, dashboardData);
 
-        _logger.LogInformation("Calculated metrics for ProjectId: {ProjectId}.", projectId);
-
-        var recentActivity = await _activityLogRepository.GetByProjectIdAsync(projectId, 1, 10);
-        dashboardData.RecentActivity = recentActivity.Select(log => new ActivityLogDto
-        {
-            UserId = log.UserId,
-            ActionType = log.ActionType,
-            EntityType = log.EntityType,
-            EntityId = log.EntityId,
-            CreatedAt = log.CreatedAt
-        }).ToList();
-
+        _logger.LogInformation("Calculated and saved metrics for ProjectId: {ProjectId}.", projectId);
         return dashboardData;
+    }
+
+    private async Task SaveAllMetrics(long projectId, int total, int completed, int todo, int inProgress, DateTime snapshotDate)
+    {
+        await _snapshotRepository.CreateAsync(new DashboardSnapshot { ProjectId = projectId, MetricName = "total_issues", MetricValue = total, SnapshotDate = snapshotDate });
+        await _snapshotRepository.CreateAsync(new DashboardSnapshot { ProjectId = projectId, MetricName = "completed_issues", MetricValue = completed, SnapshotDate = snapshotDate });
+        await _snapshotRepository.CreateAsync(new DashboardSnapshot { ProjectId = projectId, MetricName = "todo_issues", MetricValue = todo, SnapshotDate = snapshotDate });
+        await _snapshotRepository.CreateAsync(new DashboardSnapshot { ProjectId = projectId, MetricName = "in_progress_issues", MetricValue = inProgress, SnapshotDate = snapshotDate });
+        await _snapshotRepository.CreateAsync(new DashboardSnapshot { ProjectId = projectId, MetricName = "completion_rate", MetricValue = total > 0 ? (decimal)completed / total * 100 : 0, SnapshotDate = snapshotDate });
     }
 
     private void CalculateUserEfficiency(

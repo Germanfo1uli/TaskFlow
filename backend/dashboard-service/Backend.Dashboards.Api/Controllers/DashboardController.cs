@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Backend.Dashboard.Api.Services;
-using Backend.Dashboard.Api.Models.Entities;
 
 namespace Backend.Dashboard.Api.Controllers;
 
@@ -22,7 +21,8 @@ public class DashboardController : ControllerBase
     {
         try
         {
-            var dashboardData = await _dashboardService.GetDashboardDataAsync(projectId);
+            // ОДИН ЗАПРОС - ВСЕ ДЕЙСТВИЯ НА СЕРВЕРЕ
+            var dashboardData = await _dashboardService.CalculateAndSaveDashboardDataAsync(projectId);
             return Ok(dashboardData);
         }
         catch (KeyNotFoundException ex)
@@ -36,24 +36,18 @@ public class DashboardController : ControllerBase
         }
     }
 
-    [HttpPost("snapshots")]
-    public async Task<ActionResult<DashboardSnapshot>> CreateSnapshot(long projectId, [FromBody] CreateSnapshotRequest request)
+    [HttpGet("metrics/{metricName}/trend")]
+    public async Task<ActionResult<List<MetricTrendDto>>> GetMetricTrend(long projectId, string metricName, [FromQuery] DateTime fromDate, [FromQuery] DateTime toDate)
     {
         try
         {
-            var snapshot = await _dashboardService.CreateSnapshotAsync(projectId, request.MetricName, request.MetricValue, DateTime.UtcNow);
-            return Ok(snapshot);
+            var trend = await _dashboardService.GetMetricTrendAsync(projectId, metricName, fromDate, toDate);
+            return Ok(trend);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An error occurred while creating snapshot for ProjectId: {ProjectId}", projectId);
+            _logger.LogError(ex, "An error occurred while fetching trend for ProjectId: {ProjectId}", projectId);
             return BadRequest(ex.Message);
         }
     }
-}
-
-public class CreateSnapshotRequest
-{
-    public string MetricName { get; set; } = string.Empty;
-    public decimal MetricValue { get; set; }
 }

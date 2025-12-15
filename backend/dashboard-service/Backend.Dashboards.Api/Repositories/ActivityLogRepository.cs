@@ -115,10 +115,22 @@ public class ActivityLogRepository
         return cycleTimes;
     }
 
-    public async Task<Dictionary<long, long>> GetIssueCreatorsAsync(long projectId)
+    public async Task<List<long>> GetDeletedEntityIdsAsync(long projectId, string entityType)
     {
         return await _context.ActivityLogs
-            .Where(log => log.ProjectId == projectId && log.EntityType == "Issue" && log.ActionType == "Created")
+            .Where(log => log.ProjectId == projectId && log.EntityType == entityType && log.ActionType == "Deleted")
+            .Select(log => log.EntityId)
+            .Distinct()
+            .ToListAsync();
+    }
+
+    public async Task<Dictionary<long, long>> GetIssueCreatorsAsync(long projectId, IEnumerable<long> issueIds)
+    {
+        return await _context.ActivityLogs
+            .Where(log => log.ProjectId == projectId &&
+                           issueIds.Contains(log.EntityId) &&
+                           log.EntityType == "Issue" &&
+                           log.ActionType == "Created")
             .ToDictionaryAsync(log => log.EntityId, log => log.UserId);
     }
 }
