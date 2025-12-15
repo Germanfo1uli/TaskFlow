@@ -81,32 +81,14 @@ export const useComments = (issueId: number, onCommentDeleted?: () => void): Use
         try {
             setIsSubmitting(true);
 
-            const optimisticComment: Comment = {
-                id: Date.now(),
-                author: currentUser,
-                content: content.trim(),
-                createdAt: new Date().toLocaleString('ru-RU', {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })
-            };
-
-            setComments(prev => [...prev, optimisticComment]);
-
             const response = await api.post(`/issues/${issueId}/comments`, {
                 message: content.trim()
             });
 
             const newComment = response.data;
+            const transformedComment = transformApiComment(newComment);
 
-            setComments(prev =>
-                prev.map(comment =>
-                    comment.id === optimisticComment.id ? transformApiComment(newComment) : comment
-                )
-            );
+            setComments(prev => [...prev, transformedComment]);
 
             toast.success('Комментарий добавлен');
 
@@ -117,7 +99,6 @@ export const useComments = (issueId: number, onCommentDeleted?: () => void): Use
             return newComment;
         } catch (error) {
             console.error('Ошибка при добавлении комментария:', error);
-            setComments(prev => prev.filter(comment => comment.id !== Date.now()));
             toast.error('Не удалось добавить комментарий');
             return null;
         } finally {
@@ -134,7 +115,6 @@ export const useComments = (issueId: number, onCommentDeleted?: () => void): Use
 
         try {
             setIsDeleting(true);
-            const commentToRemove = comments.find(c => c.id === commentToDelete.id);
 
             setComments(prev => prev.filter(comment => comment.id !== commentToDelete.id));
 
@@ -149,11 +129,6 @@ export const useComments = (issueId: number, onCommentDeleted?: () => void): Use
             return true;
         } catch (error) {
             console.error('Ошибка при удалении комментария:', error);
-
-            if (commentToRemove) {
-                setComments(prev => [...prev, commentToRemove].sort((a, b) => a.id - b.id));
-            }
-
             toast.error('Не удалось удалить комментарий');
             return false;
         } finally {

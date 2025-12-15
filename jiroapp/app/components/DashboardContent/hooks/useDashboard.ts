@@ -810,6 +810,7 @@ export const useDashboard = (projectId: number | null) => {
                 }));
                 setBoards(updatedBoards);
 
+                // Обновляем текущую просматриваемую карточку, если она открыта
                 if (state.viewingCard?.id === cardId) {
                     updateState({ viewingCard: updatedCard });
                 }

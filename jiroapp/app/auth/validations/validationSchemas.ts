@@ -2,7 +2,7 @@ import * as Yup from 'yup'
 
 export const LoginSchema = Yup.object().shape({
     email: Yup.string()
-        .email('Некорректный email')
+        .email('Некорректный логин или пароль')
         .required('Обязательное поле'),
     password: Yup.string()
         .min(6, 'Пароль должен содержать минимум 6 символов')

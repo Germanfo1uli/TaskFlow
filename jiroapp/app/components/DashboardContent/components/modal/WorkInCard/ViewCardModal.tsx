@@ -163,8 +163,12 @@ const ViewCardModal = ({
         if (result && onAddComment) {
             const newCommentObj: Comment = {
                 id: result.id,
-                author: currentUser,
-                content: newComment.trim(),
+                author: {
+                    name: result.creator.username,
+                    avatar: null,
+                    role: 'Участник'
+                },
+                content: result.text,
                 createdAt: new Date(result.createdAt).toLocaleString('ru-RU', {
                     year: 'numeric',
                     month: '2-digit',

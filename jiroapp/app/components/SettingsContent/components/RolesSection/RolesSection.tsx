@@ -32,22 +32,17 @@ const RolesSection = ({ projectId }: RolesSectionProps) => {
         { key: 'issue_transition_review', label: 'Перевод на ревью', description: 'Перевод задач из IN_PROGRESS в CODE_REVIEW и обратно', icon: <FaCode />, category: 'Задачи', entity: 'ISSUE', action: 'TRANSITION_CODE_REVIEW' },
         { key: 'issue_transition_qa', label: 'Перевод на QA', description: 'Перевод задач из CODE_REVIEW в QA и обратно', icon: <FaBug />, category: 'Задачи', entity: 'ISSUE', action: 'TRANSITION_QA' },
         { key: 'issue_transition_full', label: 'Полный перевод', description: 'Перевод задач между любыми статусами', icon: <FaArrowRight />, category: 'Задачи', entity: 'ISSUE', action: 'FULL_TRANSITION' },
-
         { key: 'sprint_manage', label: 'Управление спринтами', description: 'Создание, изменение и управление спринтами', icon: <FaClipboardList />, category: 'Спринты', entity: 'SPRINT', action: 'MANAGE' },
-
         { key: 'comment_create', label: 'Создание комментариев', description: 'Написание комментариев', icon: <FaComment />, category: 'Комментарии', entity: 'COMMENT', action: 'CREATE' },
         { key: 'comment_edit_own', label: 'Редактирование своих', description: 'Редактирование своих комментариев', icon: <FaEdit />, category: 'Комментарии', entity: 'COMMENT', action: 'EDIT_OWN' },
         { key: 'comment_delete_own', label: 'Удаление своих', description: 'Удаление своих комментариев', icon: <FaTrash />, category: 'Комментарии', entity: 'COMMENT', action: 'DELETE_OWN' },
-
         { key: 'attachment_create', label: 'Загрузка файлов', description: 'Загрузка вложений', icon: <FaPaperclip />, category: 'Вложения', entity: 'ATTACHMENT', action: 'CREATE' },
         { key: 'attachment_edit_own', label: 'Редактирование своих', description: 'Редактирование своих вложений', icon: <FaEdit />, category: 'Вложения', entity: 'ATTACHMENT', action: 'EDIT_OWN' },
         { key: 'attachment_delete_own', label: 'Удаление своих', description: 'Удаление своих вложений', icon: <FaTrash />, category: 'Вложения', entity: 'ATTACHMENT', action: 'DELETE_OWN' },
-
         { key: 'tag_create', label: 'Создание тегов', description: 'Создание новых тегов', icon: <FaPlus />, category: 'Теги', entity: 'TAG', action: 'CREATE' },
         { key: 'tag_edit', label: 'Редактирование тегов', description: 'Изменение существующих тегов', icon: <FaEdit />, category: 'Теги', entity: 'TAG', action: 'EDIT' },
         { key: 'tag_delete', label: 'Удаление тегов', description: 'Удаление тегов', icon: <FaTrash />, category: 'Теги', entity: 'TAG', action: 'DELETE' },
         { key: 'tag_apply', label: 'Применение тегов', description: 'Добавление тегов к задачам', icon: <FaTags />, category: 'Теги', entity: 'TAG', action: 'APPLY' },
-
         { key: 'analytics_view', label: 'Просмотр дашбордов', description: 'Просмотр дашбордов проекта', icon: <FaChartLine />, category: 'Система', entity: 'ANALYTICS', action: 'VIEW' },
         { key: 'logs_view', label: 'Просмотр логов', description: 'Просмотр истории действий проекта', icon: <FaHistory />, category: 'Система', entity: 'LOGS', action: 'VIEW' }
     ];

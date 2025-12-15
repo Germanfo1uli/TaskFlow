@@ -55,7 +55,7 @@ export const useAuth = () => {
             }
         } catch (error: any) {
             dismissToast(loadingToast);
-            const errorMessage = error.response?.data?.message || 'Ошибка сети. Проверьте соединение и адрес сервера.';
+            const errorMessage = error.response?.data?.message || 'Неверный логин или пароль.';
             showError(errorMessage);
             return { success: false, message: errorMessage };
         }
