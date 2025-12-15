@@ -74,13 +74,22 @@ public class SprintService : ISprintService
         return MapToDetailDto(sprint, issues);
     }
 
-    public async Task<SprintWithIssuesDto> GetSprintByIdAsync(long userId, long id)
+    public async Task<SprintWithIssuesDto> GetSprintByIdAsync(long userId, long id, long? projectId = null)
     {
+        if (id == 0)
+        {
+            if (!projectId.HasValue)
+                throw new ArgumentException("ProjectId is required when retrieving backlog (id=0)");
+
+            return await GetBacklogByProjectIdAsync(userId, projectId.Value);
+        }
+
         var sprint = await _sprintRepository.GetByIdAsync(id);
-        await _authService.HasPermissionAsync(userId, sprint.ProjectId,
-            Cache.EntityType.SPRINT, Cache.ActionType.VIEW);
         if (sprint == null)
             throw new KeyNotFoundException($"Sprint with id {id} not found");
+
+        await _authService.HasPermissionAsync(userId, sprint.ProjectId,
+            Cache.EntityType.SPRINT, Cache.ActionType.VIEW);
 
         var issueIds = await _sprintIssueService.GetIssueIdsBySprintIdAsync(id);
         var issues = new List<InternalIssueResponse>();
@@ -90,6 +99,46 @@ public class SprintService : ISprintService
         }
 
         return MapToDetailDto(sprint, issues);
+    }
+
+    private async Task<SprintWithIssuesDto> GetBacklogByProjectIdAsync(long userId, long projectId)
+    {
+        await _authService.HasPermissionAsync(userId, projectId,
+            Cache.EntityType.SPRINT, Cache.ActionType.VIEW);
+
+        try
+        {
+            await _projectClient.GetProjectByIdAsync(projectId);
+        }
+        catch (ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
+
+        var sprints = await _sprintRepository.GetByProjectIdAsync(projectId);
+        var allIssues = await _issueClient.GetIssuesByProjectId(projectId);
+
+        var allAssignedIssueIds = new HashSet<long>();
+        foreach (var sprint in sprints)
+        {
+            var issueIds = await _sprintIssueService.GetIssueIdsBySprintIdAsync(sprint.Id);
+            allAssignedIssueIds.UnionWith(issueIds);
+        }
+
+        var backLogIssues = allIssues.Where(i => !allAssignedIssueIds.Contains(i.Id)).ToList();
+
+        return new SprintWithIssuesDto
+        {
+            Id = 0,
+            ProjectId = projectId,
+            Name = "BackLog",
+            Goal = null,
+            StartDate = null,
+            EndDate = null,
+            Status = SprintStatus.Planned,
+            IssueCount = backLogIssues.Count,
+            Issues = backLogIssues
+        };
     }
 
     public async Task<ProjectSprintsDto> GetSprintsByProjectIdAsync(long userId, long projectId)

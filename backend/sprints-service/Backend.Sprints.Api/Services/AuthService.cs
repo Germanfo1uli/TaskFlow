@@ -16,6 +16,8 @@ namespace Backend.Sprints.Api.Services
 
         public async Task HasPermissionAsync(long userId, long projectId, EntityType entity, ActionType action)
         {
+            if (userId == SprintExpirationService.SYSTEM_USER_ID) return;
+
             var perms = await _cacheReader.GetUserPermissionsAsync(userId, projectId);
             var requiredPermission = $"{entity}:{action}";
 

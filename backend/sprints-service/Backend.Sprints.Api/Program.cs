@@ -69,6 +69,8 @@ builder.Services.AddSwaggerGen(options =>
 var redisHost = builder.Configuration["REDIS_HOST"] ?? "localhost";
 var redisPort = builder.Configuration["REDIS_PORT"] ?? "6379";
 
+builder.Services.AddHostedService<SprintExpirationService>();
+
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     ConnectionMultiplexer.Connect($"{redisHost}:{redisPort}"));
 

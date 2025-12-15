@@ -31,17 +31,21 @@ public class SprintsController : ControllerBase
         }
     }
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetSprint(long id)
+    [HttpGet("{sprintId}")]
+    public async Task<IActionResult> GetSprint(long sprintId, [FromQuery] long? projectId = null)
     {
         try
         {
-            var sprint = await _sprintService.GetSprintByIdAsync(_currentUser.UserId, id);
+            var sprint = await _sprintService.GetSprintByIdAsync(_currentUser.UserId, sprintId, projectId);
             return Ok(sprint);
         }
         catch (KeyNotFoundException ex)
         {
             return NotFound(ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
         }
     }
 

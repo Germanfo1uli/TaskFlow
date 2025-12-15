@@ -50,4 +50,22 @@ public class SprintRepository
             await _context.SaveChangesAsync();
         }
     }
+
+    public async Task<List<Sprint>> GetPlannedSprintsWithStartDatePassedAsync()
+    {
+        var today = DateTime.UtcNow.Date;
+        return await _context.Sprints
+            .Where(s => s.Status == SprintStatus.Planned)
+            .Where(s => s.StartDate <= today)
+            .ToListAsync();
+    }
+
+    public async Task<List<Sprint>> GetActiveExpiredSprintsAsync()
+    {
+        var today = DateTime.UtcNow.Date;
+        return await _context.Sprints
+            .Where(s => s.Status == SprintStatus.Active)
+            .Where(s => s.EndDate < today)
+            .ToListAsync();
+    }
 }
