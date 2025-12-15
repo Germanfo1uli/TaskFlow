@@ -74,6 +74,7 @@ builder.Services.AddSingleton<AuthService>();
 
 builder.Services.AddScoped<DashboardSnapshotRepository>();
 builder.Services.AddScoped<ActivityLogRepository>();
+
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 

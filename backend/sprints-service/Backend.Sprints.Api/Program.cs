@@ -8,6 +8,8 @@ using Backend.Sprints.Api.Configuration;
 using Backend.Sprints.Api.Handlers;
 using Refit;
 using Microsoft.OpenApi.Models;
+using StackExchange.Redis;
+using Backend.Sprints.Api.Cache;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,9 +19,9 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "Dashboard API",
+        Title = "Sprints API",
         Version = "v1.0",
-        Description = "API для дашборда проектов"
+        Description = "API для спринтов проектов"
     });
 
     options.AddSecurityDefinition("bearerAuth", new OpenApiSecurityScheme
@@ -54,6 +56,18 @@ builder.Services.AddSwaggerGen(options =>
     }
 });
 
+var redisHost = builder.Configuration["REDIS_HOST"] ?? "localhost";
+var redisPort = builder.Configuration["REDIS_PORT"] ?? "6379";
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+    ConnectionMultiplexer.Connect($"{redisHost}:{redisPort}"));
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+builder.Services.AddSingleton<PermissionCacheReader>();
+builder.Services.AddSingleton<AuthService>();
+
 builder.Services.AddScoped<SprintRepository>();
 builder.Services.AddScoped<SprintIssueRepository>();
 
@@ -87,17 +101,39 @@ builder.Services.AddDbContext<SprintsDbContext>(options =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+using (var scope = app.Services.CreateScope())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    var dbContext = scope.ServiceProvider.GetRequiredService<SprintsDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        await dbContext.Database.MigrateAsync();
+        logger.LogInformation("Миграции успешно применены");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Ошибка при применении миграций");
+        throw;
+    }
 }
 
-app.MapHealthChecks("/healthz");
+app.UseRouting();
+
+app.MapSwagger("/v3/api-docs/{documentName}").AllowAnonymous();
+app.MapHealthChecks("/healthz").AllowAnonymous();
 
 app.UseGatewayAuthentication();
-
 app.UseAuthorization();
+
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/v3/api-docs/v1", "Sprints API v1");
+    options.RoutePrefix = "swagger";
+    options.DocumentTitle = "Sprints API";
+});
+
 app.MapControllers();
 
 app.Run();
