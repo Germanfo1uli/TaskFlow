@@ -262,6 +262,25 @@ public class IssueService {
         return InternalIssueResponse.from(issue);
     }
 
+    public List<InternalIssueResponse> getIssuesByIds(List<Long> issuesIds) {
+
+        if (issuesIds == null || issuesIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Issue> issues = issueRepository.findAllById(issuesIds);
+
+        try {
+            boardClient.getProjectById(issues.getFirst().getProjectId());
+        } catch (Exception e) {
+            throw new ProjectNotFoundException(issues.getFirst().getProjectId());
+        }
+
+        return issues.stream()
+                .map(InternalIssueResponse::from)
+                .collect(Collectors.toList());
+    }
+
     public List<InternalIssueResponse> getIssuesInternal(Long projectId) {
         List<Issue> issues = issueRepository.findAllByProjectId(projectId);
 

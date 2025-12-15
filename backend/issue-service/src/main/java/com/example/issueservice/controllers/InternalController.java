@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -59,8 +60,20 @@ public class InternalController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Получение профилей по списку userId")
+    @PostMapping("/issues/batch")
+    public ResponseEntity<List<InternalIssueResponse>> getProfilesByIds(
+            @AuthenticationPrincipal SystemPrincipal principal,
+            @RequestBody @Validated IssueBatchRequest request) {
+
+        log.info("Service {} requested {} profiles", principal.getUsername(), request.issuesIds().size());
+
+        List<InternalIssueResponse> responses = issueService.getIssuesByIds(request.issuesIds());
+        return ResponseEntity.ok(responses);
+    }
+
     @Operation(summary = "Старт спринта")
-    @PostMapping("/issues")
+    @PostMapping("/issues/startsprint")
     public ResponseEntity<List<InternalIssueResponse>> startSprint(
             @AuthenticationPrincipal SystemPrincipal principal,
             @RequestParam Long projectId,
