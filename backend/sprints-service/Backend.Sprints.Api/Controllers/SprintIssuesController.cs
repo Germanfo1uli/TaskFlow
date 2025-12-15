@@ -23,13 +23,16 @@ public class SprintIssuesController : ControllerBase
             await _sprintIssueService.AddIssueToSprintAsync(sprintId, request.IssueId);
             return Ok(new { message = "Issue added to sprint successfully" });
         }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
         catch (Exception ex)
         {
             return BadRequest(ex.Message);
         }
     }
 
-    // Новый эндпоинт для батч добавления
     [HttpPost("batch")]
     public async Task<IActionResult> AddIssuesToSprint(long sprintId, [FromBody] AddIssuesRequestDto request)
     {
@@ -37,6 +40,10 @@ public class SprintIssuesController : ControllerBase
         {
             await _sprintIssueService.AddIssuesToSprintAsync(sprintId, request.IssueIds);
             return Ok(new { message = $"Added {request.IssueIds.Count} issues to sprint successfully" });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
@@ -47,11 +54,17 @@ public class SprintIssuesController : ControllerBase
     [HttpDelete("{issueId}")]
     public async Task<IActionResult> RemoveIssueFromSprint(long sprintId, long issueId)
     {
-        await _sprintIssueService.RemoveIssueFromSprintAsync(sprintId, issueId);
-        return NoContent();
+        try
+        {
+            await _sprintIssueService.RemoveIssueFromSprintAsync(sprintId, issueId);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
-    // Новый эндпоинт для батч удаления
     [HttpDelete("batch")]
     public async Task<IActionResult> RemoveIssuesFromSprint(long sprintId, [FromBody] RemoveIssuesRequestDto request)
     {
@@ -69,7 +82,14 @@ public class SprintIssuesController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetSprintIssues(long sprintId)
     {
-        var issueIds = await _sprintIssueService.GetIssueIdsBySprintIdAsync(sprintId);
-        return Ok(new { SprintId = sprintId, IssueIds = issueIds });
+        try
+        {
+            var issueIds = await _sprintIssueService.GetIssueIdsBySprintIdAsync(sprintId);
+            return Ok(new { SprintId = sprintId, IssueIds = issueIds });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 }

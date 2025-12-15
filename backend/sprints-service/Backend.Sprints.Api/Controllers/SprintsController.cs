@@ -15,7 +15,6 @@ public class SprintsController : ControllerBase
         _sprintService = sprintService;
     }
 
-    // Новый эндпоинт для создания спринта с задачами и опциональными датами
     [HttpPost("projects/{projectId}/sprints")]
     public async Task<IActionResult> CreateSprint(long projectId, [FromBody] CreateSprintRequestDto request)
     {
@@ -23,6 +22,10 @@ public class SprintsController : ControllerBase
         {
             var sprint = await _sprintService.CreateSprintWithIssuesAsync(projectId, request);
             return CreatedAtAction(nameof(GetSprint), new { id = sprint.Id }, sprint);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
         }
         catch (ArgumentException ex)
         {
@@ -41,11 +44,17 @@ public class SprintsController : ControllerBase
     [HttpGet("projects/{projectId}/sprints")]
     public async Task<IActionResult> GetSprintsByProject(long projectId)
     {
-        var sprints = await _sprintService.GetSprintsByProjectIdAsync(projectId);
-        return Ok(sprints);
+        try
+        {
+            var sprints = await _sprintService.GetSprintsByProjectIdAsync(projectId);
+            return Ok(sprints);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
     }
 
-    // Новый эндпоинт для получения всех спринтов проекта с задачами
     [HttpGet("projects/{projectId}/sprints-with-issues")]
     public async Task<IActionResult> GetProjectSprintsWithIssues(long projectId)
     {
@@ -53,6 +62,10 @@ public class SprintsController : ControllerBase
         {
             var result = await _sprintService.GetProjectSprintsWithIssuesAsync(projectId);
             return Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
@@ -63,13 +76,17 @@ public class SprintsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetSprint(long id)
     {
-        var sprint = await _sprintService.GetSprintByIdAsync(id);
-        if (sprint == null)
-            return NotFound();
-        return Ok(sprint);
+        try
+        {
+            var sprint = await _sprintService.GetSprintByIdAsync(id);
+            return Ok(sprint);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
     }
 
-    // Обновляем эндпоинт для обновления спринта
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateSprint(long id, [FromBody] UpdateSprintRequestDto request)
     {
@@ -79,9 +96,9 @@ public class SprintsController : ControllerBase
                 request.StartDate, request.EndDate, request.Status);
             return Ok(sprint);
         }
-        catch (KeyNotFoundException)
+        catch (KeyNotFoundException ex)
         {
-            return NotFound();
+            return NotFound(ex.Message);
         }
         catch (ArgumentException ex)
         {
@@ -101,9 +118,9 @@ public class SprintsController : ControllerBase
             await _sprintService.DeleteSprintAsync(id);
             return NoContent();
         }
-        catch (KeyNotFoundException)
+        catch (KeyNotFoundException ex)
         {
-            return NotFound();
+            return NotFound(ex.Message);
         }
     }
 
@@ -115,13 +132,12 @@ public class SprintsController : ControllerBase
             await _sprintService.CompleteSprintAsync(sprintId);
             return Ok(new { message = "Sprint completed successfully" });
         }
-        catch (KeyNotFoundException)
+        catch (KeyNotFoundException ex)
         {
-            return NotFound();
+            return NotFound(ex.Message);
         }
     }
 
-    // Новый эндпоинт для старта спринта
     [HttpPost("{sprintId}/start")]
     public async Task<IActionResult> StartSprint(long sprintId)
     {
@@ -130,9 +146,9 @@ public class SprintsController : ControllerBase
             await _sprintService.StartSprintAsync(sprintId);
             return Ok(new { message = "Sprint started successfully" });
         }
-        catch (KeyNotFoundException)
+        catch (KeyNotFoundException ex)
         {
-            return NotFound();
+            return NotFound(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
@@ -148,9 +164,9 @@ public class SprintsController : ControllerBase
             var board = await _sprintService.GetSprintBoardAsync(sprintId);
             return Ok(board);
         }
-        catch (KeyNotFoundException)
+        catch (KeyNotFoundException ex)
         {
-            return NotFound();
+            return NotFound(ex.Message);
         }
     }
 }

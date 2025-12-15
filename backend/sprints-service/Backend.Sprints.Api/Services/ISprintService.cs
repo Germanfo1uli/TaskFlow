@@ -9,7 +9,7 @@ public interface ISprintService
     Task<Sprint> CreateSprintAsync(long projectId, string name, string? goal, DateTime startDate, DateTime endDate);
     Task<Sprint?> GetSprintByIdAsync(long id);
     Task<List<Sprint>> GetSprintsByProjectIdAsync(long projectId);
-    Task<Sprint> UpdateSprintAsync(long id, string name, string? goal, DateTime startDate, DateTime endDate, SprintStatus status);
+    Task<Sprint> UpdateSprintAsync(long id, string name, string? goal, DateTime? startDate, DateTime? endDate, SprintStatus status);
     Task DeleteSprintAsync(long id);
     Task CompleteSprintAsync(long sprintId);
     Task<SprintBoardDto> GetSprintBoardAsync(long sprintId);
