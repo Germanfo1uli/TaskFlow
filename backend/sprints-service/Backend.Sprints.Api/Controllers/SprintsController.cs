@@ -138,23 +138,32 @@ public class SprintsController : ControllerBase
         }
     }
 
-    [HttpPost("{sprintId}/start")]
-    public async Task<IActionResult> StartSprint(long sprintId)
-    {
-        try
-        {
-            await _sprintService.StartSprintAsync(sprintId);
-            return Ok(new { message = "Sprint started successfully" });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-    }
+	[HttpPost("{sprintId}/start")]
+	public async Task<IActionResult> StartSprint(long sprintId)
+	{
+    	try
+    	{
+        	var updatedIssues = await _sprintService.StartSprintAsync(sprintId);
+        
+        	var response = new 
+        	{ 
+            	message = "Sprint started successfully",
+            	sprintId = sprintId,
+            	updatedIssues = updatedIssues,
+            	updatedIssuesCount = updatedIssues.Count
+        	};
+        
+        	return Ok(response);
+    	}
+    	catch (KeyNotFoundException ex)
+    	{
+        	return NotFound(ex.Message);
+    	}
+    	catch (InvalidOperationException ex)
+    	{
+        	return BadRequest(ex.Message);
+    	}
+	}
 
     [HttpGet("{sprintId}/board")]
     public async Task<IActionResult> GetSprintBoard(long sprintId)

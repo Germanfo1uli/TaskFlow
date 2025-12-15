@@ -16,16 +16,29 @@ public class SprintIssueService : ISprintIssueService
         _internalApiClient = internalApiClient;
     }
 
-    public async Task AddIssueToSprintAsync(long sprintId, long issueId)
-    {
-        // Проверяем задачу
-        var issueResponse = await _internalApiClient.IssueExistsAsync(issueId);
-        if (!issueResponse.IsSuccessStatusCode || !issueResponse.Content)
-            throw new KeyNotFoundException($"Issue with id {issueId} not found");
+	public async Task AddIssueToSprintAsync(long sprintId, long issueId)
+	{
+    // Проверяем задачу
+    	try
+    	{
+        	var request = new IssueBatchRequest { IssuesIds = new List<long> { issueId } };
+        	var issuesResponse = await _internalApiClient.GetIssuesByIds(request);
         
-        await _sprintIssueRepository.RemoveIssueFromAllSprintsAsync(issueId);
-        await _sprintIssueRepository.AddIssueToSprintAsync(sprintId, issueId);
-    }
+        	if (issuesResponse == null || issuesResponse.Count == 0)
+            	throw new KeyNotFoundException($"Issue with id {issueId} not found");
+    	}
+    	catch (ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+    	{
+        	throw new KeyNotFoundException($"Issue with id {issueId} not found");
+    	}
+    	catch (Exception ex)
+    	{
+        	throw new Exception($"Failed to validate issue {issueId}: {ex.Message}");
+    	}
+    
+    	await _sprintIssueRepository.RemoveIssueFromAllSprintsAsync(issueId);
+    	await _sprintIssueRepository.AddIssueToSprintAsync(sprintId, issueId);
+	}
 
     public async Task AddIssuesToSprintAsync(long sprintId, List<long> issueIds)
     {
