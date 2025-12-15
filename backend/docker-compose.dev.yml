@@ -256,7 +256,7 @@ services:
       ASPNETCORE_ENVIRONMENT: "Development"
     volumes:
       - .:/src
-      - dashboard-nuget-cache:/root/.nuget/packages
+      - sprints-nuget-cache:/root/.nuget/packages
 
 
   dashboard-service:

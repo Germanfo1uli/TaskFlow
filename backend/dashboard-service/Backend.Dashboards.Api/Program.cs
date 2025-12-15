@@ -12,6 +12,7 @@ using Backend.Dashboard.Api.Messages;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.OpenApi.Models;
+using Backend.Dashboard.Api.Cache;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,6 +58,14 @@ builder.Services.AddSwaggerGen(options =>
         options.AddServer(server);
     }
 });
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = "localhost:6379";
+});
+
+builder.Services.AddSingleton<PermissionCacheReader>();
+builder.Services.AddSingleton<AuthService>();
 
 builder.Services.AddScoped<DashboardSnapshotRepository>();
 builder.Services.AddScoped<ActivityLogRepository>();
