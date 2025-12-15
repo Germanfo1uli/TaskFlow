@@ -70,6 +70,7 @@ builder.Services.Configure<ServiceAuthSettings>(builder.Configuration.GetSection
 
 builder.Services.AddTransient<InternalAuthHandler>();
 
+// клиент на внутренние запросы
 builder.Services.AddRefitClient<IProjectClient>()
     .ConfigureHttpClient(client =>
     {

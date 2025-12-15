@@ -1,6 +1,7 @@
 ﻿using Backend.Dashboard.Api.Services;
 using Backend.Shared.DTOs;
 using MassTransit;
+using Steeltoe.Discovery.Eureka.AppInfo;
 
 namespace Backend.Dashboard.Api.Messages
 {
@@ -23,7 +24,7 @@ namespace Backend.Dashboard.Api.Messages
             await _activityLogService.LogActivityAsync(
                 @event.ProjectId,
                 @event.UpdaterId,
-                "StatusChanged",
+                @event.NewStatus, 
                 "Issue",
                 @event.IssueId
             );
