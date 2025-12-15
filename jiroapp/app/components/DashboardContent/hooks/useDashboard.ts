@@ -798,6 +798,31 @@ export const useDashboard = (projectId: number | null) => {
         return filteredCards;
     };
 
+    const refreshCardData = async (cardId: number): Promise<Card | null> => {
+        try {
+            const updatedCard = await fetchIssueById(cardId);
+            if (updatedCard) {
+                const updatedBoards = boards.map(board => ({
+                    ...board,
+                    cards: board.cards.map(card =>
+                        card.id === cardId ? updatedCard : card
+                    )
+                }));
+                setBoards(updatedBoards);
+
+                if (state.viewingCard?.id === cardId) {
+                    updateState({ viewingCard: updatedCard });
+                }
+
+                return updatedCard;
+            }
+            return null;
+        } catch (error) {
+            console.error('Ошибка при обновлении данных карточки:', error);
+            return null;
+        }
+    };
+
     const getAvailableBoardTitles = () => {
         const existingTitles = boards.map(board => board.title);
         return availableBoardTitles.map(title => ({
@@ -867,6 +892,7 @@ export const useDashboard = (projectId: number | null) => {
         uploadFiles,
         deleteAttachment,
         fetchCurrentUser,
-        fetchUserRole
+        fetchUserRole,
+        refreshCardData
     };
 };

@@ -16,10 +16,25 @@ interface ApiComment {
     updatedAt: string;
 }
 
-export const useComments = (issueId: number) => {
+interface UseCommentsReturn {
+    comments: Comment[];
+    isLoading: boolean;
+    isSubmitting: boolean;
+    commentToDelete: { id: number; authorName: string } | null;
+    addComment: (content: string, currentUser: Author) => Promise<any>;
+    requestDeleteComment: (commentId: number, authorName: string) => void;
+    confirmDeleteComment: () => Promise<boolean>;
+    cancelDeleteComment: () => void;
+    fetchComments: () => Promise<Comment[]>;
+    refreshComments: () => Promise<Comment[]>;
+    isDeleting: boolean;
+}
+
+export const useComments = (issueId: number, onCommentDeleted?: () => void): UseCommentsReturn => {
     const [comments, setComments] = useState<Comment[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [commentToDelete, setCommentToDelete] = useState<{
         id: number;
         authorName: string;
@@ -44,7 +59,7 @@ export const useComments = (issueId: number) => {
         };
     };
 
-    const fetchComments = async () => {
+    const fetchComments = async (): Promise<Comment[]> => {
         try {
             setIsLoading(true);
             const response = await api.get<ApiComment[]>(`/issues/${issueId}/comments`);
@@ -60,7 +75,7 @@ export const useComments = (issueId: number) => {
         }
     };
 
-    const addComment = async (content: string, currentUser: Author) => {
+    const addComment = async (content: string, currentUser: Author): Promise<any> => {
         if (!content.trim()) return null;
 
         try {
@@ -94,6 +109,11 @@ export const useComments = (issueId: number) => {
             );
 
             toast.success('Комментарий добавлен');
+
+            if (onCommentDeleted) {
+                onCommentDeleted();
+            }
+
             return newComment;
         } catch (error) {
             console.error('Ошибка при добавлении комментария:', error);
@@ -105,39 +125,48 @@ export const useComments = (issueId: number) => {
         }
     };
 
-    const requestDeleteComment = (commentId: number, authorName: string) => {
+    const requestDeleteComment = (commentId: number, authorName: string): void => {
         setCommentToDelete({ id: commentId, authorName });
     };
 
-    const confirmDeleteComment = async () => {
+    const confirmDeleteComment = async (): Promise<boolean> => {
         if (!commentToDelete) return false;
 
         try {
-            // Оптимистичное удаление
+            setIsDeleting(true);
             const commentToRemove = comments.find(c => c.id === commentToDelete.id);
+
             setComments(prev => prev.filter(comment => comment.id !== commentToDelete.id));
 
             await api.delete(`/issues/${issueId}/comments/${commentToDelete.id}`);
 
             toast.success('Комментарий удален');
-            setCommentToDelete(null);
+
+            if (onCommentDeleted) {
+                onCommentDeleted();
+            }
+
             return true;
         } catch (error) {
             console.error('Ошибка при удалении комментария:', error);
+
             if (commentToRemove) {
                 setComments(prev => [...prev, commentToRemove].sort((a, b) => a.id - b.id));
             }
+
             toast.error('Не удалось удалить комментарий');
-            setCommentToDelete(null);
             return false;
+        } finally {
+            setIsDeleting(false);
+            setCommentToDelete(null);
         }
     };
 
-    const cancelDeleteComment = () => {
+    const cancelDeleteComment = (): void => {
         setCommentToDelete(null);
     };
 
-    const refreshComments = async () => {
+    const refreshComments = async (): Promise<Comment[]> => {
         return await fetchComments();
     };
 
@@ -151,6 +180,7 @@ export const useComments = (issueId: number) => {
         confirmDeleteComment,
         cancelDeleteComment,
         fetchComments,
-        refreshComments
+        refreshComments,
+        isDeleting
     };
 };

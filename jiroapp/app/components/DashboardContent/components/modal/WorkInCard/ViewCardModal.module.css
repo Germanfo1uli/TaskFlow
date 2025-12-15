@@ -956,26 +956,7 @@
     font-size: 0.7rem;
 }
 
-/* Добавить в ViewCardModal.module.css */
 
-.deleteCommentButton {
-    background: transparent;
-    border: none;
-    color: #ef4444;
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 6px;
-    transition: all 0.3s ease;
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.deleteCommentButton:hover {
-    background: rgba(239, 68, 68, 0.1);
-    transform: scale(1.1);
-}
 
 .loadingComments {
     display: flex;
@@ -998,16 +979,9 @@
     to { transform: rotate(360deg); }
 }
 
-.deleteCommentButton {
-    background: none;
-    border: none;
-    color: #94a3b8;
-    cursor: pointer;
-    padding: 0.25rem;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    transition: all 0.2s ease;
-    opacity: 0;
+
+.commentItem:hover .deleteCommentButton {
+    opacity: 1;
 }
 
 .commentItem:hover .deleteCommentButton {
@@ -1017,6 +991,31 @@
 .deleteCommentButton:hover {
     color: #ef4444;
     background: rgba(239, 68, 68, 0.1);
+}
+
+
+.loadingComments {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 3rem 2rem;
+    color: #64748b;
+    font-size: 0.95rem;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 14px;
+    border: 2px dashed rgba(59, 130, 246, 0.2);
+}
+
+.loadingIcon {
+    font-size: 2rem;
+    color: #3b82f6;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .deleteCommentButton {
@@ -1036,12 +1035,46 @@
     height: 32px;
 }
 
-.commentItem:hover .deleteCommentButton {
+.deleteCommentButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.commentItem:hover .deleteCommentButton:not(:disabled) {
     opacity: 1;
 }
 
-.deleteCommentButton:hover {
+.deleteCommentButton:hover:not(:disabled) {
     color: #ef4444;
     background: rgba(239, 68, 68, 0.1);
+}
+
+.deletingIcon {
+    animation: spin 1s linear infinite;
+    font-size: 0.9rem;
+}
+
+.commentAuthorRole {
+    font-size: 0.75rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.roleIcon {
+    font-size: 0.7rem;
+}
+
+.assigneeRoleCompact {
+    font-size: 0.8rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.roleIconCompact {
+    font-size: 0.7rem;
 }
 

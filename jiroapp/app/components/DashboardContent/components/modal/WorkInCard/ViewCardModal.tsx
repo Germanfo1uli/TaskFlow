@@ -46,6 +46,7 @@ interface ViewCardModalProps {
     userRole?: {
         isOwner: boolean;
     } | null
+    onRefreshCard?: () => void
 }
 
 const ViewCardModal = ({
@@ -57,23 +58,31 @@ const ViewCardModal = ({
                            onAddComment,
                            assignees,
                            currentUser,
-                           userRole
+                           userRole,
+                           onRefreshCard
                        }: ViewCardModalProps) => {
     const [newComment, setNewComment] = useState('')
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const modalContentRef = useRef<HTMLDivElement>(null)
+
+    const handleCommentDeleted = () => {
+        if (onRefreshCard) {
+            onRefreshCard();
+        }
+    };
 
     const {
         comments,
         isLoading: isLoadingComments,
         isSubmitting,
         commentToDelete,
+        isDeleting,
         addComment,
         requestDeleteComment,
         confirmDeleteComment,
         cancelDeleteComment,
         refreshComments
-    } = useComments(card.id)
+    } = useComments(card.id, handleCommentDeleted)
 
     useEffect(() => {
         const handleWheel = (e: WheelEvent) => {
@@ -166,6 +175,10 @@ const ViewCardModal = ({
             }
 
             onAddComment(card.id, newCommentObj)
+
+            if (onRefreshCard) {
+                onRefreshCard();
+            }
         }
 
         setNewComment('')
@@ -180,7 +193,7 @@ const ViewCardModal = ({
     }
 
     const handleConfirmDelete = async () => {
-        await confirmDeleteComment()
+        await confirmDeleteComment();
     }
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -328,8 +341,13 @@ const ViewCardModal = ({
                                                                     className={styles.deleteCommentButton}
                                                                     onClick={() => handleRequestDeleteComment(comment.id, comment.author.name)}
                                                                     title="Удалить комментарий"
+                                                                    disabled={isDeleting}
                                                                 >
-                                                                    <FaTrash />
+                                                                    {isDeleting && commentToDelete?.id === comment.id ? (
+                                                                        <FaClock className={styles.deletingIcon} />
+                                                                    ) : (
+                                                                        <FaTrash />
+                                                                    )}
                                                                 </button>
                                                             ) : null}
                                                         </div>
