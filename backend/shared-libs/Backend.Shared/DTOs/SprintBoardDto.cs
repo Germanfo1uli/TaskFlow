@@ -10,8 +10,8 @@ namespace Backend.Shared.DTOs
        
         public string SprintName { get; set; } = string.Empty;
    
-        public List<long> IssueIds { get; set; } = new List<long>();
+        //public List<long> IssueIds { get; set; } = new List<long>();
 
-        //public List<IssueDto> Issues { get; set; } = new List<IssueDto>();
+        public List<InternalIssueResponse> Issues { get; set; } = new List<InternalIssueResponse>();
     }
 }

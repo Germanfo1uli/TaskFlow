@@ -10,7 +10,7 @@
         public Priority Priority { get; set; }
         public DateTime? CompletedAt { get; set; }
     }
-    
+
     public class IssueBatchRequest
     {
         public List<long> IssuesIds { get; set; } = new();

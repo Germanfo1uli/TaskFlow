@@ -2,6 +2,7 @@
 using Backend.Sprints.Api.Data.Repositories;
 using Backend.Sprints.Api.Models.Entities;
 using Backend.Shared.DTOs;
+using Refit;
 
 namespace Backend.Sprints.Api.Services;
 
@@ -10,15 +11,18 @@ public class SprintService : ISprintService
     private readonly SprintRepository _sprintRepository;
     private readonly ISprintIssueService _sprintIssueService;
     private readonly IInternalApiClient _internalApiClient;
+    private readonly IIssueClient _issueClient;
 
     public SprintService(
         SprintRepository sprintRepository, 
         ISprintIssueService sprintIssueService,
-        IInternalApiClient internalApiClient)
+        IInternalApiClient internalApiClient,
+        IIssueClient issueClient)
     {
         _sprintRepository = sprintRepository;
         _sprintIssueService = sprintIssueService;
         _internalApiClient = internalApiClient;
+        _issueClient = issueClient;
     }
 
     public async Task<Sprint> CreateSprintAsync(long projectId, string name, string? goal, DateTime startDate, DateTime endDate)
@@ -84,7 +88,7 @@ public class SprintService : ISprintService
         	throw new KeyNotFoundException($"Sprint with id {sprintId} not found");
 
     	var request = new IssueBatchRequest { IssuesIds = issueIds };
-    	var issuesResponse = await _internalApiClient.GetIssuesByIds(request);
+    	var issuesResponse = await _issueClient.GetIssuesByIds(request);
 
     	var foundIssueIds = issuesResponse.Select(i => i.Id).ToHashSet();
     	var missingIssueIds = issueIds.Except(foundIssueIds).ToList();
@@ -141,7 +145,7 @@ public class SprintService : ISprintService
     	if (issueIds.Any())
     	{
         	var request = new IssueBatchRequest { IssuesIds = issueIds };
-        	updatedIssues = await _internalApiClient.StartSprint(sprint.ProjectId, request);
+        	updatedIssues = await _issueClient.StartSprint(sprint.ProjectId, request);
     	}
 
     	sprint.Status = SprintStatus.Active;
@@ -164,7 +168,7 @@ public class SprintService : ISprintService
         List<InternalIssueResponse> allProjectIssues;
         try
         {
-            allProjectIssues = await _internalApiClient.GetIssuesByProjectId(projectId);
+            allProjectIssues = await _issueClient.GetIssuesByProjectId(projectId);
         }
         catch (Exception ex)
         {
@@ -269,7 +273,7 @@ public class SprintService : ISprintService
         {
             try
             {
-                var issue = await _internalApiClient.GetIssueByIdAsync(issueId);
+                var issue = await _issueClient.GetIssueByIdAsync(issueId);
                 if (issue != null)
                 {
                     issues.Add(issue);

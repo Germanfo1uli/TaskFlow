@@ -2,10 +2,10 @@
 
 namespace Backend.Shared.DTOs
 {
-    public class UserPermissionsResponse
-    {
-        public long UserId { get; set; }
-        public long ProjectId { get; set; }
-        public List<string> Permissions { get; set; } = new List<string>();
-    }
+    public record UserPermissionsResponse(
+       long UserId,
+       long ProjectId,
+       HashSet<string> Permissions,
+       bool IsOwner
+   );
 }

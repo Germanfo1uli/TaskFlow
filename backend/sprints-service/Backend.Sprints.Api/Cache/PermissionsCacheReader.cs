@@ -2,8 +2,7 @@
 using Microsoft.Extensions.Caching.Distributed;
 using Refit;
 using StackExchange.Redis;
-using System.Net.Http.Json;
-using System.Text.Json;
+using Backend.Shared.DTOs;
 
 namespace Backend.Sprints.Api.Cache
 {

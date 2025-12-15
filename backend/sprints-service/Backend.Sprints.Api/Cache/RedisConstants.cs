@@ -26,10 +26,4 @@
         EDIT_OWN, DELETE_OWN, APPLY
     }
 
-    public record UserPermissionsResponse(
-        long UserId,
-        long ProjectId,
-        HashSet<string> Permissions,
-        bool IsOwner
-    );
 }

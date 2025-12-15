@@ -1,5 +1,7 @@
 ﻿using Backend.Sprints.Api.Data.Repositories;
 using Backend.Sprints.Api.Clients;
+using Backend.Shared.DTOs;
+using Refit;
 
 namespace Backend.Sprints.Api.Services;
 
@@ -7,22 +9,27 @@ public class SprintIssueService : ISprintIssueService
 {
     private readonly SprintIssueRepository _sprintIssueRepository;
     private readonly IInternalApiClient _internalApiClient;
+    private readonly IIssueClient _issueClient;
 
     public SprintIssueService(
         SprintIssueRepository sprintIssueRepository,
-        IInternalApiClient internalApiClient)
+        IInternalApiClient internalApiClient,
+        IIssueClient issueClient)
+
+
     {
         _sprintIssueRepository = sprintIssueRepository;
         _internalApiClient = internalApiClient;
+        _issueClient = issueClient;
     }
 
-	public async Task AddIssueToSprintAsync(long sprintId, long issueId)
+    public async Task AddIssueToSprintAsync(long sprintId, long issueId)
 	{
     // Проверяем задачу
     	try
     	{
         	var request = new IssueBatchRequest { IssuesIds = new List<long> { issueId } };
-        	var issuesResponse = await _internalApiClient.GetIssuesByIds(request);
+        	var issuesResponse = await _issueClient.GetIssuesByIds(request);
         
         	if (issuesResponse == null || issuesResponse.Count == 0)
             	throw new KeyNotFoundException($"Issue with id {issueId} not found");
