@@ -55,7 +55,7 @@ public class SprintsController : ControllerBase
         try
         {
             var sprint = await _sprintService.CreateSprintWithIssuesAsync(_currentUser.UserId, projectId, request);
-            return CreatedAtAction(nameof(GetSprint), new { id = sprint.Id }, sprint);
+            return CreatedAtAction(nameof(GetSprint), new { sprintId = sprint.Id }, sprint);
         }
         catch (KeyNotFoundException ex)
         {

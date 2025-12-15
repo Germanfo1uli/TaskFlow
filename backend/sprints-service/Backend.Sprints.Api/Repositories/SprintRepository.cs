@@ -15,7 +15,7 @@ public class SprintRepository
 
     public async Task<Sprint?> GetByIdAsync(long id)
     {
-        return await _context.Sprints.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
+        return await _context.Sprints.FindAsync(id);
     }
 
     public async Task<List<Sprint>> GetByProjectIdAsync(long projectId)
@@ -34,11 +34,9 @@ public class SprintRepository
         return sprint;
     }
 
-    public async Task<Sprint> UpdateAsync(Sprint sprint)
+    public async Task UpdateAsync(Sprint sprint)
     {
-        _context.Sprints.Update(sprint);
         await _context.SaveChangesAsync();
-        return sprint;
     }
 
     public async Task DeleteAsync(long id)

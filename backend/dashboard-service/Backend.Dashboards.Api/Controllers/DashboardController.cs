@@ -6,8 +6,6 @@ namespace Backend.Dashboard.Api.Controllers;
 [ApiController]
 [Route("api/dashboards/{projectId}/[controller]")]
 public class DashboardController : ControllerBase
-
-    private const long SYSTEM_USER_ID = 0;
 {
     private readonly IDashboardService _dashboardService;
     private readonly ICurrentUserService _currentUser;
