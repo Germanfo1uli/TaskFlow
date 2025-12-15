@@ -25,11 +25,4 @@
         TRANSITION_CODE_REVIEW, TRANSITION_QA, FULL_TRANSITION,
         EDIT_OWN, DELETE_OWN, APPLY
     }
-
-    public record UserPermissionsResponse(
-        long UserId,
-        long ProjectId,
-        HashSet<string> Permissions,
-        bool IsOwner
-    );
 }

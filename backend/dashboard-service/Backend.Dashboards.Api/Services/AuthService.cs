@@ -1,4 +1,5 @@
 ﻿using Backend.Dashboard.Api.Cache;
+using Backend.Shared.DTOs;
 
 namespace Backend.Dashboard.Api.Services
 {

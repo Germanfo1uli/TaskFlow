@@ -6,7 +6,7 @@ public interface IDashboardService
 {
     Task<DashboardSnapshot> CreateSnapshotAsync(long projectId, string metricName, decimal metricValue, DateTime snapshotDate);
     Task<List<MetricTrendDto>> GetMetricTrendAsync(long projectId, string metricName, DateTime fromDate, DateTime toDate);
-    Task<DashboardEfficiencyDto> CalculateAndSaveDashboardDataAsync(long projectId);
+    Task<DashboardEfficiencyDto> CalculateAndSaveDashboardDataAsync(long userId, long projectId);
 }
 
 public class DashboardDataDto

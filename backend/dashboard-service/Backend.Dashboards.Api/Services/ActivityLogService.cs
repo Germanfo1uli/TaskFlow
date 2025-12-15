@@ -30,7 +30,8 @@ public class ActivityLogService : IActivityLogService
 
     public async Task<List<ActivityLog>> GetProjectActivityAsync(long userId, long projectId, int page = 1, int pageSize = 50)
     {
-        _authService.HasPermission(userId, projectId, Cache.EntityType.LOGS, Cache.ActionType.VIEW);
+        await _authService.HasPermissionAsync(userId, projectId,
+                Cache.EntityType.LOGS, Cache.ActionType.VIEW);
         return await _activityLogRepository.GetByProjectIdAsync(projectId, page, pageSize);
     }
 

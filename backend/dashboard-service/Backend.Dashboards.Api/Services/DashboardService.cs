@@ -11,17 +11,20 @@ public class DashboardService : IDashboardService
     private readonly ActivityLogRepository _activityLogRepository;
     private readonly IProjectClient _projectClient;
     private readonly ILogger<DashboardService> _logger;
+    private readonly AuthService _authService;
 
     public DashboardService(
         DashboardSnapshotRepository snapshotRepository,
         ActivityLogRepository activityLogRepository,
         IProjectClient projectClient,
-        ILogger<DashboardService> logger)
+        ILogger<DashboardService> logger,
+        AuthService authService)
     {
         _snapshotRepository = snapshotRepository;
         _activityLogRepository = activityLogRepository;
         _projectClient = projectClient;
         _logger = logger;
+        _authService = authService;
     }
 
     public async Task<DashboardSnapshot> CreateSnapshotAsync(long projectId, string metricName, decimal metricValue, DateTime snapshotDate)
@@ -30,8 +33,10 @@ public class DashboardService : IDashboardService
         return await _snapshotRepository.CreateAsync(snapshot);
     }
 
-    public async Task<DashboardEfficiencyDto> CalculateAndSaveDashboardDataAsync(long projectId)
+    public async Task<DashboardEfficiencyDto> CalculateAndSaveDashboardDataAsync(long usersId, long projectId)
     {
+        await _authService.HasPermissionAsync(usersId, projectId,
+                Cache.EntityType.ANALYTICS, Cache.ActionType.VIEW);
         _logger.LogInformation("Calculating and saving dashboard data for ProjectId: {ProjectId}", projectId);
 
         ProjectDto project;

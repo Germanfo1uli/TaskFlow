@@ -8,11 +8,13 @@ namespace Backend.Dashboard.Api.Controllers;
 public class DashboardController : ControllerBase
 {
     private readonly IDashboardService _dashboardService;
+    private readonly ICurrentUserService _currentUser;
     private readonly ILogger<DashboardController> _logger;
 
-    public DashboardController(IDashboardService dashboardService, ILogger<DashboardController> logger)
+    public DashboardController(IDashboardService dashboardService, ICurrentUserService currentUser, ILogger<DashboardController> logger)
     {
         _dashboardService = dashboardService;
+        _currentUser = currentUser;
         _logger = logger;
     }
 
@@ -21,8 +23,7 @@ public class DashboardController : ControllerBase
     {
         try
         {
-            // ОДИН ЗАПРОС - ВСЕ ДЕЙСТВИЯ НА СЕРВЕРЕ
-            var dashboardData = await _dashboardService.CalculateAndSaveDashboardDataAsync(projectId);
+            var dashboardData = await _dashboardService.CalculateAndSaveDashboardDataAsync(_currentUser.UserId, projectId);
             return Ok(dashboardData);
         }
         catch (KeyNotFoundException ex)
