@@ -1,5 +1,7 @@
-﻿using Backend.Dashboard.Api.Data.Repositories;
+﻿using Backend.Dashboard.Api.Clients;
+using Backend.Dashboard.Api.Data.Repositories;
 using Backend.Dashboard.Api.Models.Entities;
+using Backend.Shared.DTOs;
 
 namespace Backend.Dashboard.Api.Services;
 
@@ -7,11 +9,19 @@ public class DashboardService : IDashboardService
 {
     private readonly DashboardSnapshotRepository _snapshotRepository;
     private readonly ActivityLogRepository _activityLogRepository;
+    private readonly IProjectClient _projectClient;
+    private readonly ILogger<DashboardService> _logger;
 
-    public DashboardService(DashboardSnapshotRepository snapshotRepository, ActivityLogRepository activityLogRepository)
+    public DashboardService(
+        DashboardSnapshotRepository snapshotRepository,
+        ActivityLogRepository activityLogRepository,
+        IProjectClient projectClient,
+        ILogger<DashboardService> logger)
     {
         _snapshotRepository = snapshotRepository;
         _activityLogRepository = activityLogRepository;
+        _projectClient = projectClient;
+        _logger = logger;
     }
 
     public async Task<DashboardSnapshot> CreateSnapshotAsync(long projectId, string metricName, decimal metricValue, DateTime snapshotDate)
@@ -27,22 +37,58 @@ public class DashboardService : IDashboardService
         return await _snapshotRepository.CreateAsync(snapshot);
     }
 
-    public async Task<DashboardDataDto> GetDashboardDataAsync(long projectId, DateTime? fromDate = null, DateTime? toDate = null)
+    public async Task<DashboardEfficiencyDto> GetDashboardDataAsync(long projectId, DateTime? fromDate = null, DateTime? toDate = null)
     {
-        var dashboardData = new DashboardDataDto { ProjectId = projectId };
+        _logger.LogInformation("Getting real-time dashboard data for ProjectId: {ProjectId}", projectId);
 
-        // Получаем последние значения метрик
-        var metrics = new[] { "total_issues", "completed_issues", "completion_rate", "avg_cycle_time" };
-        foreach (var metric in metrics)
+        ProjectDto project;
+        try
         {
-            var latestSnapshot = await _snapshotRepository.GetLatestByProjectAndMetricAsync(projectId, metric);
-            if (latestSnapshot != null)
-            {
-                dashboardData.CurrentMetrics[metric] = latestSnapshot.MetricValue;
-            }
+            project = await _projectClient.GetProjectById(projectId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to verify project existence for ProjectId: {ProjectId}.", projectId);
+            throw;
         }
 
-        // Получаем последнюю активность
+        if (project == null)
+        {
+            _logger.LogWarning("Project with ID {ProjectId} not found.", projectId);
+            throw new KeyNotFoundException($"Project with ID {projectId} not found.");
+        }
+
+        var dashboardData = new DashboardEfficiencyDto { ProjectId = projectId };
+
+        var issueIds = await _activityLogRepository.GetEntityIdsByTypeAsync(projectId, "Issue", "Created");
+
+        if (!issueIds.Any())
+        {
+            _logger.LogInformation("No issues found for ProjectId: {ProjectId}. All metrics are 0.", projectId);
+            SetZeroMetrics(dashboardData);
+            return dashboardData;
+        }
+
+        var latestStatuses = await _activityLogRepository.GetLatestStatusForIssuesAsync(projectId, issueIds);
+
+        var issueCreators = await _activityLogRepository.GetIssueCreatorsAsync(projectId);
+
+        var totalIssuesCount = issueIds.Count;
+        var completedIssuesCount = latestStatuses.Values.Count(status => status == "DONE");
+        var todoIssuesCount = latestStatuses.Values.Count(status => status == "TO_DO");
+        var inProgressIssuesCount = latestStatuses.Values.Count(status => status == "IN_PROGRESS");
+        var completionRate = totalIssuesCount > 0 ? (decimal)completedIssuesCount / totalIssuesCount * 100 : 0;
+
+        dashboardData.CurrentMetrics["total_issues"] = totalIssuesCount;
+        dashboardData.CurrentMetrics["completed_issues"] = completedIssuesCount;
+        dashboardData.CurrentMetrics["todo_issues"] = todoIssuesCount;
+        dashboardData.CurrentMetrics["in_progress_issues"] = inProgressIssuesCount;
+        dashboardData.CurrentMetrics["completion_rate"] = completionRate;
+
+        CalculateUserEfficiency(latestStatuses, issueCreators, dashboardData);
+
+        _logger.LogInformation("Calculated metrics for ProjectId: {ProjectId}.", projectId);
+
         var recentActivity = await _activityLogRepository.GetByProjectIdAsync(projectId, 1, 10);
         dashboardData.RecentActivity = recentActivity.Select(log => new ActivityLogDto
         {
@@ -53,26 +99,63 @@ public class DashboardService : IDashboardService
             CreatedAt = log.CreatedAt
         }).ToList();
 
-        // Получаем тренды для ключевых метрик
-        if (fromDate.HasValue && toDate.HasValue)
+        return dashboardData;
+    }
+
+    private void CalculateUserEfficiency(
+    Dictionary<long, string> latestStatuses,
+    Dictionary<long, long> issueCreators,
+    DashboardEfficiencyDto dashboardData)
+    {
+        var userStats = new Dictionary<long, (int total, int completed)>();
+
+        foreach (var statusPair in latestStatuses)
         {
-            foreach (var metric in metrics)
+            var issueId = statusPair.Key;
+            var status = statusPair.Value;
+
+            if (issueCreators.TryGetValue(issueId, out var creatorId))
             {
-                var dataPoints = await GetMetricTrendAsync(projectId, metric, fromDate.Value, toDate.Value);
-                dashboardData.Trends[metric] = new MetricTrendDto
+                if (!userStats.ContainsKey(creatorId))
                 {
-                    MetricName = metric
-                };
+                    userStats[creatorId] = (0, 0);
+                }
+
+                var stats = userStats[creatorId];
+                stats.total++;
+                if (status == "DONE")
+                {
+                    stats.completed++;
+                }
+                
+                userStats[creatorId] = stats;
             }
         }
 
-        return dashboardData;
+        foreach (var userStat in userStats)
+        {
+            var userId = userStat.Key;
+            var total = userStat.Value.total;
+            var completed = userStat.Value.completed;
+            var efficiency = total > 0 ? (decimal)completed / total * 100 : 0;
+            dashboardData.UserEfficiency[userId] = efficiency;
+        }
     }
+
+    private void SetZeroMetrics(DashboardEfficiencyDto dashboardData)
+    {
+        dashboardData.CurrentMetrics["total_issues"] = 0;
+        dashboardData.CurrentMetrics["completed_issues"] = 0;
+        dashboardData.CurrentMetrics["todo_issues"] = 0;
+        dashboardData.CurrentMetrics["in_progress_issues"] = 0;
+        dashboardData.CurrentMetrics["completion_rate"] = 0;
+    }
+
 
     public async Task<List<MetricTrendDto>> GetMetricTrendAsync(long projectId, string metricName, DateTime fromDate, DateTime toDate)
     {
         var snapshots = await _snapshotRepository.GetByProjectAndMetricAsync(projectId, metricName, fromDate, toDate);
-        
+
         var trend = new MetricTrendDto
         {
             MetricName = metricName,
@@ -84,5 +167,14 @@ public class DashboardService : IDashboardService
         };
 
         return new List<MetricTrendDto> { trend };
+    }
+
+    private async Task SaveMetrics(long projectId, int totalIssues, int completedIssues, decimal completionRate, decimal avgCycleTime)
+    {
+        var now = DateTime.UtcNow;
+        await _snapshotRepository.CreateAsync(new DashboardSnapshot { ProjectId = projectId, MetricName = "total_issues", MetricValue = totalIssues, SnapshotDate = now });
+        await _snapshotRepository.CreateAsync(new DashboardSnapshot { ProjectId = projectId, MetricName = "completed_issues", MetricValue = completedIssues, SnapshotDate = now });
+        await _snapshotRepository.CreateAsync(new DashboardSnapshot { ProjectId = projectId, MetricName = "completion_rate", MetricValue = completionRate, SnapshotDate = now });
+        await _snapshotRepository.CreateAsync(new DashboardSnapshot { ProjectId = projectId, MetricName = "avg_cycle_time_days", MetricValue = avgCycleTime, SnapshotDate = now });
     }
 }

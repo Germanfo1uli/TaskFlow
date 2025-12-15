@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Backend.Dashboard.Api.Services;
+using Backend.Dashboard.Api.Models.Entities;
 
 namespace Backend.Dashboard.Api.Controllers;
 
@@ -8,28 +9,35 @@ namespace Backend.Dashboard.Api.Controllers;
 public class DashboardController : ControllerBase
 {
     private readonly IDashboardService _dashboardService;
+    private readonly ILogger<DashboardController> _logger;
 
-    public DashboardController(IDashboardService dashboardService)
+    public DashboardController(IDashboardService dashboardService, ILogger<DashboardController> logger)
     {
         _dashboardService = dashboardService;
+        _logger = logger;
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetDashboard(long projectId, [FromQuery] DateTime? fromDate, [FromQuery] DateTime? toDate)
+    public async Task<ActionResult<DashboardEfficiencyDto>> GetDashboard(long projectId)
     {
         try
         {
-            var dashboardData = await _dashboardService.GetDashboardDataAsync(projectId, fromDate, toDate);
+            var dashboardData = await _dashboardService.GetDashboardDataAsync(projectId);
             return Ok(dashboardData);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            _logger.LogError(ex, "An error occurred while fetching dashboard for ProjectId: {ProjectId}", projectId);
+            return StatusCode(500, "An internal server error occurred.");
         }
     }
 
     [HttpPost("snapshots")]
-    public async Task<IActionResult> CreateSnapshot(long projectId, [FromBody] CreateSnapshotRequest request)
+    public async Task<ActionResult<DashboardSnapshot>> CreateSnapshot(long projectId, [FromBody] CreateSnapshotRequest request)
     {
         try
         {
@@ -38,20 +46,7 @@ public class DashboardController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
-        }
-    }
-
-    [HttpGet("metrics/{metricName}/trend")]
-    public async Task<IActionResult> GetMetricTrend(long projectId, string metricName, [FromQuery] DateTime fromDate, [FromQuery] DateTime toDate)
-    {
-        try
-        {
-            var trend = await _dashboardService.GetMetricTrendAsync(projectId, metricName, fromDate, toDate);
-            return Ok(trend);
-        }
-        catch (Exception ex)
-        {
+            _logger.LogError(ex, "An error occurred while creating snapshot for ProjectId: {ProjectId}", projectId);
             return BadRequest(ex.Message);
         }
     }
