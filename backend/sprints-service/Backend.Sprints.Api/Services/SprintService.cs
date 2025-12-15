@@ -1,4 +1,4 @@
-﻿﻿using Backend.Sprints.Api.Clients;
+﻿using Backend.Sprints.Api.Clients;
 using Backend.Sprints.Api.Data.Repositories;
 using Backend.Sprints.Api.Models.Entities;
 using Backend.Shared.DTOs;
@@ -9,18 +9,15 @@ public class SprintService : ISprintService
 {
     private readonly SprintRepository _sprintRepository;
     private readonly ISprintIssueService _sprintIssueService;
-    private readonly IIssueClient _issueClient;
     private readonly IInternalApiClient _internalApiClient;
 
     public SprintService(
         SprintRepository sprintRepository, 
         ISprintIssueService sprintIssueService,
-        IIssueClient issueClient,
         IInternalApiClient internalApiClient)
     {
         _sprintRepository = sprintRepository;
         _sprintIssueService = sprintIssueService;
-        _issueClient = issueClient;
         _internalApiClient = internalApiClient;
     }
 
@@ -29,24 +26,35 @@ public class SprintService : ISprintService
         return await CreateSprintInternalAsync(projectId, name, goal, startDate, endDate);
     }
 
-    public async Task<Sprint> CreateSprintWithIssuesAsync(long projectId, CreateSprintRequestDto request)
-    {
-        var projectResponse = await _internalApiClient.GetProjectByIdAsync(projectId);
-        if (!projectResponse.IsSuccessStatusCode)
-            throw new KeyNotFoundException($"Project with id {projectId} not found");
+	public async Task<Sprint> CreateSprintWithIssuesAsync(long projectId, CreateSprintRequestDto request)
+	{
+    	// Проверяем проект
+    	try
+    	{
+        	var project = await _internalApiClient.GetProjectByIdAsync(projectId);
+        	// Если дошли сюда - проект найден
+    	}
+    	catch (ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+    	{
+        	throw new KeyNotFoundException($"Project with id {projectId} not found");
+    	}
+    	catch (Exception ex)
+    	{
+        	throw new Exception($"Failed to validate project {projectId}: {ex.Message}");
+    	}
 
-        var startDate = request.StartDate ?? DateTime.UtcNow.Date;
-        var endDate = request.EndDate ?? startDate.AddDays(14);
-        
-        var sprint = await CreateSprintInternalAsync(projectId, request.Name, request.Goal, startDate, endDate);
-        
-        if (request.IssueIds != null && request.IssueIds.Any())
-        {
-            await AddIssuesToSprintAsync(sprint.Id, request.IssueIds);
-        }
-        
-        return sprint;
-    }
+    	var startDate = request.StartDate ?? DateTime.UtcNow.Date;
+    	var endDate = request.EndDate ?? startDate.AddDays(14);
+    
+    	var sprint = await CreateSprintInternalAsync(projectId, request.Name, request.Goal, startDate, endDate);
+    
+    	if (request.IssueIds != null && request.IssueIds.Any())
+    	{
+        	await AddIssuesToSprintAsync(sprint.Id, request.IssueIds);
+    	}
+    
+    	return sprint;
+	}
 
     private async Task<Sprint> CreateSprintInternalAsync(long projectId, string name, string? goal, DateTime startDate, DateTime endDate)
     {
@@ -69,21 +77,28 @@ public class SprintService : ISprintService
         return await _sprintRepository.CreateAsync(sprint);
     }
 
-    public async Task AddIssuesToSprintAsync(long sprintId, List<long> issueIds)
-    {
-        var sprint = await _sprintRepository.GetByIdAsync(sprintId);
-        if (sprint == null)
-            throw new KeyNotFoundException($"Sprint with id {sprintId} not found");
+	public async Task AddIssuesToSprintAsync(long sprintId, List<long> issueIds)
+	{
+    	var sprint = await _sprintRepository.GetByIdAsync(sprintId);
+    	if (sprint == null)
+        	throw new KeyNotFoundException($"Sprint with id {sprintId} not found");
 
-        foreach (var issueId in issueIds)
-        {
-            var issueResponse = await _internalApiClient.IssueExistsAsync(issueId);
-            if (!issueResponse.IsSuccessStatusCode || !issueResponse.Content)
-                throw new KeyNotFoundException($"Issue with id {issueId} not found");
-            
-            await _sprintIssueService.AddIssueToSprintAsync(sprintId, issueId);
-        }
-    }
+    	var request = new IssueBatchRequest { IssuesIds = issueIds };
+    	var issuesResponse = await _internalApiClient.GetIssuesByIds(request);
+
+    	var foundIssueIds = issuesResponse.Select(i => i.Id).ToHashSet();
+    	var missingIssueIds = issueIds.Except(foundIssueIds).ToList();
+    
+    	if (missingIssueIds.Any())
+    	{
+        	throw new KeyNotFoundException($"Issues with ids {string.Join(", ", missingIssueIds)} not found");
+    	}
+
+    	foreach (var issueId in issueIds)
+    	{
+        	await _sprintIssueService.AddIssueToSprintAsync(sprintId, issueId);
+    	}
+	}
 
     public async Task<Sprint> UpdateSprintAsync(long id, string name, string? goal, DateTime? startDate, DateTime? endDate, SprintStatus status)
     {
@@ -110,33 +125,38 @@ public class SprintService : ISprintService
         return await _sprintRepository.UpdateAsync(sprint);
     }
 
-    public async Task StartSprintAsync(long sprintId)
-    {
-        var sprint = await _sprintRepository.GetByIdAsync(sprintId);
-        if (sprint == null)
-            throw new KeyNotFoundException($"Sprint with id {sprintId} not found");
+	public async Task<List<InternalIssueResponse>> StartSprintAsync(long sprintId)
+	{
+    	var sprint = await _sprintRepository.GetByIdAsync(sprintId);
+    	if (sprint == null)
+        	throw new KeyNotFoundException($"Sprint with id {sprintId} not found");
 
-        if (sprint.EndDate == default)
-            throw new InvalidOperationException("Cannot start sprint without EndDate");
+    	if (sprint.EndDate == default)
+        	throw new InvalidOperationException("Cannot start sprint without EndDate");
 
-        var issueIds = await _sprintIssueService.GetIssueIdsBySprintIdAsync(sprintId);
+    	var issueIds = await _sprintIssueService.GetIssueIdsBySprintIdAsync(sprintId);
     
-        if (issueIds.Any())
-        {
-            var request = new IssueBatchRequest { IssuesIds = issueIds };
-            await _issueClient.StartSprint(sprint.ProjectId, request);
-        }
+    	List<InternalIssueResponse> updatedIssues = new();
+    
+    	if (issueIds.Any())
+    	{
+        	var request = new IssueBatchRequest { IssuesIds = issueIds };
+        	updatedIssues = await _internalApiClient.StartSprint(sprint.ProjectId, request);
+    	}
 
-        sprint.Status = SprintStatus.Active;
-        sprint.StartDate = DateTime.UtcNow;
+    	sprint.Status = SprintStatus.Active;
+    	sprint.StartDate = DateTime.UtcNow;
 
-        await _sprintRepository.UpdateAsync(sprint);
-    }
+    	await _sprintRepository.UpdateAsync(sprint);
+    
+    	return updatedIssues;
+	}
 
     public async Task<ProjectSprintsDto> GetProjectSprintsWithIssuesAsync(long projectId)
     {
-        var projectResponse = await _internalApiClient.GetProjectByIdAsync(projectId);
-        if (!projectResponse.IsSuccessStatusCode)
+        // Проверяем проект
+        var project = await _internalApiClient.GetProjectByIdAsync(projectId);
+        if (project == null)
             throw new KeyNotFoundException($"Project with id {projectId} not found");
 
         var sprints = await _sprintRepository.GetByProjectIdAsync(projectId);
@@ -144,7 +164,7 @@ public class SprintService : ISprintService
         List<InternalIssueResponse> allProjectIssues;
         try
         {
-            allProjectIssues = await _issueClient.GetIssuesByProjectId(projectId);
+            allProjectIssues = await _internalApiClient.GetIssuesByProjectId(projectId);
         }
         catch (Exception ex)
         {
@@ -213,8 +233,9 @@ public class SprintService : ISprintService
 
     public async Task<List<Sprint>> GetSprintsByProjectIdAsync(long projectId)
     {
-        var projectResponse = await _internalApiClient.ProjectExistsAsync(projectId);
-        if (!projectResponse.IsSuccessStatusCode || !projectResponse.Content)
+        // Проверяем проект
+        var project = await _internalApiClient.GetProjectByIdAsync(projectId);
+        if (project == null)
             throw new KeyNotFoundException($"Project with id {projectId} not found");
         
         return await _sprintRepository.GetByProjectIdAsync(projectId);
@@ -248,8 +269,11 @@ public class SprintService : ISprintService
         {
             try
             {
-                var issue = await _issueClient.GetIssueById(issueId);
-                issues.Add(issue);
+                var issue = await _internalApiClient.GetIssueByIdAsync(issueId);
+                if (issue != null)
+                {
+                    issues.Add(issue);
+                }
             }
             catch (Exception ex)
             {

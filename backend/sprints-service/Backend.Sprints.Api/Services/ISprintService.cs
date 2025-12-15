@@ -18,6 +18,6 @@ public interface ISprintService
     // Новые методы для обновленных требований
     Task<Sprint> CreateSprintWithIssuesAsync(long projectId, CreateSprintRequestDto request);
     Task AddIssuesToSprintAsync(long sprintId, List<long> issueIds);
-    Task StartSprintAsync(long sprintId);
+    Task<List<InternalIssueResponse>> StartSprintAsync(long sprintId);
     Task<ProjectSprintsDto> GetProjectSprintsWithIssuesAsync(long projectId);
 }
