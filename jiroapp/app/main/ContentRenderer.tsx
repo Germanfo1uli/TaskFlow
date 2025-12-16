@@ -9,6 +9,7 @@ const ReportsPage = lazy(() => import('../components/ReportsContent/ReportsPage'
 const SettingsContent = lazy(() => import('../components/SettingsContent/SettingsContent'))
 const ProjectContent = lazy(() => import('../components/ProjectContent/ProjectContent'))
 const BoardsContent = lazy(() => import('../components/BoardsContent/BoardsContent'))
+const SprintComponent = lazy(() => import('../components/SprintsContent/SprintComponent'))
 
 interface ContentRendererProps {
     activePage: ActivePage
@@ -46,6 +47,8 @@ export const ContentRenderer: React.FC<ContentRendererProps> = ({
                         key={activeProject.id}
                     />
                 ) : null
+            case 'sprints':
+                return <SprintComponent projectId={activeProject?.id || null} />
             default:
                 return <BoardsContent projectId={activeProject?.id || null} />
         }

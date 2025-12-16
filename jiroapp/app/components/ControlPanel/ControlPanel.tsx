@@ -1,6 +1,6 @@
 'use client'
 
-import { FaThLarge, FaChartBar, FaCog, FaUsers, FaProjectDiagram, FaHome, FaLightbulb } from 'react-icons/fa'
+import { FaThLarge, FaChartBar, FaCog, FaUsers, FaProjectDiagram, FaHome, FaLightbulb, FaList } from 'react-icons/fa'
 import styles from './ControlPanel.module.css'
 
 interface Permission {
@@ -91,6 +91,14 @@ const ControlPanel = ({
                         >
                             <FaThLarge className={styles.panelNavIcon} />
                             <span className={styles.panelNavText}>Доска</span>
+                        </button>
+
+                        <button
+                            className={`${styles.panelNavButton} ${activePage === 'sprints' ? styles.active : ''}`}
+                            onClick={() => handleNavClick('sprints')}
+                        >
+                            <FaList className={styles.panelNavIcon} />
+                            <span className={styles.panelNavText}>Спринты</span>
                         </button>
 
                         <button

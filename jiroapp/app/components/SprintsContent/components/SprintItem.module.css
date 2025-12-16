@@ -1,0 +1,370 @@
+.sprintItem {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border: 2px solid rgba(59, 130, 246, 0.1);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-bottom: 1.5rem;
+}
+
+.sprintItem:hover {
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+.sprintHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem;
+    border-bottom: 2px solid rgba(59, 130, 246, 0.1);
+    border-left: 4px solid #3b82f6; 
+    padding-left: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 14px 14px 0 0;
+}
+
+.sprintHeader.collapsed {
+    border-radius: 8px;
+}
+
+.headerLeft {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8rem;
+}
+
+.expandButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #42526e;
+    display: flex;
+    align-items: center;
+    padding: 0;
+    margin-top: 6px;
+}
+
+.headerInfo {
+    display: flex;
+    flex-direction: column;
+}
+
+.titleRow {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.2rem;
+}
+
+.sprintName {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    line-height: 1.3;
+    transition: color 0.2s ease;
+}
+
+.sprintHeader:hover .sprintName {
+    color: #3b82f6;
+}
+
+.dates {
+    font-size: 0.85rem;
+    color: #5e6c84;
+}
+
+.issueCount {
+    font-size: 0.85rem;
+    color: #5e6c84;
+}
+
+.sprintGoal {
+    font-size: 0.9rem;
+    color: #64748b;
+    line-height: 1.5;
+    margin: 0;
+    font-style: normal;
+}
+
+.headerRight {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.statsBadges {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: white;
+    cursor: help;
+}
+
+.badgeGrey {
+    background-color: #dfe1e6;
+    color: #172b4d;
+}
+
+.badgeBlue {
+    background-color: #0052cc;
+}
+
+.badgeGreen {
+    background-color: #00875a;
+}
+
+.badgeRed {
+    background-color: #de350b;
+}
+
+.startSprintButton {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background-color: #0052cc;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.startSprintButton:hover {
+    background-color: #0065ff;
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+    transform: translateY(-2px);
+}
+
+.activeSprintButton {
+    background-color: #6b778c;
+    color: white;
+    cursor: not-allowed;
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+}
+
+.activeSprintButton:hover {
+    background-color: #6b778c;
+    box-shadow: 0 6px 20px rgba(220, 233, 255, 0.4);
+}
+
+.completedSprintButton {
+    background-color: #10b981;
+    color: white;
+    cursor: not-allowed;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.menuContainer {
+    position: relative;
+}
+
+.menuButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #42526e;
+    padding: 0.5rem;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+}
+
+.menuButton:hover {
+    background-color: rgba(9, 30, 66, 0.08);
+}
+
+.dropdownMenu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    width: 200px;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    border: 2px solid rgba(59, 130, 246, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    padding: 0.5rem;
+}
+
+.menuItem {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border: none;
+    background: none;
+    border-radius: 12px;
+    color: #64748b;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    width: 100%;
+}
+
+.menuItem:hover {
+    background: rgba(59, 130, 246, 0.08);
+    color: #3b82f6;
+    transform: translateX(4px);
+}
+
+.sprintBody {
+    padding: 0;
+    border-top: 1px solid #dfe1e6;
+}
+
+.issueList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.issueItem {
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.issueItem:last-child {
+    border-bottom: none;
+    border-radius: 0 0 14px 14px;
+}
+
+.addTasksButton {
+    width: 100%;
+    padding: 0.8rem;
+    background: none;
+    border: none;
+    border-top: 1px solid #dfe1e6;
+    text-align: left;
+    padding-left: 1.5rem;
+    cursor: pointer;
+    color: #3b82f6;
+    font-weight: 500;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    border-radius: 0 0 8px 8px;
+}
+
+.addTasksButton:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+}
+
+.issueLeft {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.issueTypeIcon {
+    font-size: 1rem;
+}
+
+.issueTitle {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    line-height: 1.3;
+    flex: 1;
+}
+
+.issueRight {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.issueStatus {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+    padding: 0.35rem 0.7rem;
+    border-radius: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.assigneeAvatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+    color: #5e6c84;
+}
+
+.assigneeAvatar:hover {
+    transform: scale(1.1);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+
+.avatarImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.emptySprint {
+    padding: 2rem;
+    text-align: center;
+    color: #6b778c;
+    font-style: italic;
+}
+
+.removeIssueButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #5e6c84;
+    margin-left: 0.5rem;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.removeIssueButton:hover {
+    color: #de350b;
+}
+
+.issueActions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
