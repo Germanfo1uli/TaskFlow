@@ -87,7 +87,8 @@ public class ProjectMemberService {
             throw new InvalidInviteException("User with ID " + userId + " does not exist");
         }
 
-        Project project = Project.builder().id(projectId).build();
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
         ProjectRole role = roleRepository.findByProject_IdAndIsDefaultTrue(projectId)
                 .orElseThrow(() -> new RoleNotFoundException("Default role not found"));
 

@@ -44,8 +44,8 @@ public class SprintService : ISprintService
             throw new KeyNotFoundException($"Project with id {projectId} not found");
         }
 
-        var startDate = request.StartDate ?? DateTime.UtcNow.Date;
-        var endDate = request.EndDate ?? startDate.AddDays(14);
+        var startDate = request.StartDate ?? null;
+        var endDate = request.EndDate ?? null;
         if (startDate >= endDate)
             throw new ArgumentException("Start date must be before end date");
 
