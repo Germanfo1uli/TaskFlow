@@ -8,7 +8,7 @@ RUN apk update && apk add --no-cache curl ca-certificates
 
 WORKDIR /src/dashboard-service
 
-RUN dotnet restore Backend.Dashboard.sln --verbosity detailed --force
+RUN dotnet restore Backend.Dashboard.sln --verbosity detailed --force --disable-parallel
 
 # Переходим в папку с проектом API
 WORKDIR /src/dashboard-service/Backend.Dashboards.Api
