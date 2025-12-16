@@ -7,6 +7,7 @@ import com.example.issueservice.dto.data.UserBatchRequest;
 import com.example.issueservice.dto.models.IssueComment;
 import com.example.issueservice.dto.models.ProjectTag;
 import com.example.issueservice.dto.models.enums.*;
+import com.example.issueservice.dto.rabbit.*;
 import com.example.issueservice.dto.response.*;
 import com.example.issueservice.exception.*;
 import com.example.issueservice.dto.models.Issue;
@@ -15,6 +16,7 @@ import com.example.issueservice.repositories.IssueRepository;
 import com.example.issueservice.repositories.ProjectTagRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +37,7 @@ public class IssueService {
     private final AuthService authService;
     private final UserServiceClient userClient;
     private final BoardServiceClient boardClient;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public IssueDetailResponse createIssue(
@@ -61,6 +64,10 @@ public class IssueService {
         List<TagResponse> tags = (tagIds != null && !tagIds.isEmpty())
                 ? assignTagsToIssue(newIssue, tagIds, projectId, true)
                 : List.of();
+
+        eventPublisher.publishEvent(
+                IssueCreatedEvent.from(newIssue)
+        );
 
         log.info("Successfully created issue with id: {}, level: {}", newIssue.getId(), newIssue.getLevel());
         return IssueDetailResponse.fromIssue(
@@ -95,6 +102,10 @@ public class IssueService {
             assignTagsToIssue(issue, tagIds, issue.getProjectId(), false);
         }
 
+        eventPublisher.publishEvent(
+                IssueUpdatedEvent.from(issue, userId)
+        );
+
         issueRepository.save(issue);
         log.info("Successfully updated issue with id: {}", issue.getId());
 
@@ -119,6 +130,10 @@ public class IssueService {
         log.info("Assigning tags {} to issue {} by user {}", tagIds, issueId, userId);
 
         assignTagsToIssue(issue, tagIds, issue.getProjectId(), false);
+
+        eventPublisher.publishEvent(
+                IssueUpdatedEvent.from(issue, userId)
+        );
 
         issueRepository.save(issue);
 
@@ -244,6 +259,25 @@ public class IssueService {
         return InternalIssueResponse.from(issue);
     }
 
+    public List<InternalIssueResponse> getIssuesByIds(List<Long> issuesIds) {
+
+        if (issuesIds == null || issuesIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Issue> issues = issueRepository.findAllById(issuesIds);
+
+        try {
+            boardClient.getProjectById(issues.getFirst().getProjectId());
+        } catch (Exception e) {
+            throw new ProjectNotFoundException(issues.getFirst().getProjectId());
+        }
+
+        return issues.stream()
+                .map(InternalIssueResponse::from)
+                .collect(Collectors.toList());
+    }
+
     public List<InternalIssueResponse> getIssuesInternal(Long projectId) {
         List<Issue> issues = issueRepository.findAllByProjectId(projectId);
 
@@ -314,6 +348,10 @@ public class IssueService {
                     PublicProfileResponse reviewer = userProfiles.get(issue.getCodeReviewerId());
                     PublicProfileResponse qa = userProfiles.get(issue.getQaEngineerId());
 
+                    List<AttachmentResponse> attachments = issue.getAttachments().stream()
+                            .map(AttachmentResponse::from)
+                            .toList();
+
                     return IssueDetailResponse.withUsers(
                             issue,
                             creator,
@@ -322,7 +360,7 @@ public class IssueService {
                             qa,
                             tags,
                             null,
-                            null
+                            attachments
                     );
                 })
                 .collect(Collectors.toList());
@@ -356,12 +394,65 @@ public class IssueService {
 
         authService.hasPermission(userId, issue.getProjectId(), EntityType.ISSUE, ActionType.DELETE);
 
+        eventPublisher.publishEvent(
+                IssueDeletedEvent.from(issue, userId)
+        );
+
         issueRepository.deleteById(issueId);
     }
 
     @Transactional
-    public List<InternalIssueResponse> startSprint(Long projectId, IssueBatchRequest issuesIds) {
+    public List<InternalIssueResponse> startSprint(Long userId, Long projectId, IssueBatchRequest issuesIds) {
+        log.info("Starting sprint for project {} with issues: {}", projectId, issuesIds);
 
-        return null;
+        try {
+            boardClient.getProjectById(projectId);
+        } catch (Exception e) {
+            throw new ProjectNotFoundException(projectId);
+        }
+
+        List<Long> issueIdsList = issuesIds.issuesIds();
+        if (issueIdsList == null || issueIdsList.isEmpty()) {
+            log.warn("No issues provided for sprint start in project {}", projectId);
+            return Collections.emptyList();
+        }
+
+        List<Issue> issues = issueRepository.findAllById(issueIdsList);
+        if (issues.size() != issueIdsList.size()) {
+            throw new IssueNotFoundException("One or more issues not found for IDs: " + issueIdsList);
+        }
+
+        boolean allInProject = issues.stream().allMatch(issue -> issue.getProjectId().equals(projectId));
+        if (!allInProject) {
+            throw new IssueNotInProjectException("Some issues do not belong to project " + projectId);
+        }
+
+        for (Issue issue : issues) {
+            if (issue.getStatus() == IssueStatus.TO_DO) {
+                if (issue.getAssigneeId() == null) {
+                    IssueStatus oldStatus = issue.getStatus();
+                    issue.setStatus(IssueStatus.SELECTED_FOR_DEVELOPMENT);
+                    eventPublisher.publishEvent(
+                            IssueStatusChangedEvent.from(issue, userId, oldStatus.name())
+                    );
+                    log.info("Changed status of issue {} to SELECTED_FOR_DEVELOPMENT (no assignee)", issue.getId());
+                } else {
+                    IssueStatus oldStatus = issue.getStatus();
+                    issue.setStatus(IssueStatus.IN_PROGRESS);
+                    eventPublisher.publishEvent(
+                            IssueStatusChangedEvent.from(issue, userId, oldStatus.name())
+                    );
+                    log.info("Changed status of issue {} to IN_PROGRESS (has assignee {})", issue.getId(), issue.getAssigneeId());
+                }
+            } else {
+                log.warn("Issue {} is not in TO_DO status (current: {}), skipping status change", issue.getId(), issue.getStatus());
+            }
+        }
+
+        issueRepository.saveAll(issues);
+
+        return issues.stream()
+                .map(InternalIssueResponse::from)
+                .collect(Collectors.toList());
     }
 }

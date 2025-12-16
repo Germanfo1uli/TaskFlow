@@ -59,8 +59,20 @@ public class InternalController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Получение задач по списку issuesIds")
+    @GetMapping("/issues/batch")
+    public ResponseEntity<List<InternalIssueResponse>> getIssuesByIds(
+            @AuthenticationPrincipal SystemPrincipal principal,
+            @RequestBody IssueBatchRequest request) {
+
+        log.info("Service {} requested {} profiles", principal.getUsername(), request.issuesIds().size());
+
+        List<InternalIssueResponse> responses = issueService.getIssuesByIds(request.issuesIds());
+        return ResponseEntity.ok(responses);
+    }
+
     @Operation(summary = "Старт спринта")
-    @PostMapping("/issues")
+    @PostMapping("/issues/startsprint")
     public ResponseEntity<List<InternalIssueResponse>> startSprint(
             @AuthenticationPrincipal SystemPrincipal principal,
             @RequestParam Long projectId,
@@ -71,7 +83,7 @@ public class InternalController {
         }
 
         log.info("Service {} requested info for start sprint of project {}", principal.getUsername(), projectId);
-        List<InternalIssueResponse> response = issueService.startSprint(projectId, issuesIds);
+        List<InternalIssueResponse> response = issueService.startSprint(issuesIds.userId(), projectId, issuesIds);
         return ResponseEntity.ok(response);
     }
 }

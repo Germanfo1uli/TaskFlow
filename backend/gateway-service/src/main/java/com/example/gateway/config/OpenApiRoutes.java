@@ -24,6 +24,14 @@ public class OpenApiRoutes {
                         .path("/v3/api-docs/issue-service")
                         .filters(f -> f.rewritePath("/v3/api-docs/issue-service", "/v3/api-docs"))
                         .uri("lb://issue-service"))
+                .route("sprints-service-docs", r -> r
+                        .path("/v3/api-docs/sprints-service")
+                        .filters(f -> f.rewritePath("/v3/api-docs/sprints-service", "/v3/api-docs/v1"))
+                        .uri("lb://sprints-service"))
+                .route("dashboard-service-docs", r -> r
+                        .path("/v3/api-docs/dashboard-service")
+                        .filters(f -> f.rewritePath("/v3/api-docs/dashboard-service", "/v3/api-docs/v1"))
+                        .uri("lb://dashboard-service"))
                 // Individual swaggers
                 .route("user-service-swagger", r -> r
                         .path("/api/user/swagger-ui/**")
@@ -37,6 +45,14 @@ public class OpenApiRoutes {
                         .path("/api/issue/swagger-ui/**")
                         .filters(f -> f.rewritePath("/api/issue/swagger-ui/(?<path>.*)", "/swagger-ui/${path}"))
                         .uri("lb://issue-service"))
+                .route("sprints-service-swagger", r -> r
+                        .path("/api/sprints/swagger-ui/**")
+                        .filters(f -> f.rewritePath("/api/sprints/swagger-ui/(?<path>.*)", "/swagger-ui/${path}"))
+                        .uri("lb://sprints-service"))
+                .route("dashboard-service-swagger", r -> r
+                        .path("/api/dashboards/swagger-ui/**")
+                        .filters(f -> f.rewritePath("/api/dashboards/swagger-ui/(?<path>.*)", "/swagger-ui/${path}"))
+                        .uri("lb://dashboard-service"))
                 .build();
     }
 }

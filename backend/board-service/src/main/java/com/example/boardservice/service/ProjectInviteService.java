@@ -2,14 +2,18 @@ package com.example.boardservice.service;
 
 import com.example.boardservice.client.UserServiceClient;
 import com.example.boardservice.dto.models.Project;
+import com.example.boardservice.dto.models.ProjectMember;
 import com.example.boardservice.dto.models.enums.ActionType;
 import com.example.boardservice.dto.models.enums.EntityType;
+import com.example.boardservice.dto.rabbit.ProjectMemberAddedEvent;
+import com.example.boardservice.dto.rabbit.ProjectUpdatedEvent;
 import com.example.boardservice.exception.InvalidInviteException;
 import com.example.boardservice.exception.ProjectNotFoundException;
 import com.example.boardservice.repository.ProjectMemberRepository;
 import com.example.boardservice.repository.ProjectRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

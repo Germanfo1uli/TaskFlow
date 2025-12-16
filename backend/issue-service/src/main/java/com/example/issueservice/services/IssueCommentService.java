@@ -3,6 +3,9 @@ package com.example.issueservice.services;
 import com.example.issueservice.client.UserServiceClient;
 import com.example.issueservice.dto.models.enums.ActionType;
 import com.example.issueservice.dto.models.enums.EntityType;
+import com.example.issueservice.dto.rabbit.IssueAssigneeRemovedEvent;
+import com.example.issueservice.dto.rabbit.IssueCommentCreatedEvent;
+import com.example.issueservice.dto.rabbit.IssueCommentUpdatedEvent;
 import com.example.issueservice.dto.response.CommentResponse;
 import com.example.issueservice.dto.response.PublicProfileResponse;
 import com.example.issueservice.dto.response.UserPermissionsResponse;
@@ -15,6 +18,7 @@ import com.example.issueservice.repositories.IssueCommentRepository;
 import com.example.issueservice.repositories.IssueRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +31,7 @@ public class IssueCommentService {
     private final IssueRepository issueRepository;
     private final AuthService authService;
     private final UserServiceClient userClient;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public CommentResponse createComment(Long userId, Long issueId, String message) {
@@ -49,8 +54,9 @@ public class IssueCommentService {
         IssueComment savedComment = commentRepository.save(newComment);
         log.info("Successfully created comment with id: {}", savedComment.getId());
 
-        // FUTURE: Публикация события в RabbitMQ для уведомлений
-        // rabbitTemplate.convertAndSend("jira.events", "issue.comment.added", new CommentAddedEvent(issueId, savedComment.getId(), authorId));
+        eventPublisher.publishEvent(
+                IssueCommentCreatedEvent.from(savedComment, issue.getProjectId())
+        );
 
         return CommentResponse.from(savedComment, profile);
     }
@@ -65,6 +71,10 @@ public class IssueCommentService {
 
         comment.setText(message);
         commentRepository.save(comment);
+
+        eventPublisher.publishEvent(
+                IssueCommentUpdatedEvent.from(comment, comment.getIssue().getProjectId(), userId)
+        );
 
         return CommentResponse.from(comment, null);
     }
@@ -96,6 +106,10 @@ public class IssueCommentService {
             authService.hasPermission(userId, projectId, EntityType.COMMENT, ActionType.DELETE_OWN);
             log.info("User {} is author of comment {}, deletion permitted", userId, commentId);
         }
+
+        eventPublisher.publishEvent(
+                IssueCommentUpdatedEvent.from(comment, comment.getIssue().getProjectId(), userId)
+        );
 
         commentRepository.delete(comment);
         log.info("Successfully deleted comment {}", commentId);

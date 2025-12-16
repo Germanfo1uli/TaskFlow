@@ -4,8 +4,13 @@ WORKDIR /src
 
 COPY . .
 
-RUN apk add --no-cache curl
+RUN apk update && apk add --no-cache curl ca-certificates
 
+WORKDIR /src/dashboard-service
+
+RUN dotnet restore Backend.Dashboard.sln --verbosity detailed --force
+
+# Переходим в папку с проектом API
 WORKDIR /src/dashboard-service/Backend.Dashboards.Api
 
 CMD ["sh", "-c", "\

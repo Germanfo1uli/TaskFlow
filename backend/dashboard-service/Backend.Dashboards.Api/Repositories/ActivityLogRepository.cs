@@ -48,4 +48,94 @@ public class ActivityLogRepository
             .Take(pageSize)
             .ToListAsync();
     }
+
+    public async Task<List<long>> GetEntityIdsByTypeAsync(long projectId, string entityType, string actionType)
+    {
+        return await _context.ActivityLogs
+            .Where(log => log.ProjectId == projectId && log.EntityType == entityType && log.ActionType == actionType)
+            .Select(log => log.EntityId)
+            .Distinct()
+            .ToListAsync();
+    }
+
+    public async Task<Dictionary<long, string>> GetLatestStatusForIssuesAsync(long projectId, IEnumerable<long> issueIds)
+    {
+        var statusActionTypes = new[]
+        {
+        "SELECTED_FOR_DEVELOPMENT", "IN_PROGRESS", "CODE_REVIEW", "QA", "STAGING", "DONE", "Created"
+    };
+
+        return await _context.ActivityLogs
+            .Where(log => log.ProjectId == projectId &&
+                           issueIds.Contains(log.EntityId) &&
+                           log.EntityType == "Issue" &&
+                           statusActionTypes.Contains(log.ActionType))
+
+            .GroupBy(log => log.EntityId)
+            .Select(group => group.OrderByDescending(log => log.CreatedAt).First())
+            .ToDictionaryAsync(log => log.EntityId, log => log.ActionType);
+    }
+
+    public async Task<List<decimal>> GetCycleTimesForCompletedIssuesAsync(long projectId, IEnumerable<long> completedIssueIds)
+    {
+        if (!completedIssueIds.Any())
+        {
+            return new List<decimal>();
+        }
+
+        var creationLogs = await _context.ActivityLogs
+            .Where(log => log.ProjectId == projectId &&
+                           completedIssueIds.Contains(log.EntityId) &&
+                           log.EntityType == "Issue" &&
+                           log.ActionType == "Created")
+            .ToListAsync();
+
+        var creationDates = creationLogs.ToDictionary(log => log.EntityId, log => log.CreatedAt);
+
+        var completionLogs = await _context.ActivityLogs
+            .Where(log => log.ProjectId == projectId &&
+                           completedIssueIds.Contains(log.EntityId) &&
+                           log.EntityType == "Issue" &&
+                           log.ActionType == "DONE")
+            .ToListAsync();
+
+        var completionDates = completionLogs.ToDictionary(log => log.EntityId, log => log.CreatedAt);
+
+        var cycleTimes = new List<decimal>();
+        foreach (var issueId in completedIssueIds)
+        {
+            if (creationDates.TryGetValue(issueId, out var createdDate) &&
+                completionDates.TryGetValue(issueId, out var completedDate))
+            {
+                var cycleTime = (decimal)(completedDate - createdDate).TotalDays;
+                cycleTimes.Add(cycleTime);
+            }
+        }
+
+        return cycleTimes;
+    }
+
+    public async Task<List<long>> GetDeletedEntityIdsAsync(long projectId, string entityType)
+    {
+        return await _context.ActivityLogs
+            .Where(log => log.ProjectId == projectId && log.EntityType == entityType && log.ActionType == "Deleted")
+            .Select(log => log.EntityId)
+            .Distinct()
+            .ToListAsync();
+    }
+
+    public async Task<Dictionary<long, long>> GetIssueCreatorsAsync(long projectId, IEnumerable<long> activeIssueIds)
+    {
+        if (!activeIssueIds.Any())
+        {
+            return new Dictionary<long, long>();
+        }
+
+        return await _context.ActivityLogs
+            .Where(log => log.ProjectId == projectId &&
+                           activeIssueIds.Contains(log.EntityId) && 
+                           log.EntityType == "Issue" &&
+                           log.ActionType == "Created")
+            .ToDictionaryAsync(log => log.EntityId, log => log.UserId);
+    }
 }

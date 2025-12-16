@@ -5,8 +5,8 @@ namespace Backend.Dashboard.Api.Services;
 public interface IDashboardService
 {
     Task<DashboardSnapshot> CreateSnapshotAsync(long projectId, string metricName, decimal metricValue, DateTime snapshotDate);
-    Task<DashboardDataDto> GetDashboardDataAsync(long projectId, DateTime? fromDate = null, DateTime? toDate = null);
     Task<List<MetricTrendDto>> GetMetricTrendAsync(long projectId, string metricName, DateTime fromDate, DateTime toDate);
+    Task<DashboardEfficiencyDto> CalculateAndSaveDashboardDataAsync(long userId, long projectId);
 }
 
 public class DashboardDataDto

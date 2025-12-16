@@ -6,10 +6,12 @@ namespace Backend.Dashboard.Api.Services;
 public class ActivityLogService : IActivityLogService
 {
     private readonly ActivityLogRepository _activityLogRepository;
+    private readonly AuthService _authService;
 
-    public ActivityLogService(ActivityLogRepository activityLogRepository)
+    public ActivityLogService(ActivityLogRepository activityLogRepository, AuthService authService)
     {
         _activityLogRepository = activityLogRepository;
+        _authService = authService;
     }
 
     public async Task<ActivityLog> LogActivityAsync(long projectId, long userId, string actionType, string entityType, long entityId)
@@ -26,8 +28,10 @@ public class ActivityLogService : IActivityLogService
         return await _activityLogRepository.CreateAsync(log);
     }
 
-    public async Task<List<ActivityLog>> GetProjectActivityAsync(long projectId, int page = 1, int pageSize = 50)
+    public async Task<List<ActivityLog>> GetProjectActivityAsync(long userId, long projectId, int page = 1, int pageSize = 50)
     {
+        await _authService.HasPermissionAsync(userId, projectId,
+                Cache.EntityType.LOGS, Cache.ActionType.VIEW);
         return await _activityLogRepository.GetByProjectIdAsync(projectId, page, pageSize);
     }
 

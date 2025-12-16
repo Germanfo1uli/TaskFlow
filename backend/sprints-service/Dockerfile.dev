@@ -4,7 +4,11 @@ WORKDIR /src
 
 COPY . .
 
-RUN apk add --no-cache curl
+RUN apk update && apk add --no-cache curl ca-certificates
+
+WORKDIR /src/sprints-service
+
+RUN dotnet restore Backend.Sprints.sln --verbosity detailed --force
 
 WORKDIR /src/sprints-service/Backend.Sprints.Api
 

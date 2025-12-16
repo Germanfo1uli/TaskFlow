@@ -2,6 +2,7 @@ package com.example.issueservice.services;
 
 import com.example.issueservice.dto.models.Issue;
 import com.example.issueservice.dto.models.Attachment;
+import com.example.issueservice.dto.rabbit.AttachmentCreatedEvent;
 import com.example.issueservice.dto.response.AttachmentResponse;
 import com.example.issueservice.dto.response.UserPermissionsResponse;
 import com.example.issueservice.dto.models.enums.ActionType;
@@ -11,6 +12,7 @@ import com.example.issueservice.repositories.AttachmentRepository;
 import com.example.issueservice.repositories.IssueRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,6 +28,7 @@ public class AttachmentService {
     private final AttachmentRepository attachmentRepository;
     private final IssueRepository issueRepository;
     private final AuthService authService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public AttachmentResponse uploadAttachment(Long userId, Long issueId, MultipartFile file) {
@@ -70,6 +73,10 @@ public class AttachmentService {
             attachment = attachmentRepository.save(attachment);
             log.info("User {} uploaded attachment {} to issue {}", userId, attachment.getId(), issueId);
 
+            eventPublisher.publishEvent(
+                    AttachmentCreatedEvent.from(attachment, userId)
+            );
+
             return AttachmentResponse.from(attachment);
         } catch (IOException e) {
             log.error("Failed to read file", e);
@@ -109,6 +116,10 @@ public class AttachmentService {
         } else {
             authService.hasPermission(userId, projectId, EntityType.ATTACHMENT, ActionType.DELETE_OWN);
         }
+
+        eventPublisher.publishEvent(
+                AttachmentCreatedEvent.from(attachment, userId)
+        );
 
         attachmentRepository.delete(attachment);
         log.info("User {} deleted attachment {}", userId, attachmentId);

@@ -6,32 +6,31 @@ import com.example.issueservice.dto.models.enums.IssueType;
 import com.example.issueservice.dto.models.enums.Priority;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Schema(description = "Информация о задаче для других микросервисов")
 public record InternalIssueResponse(
-        @Schema(description = "ID задачи", example = "123")
         Long id,
 
-        @Schema(description = "ID ответственного", example = "123")
         Long assigneeId,
 
-        @Schema(description = "ID ответственного", example = "123")
         String title,
 
-        @Schema(description = "ID ответственного", example = "123")
         IssueStatus status,
 
-        @Schema(description = "ID ответственного", example = "123")
         IssueType type,
 
-        @Schema(description = "ID ответственного", example = "123")
         Priority priority,
 
-        @Schema(description = "ID ответственного", example = "123")
-        LocalDateTime completedAt
+        Instant completedAt
 ) {
         public static InternalIssueResponse from(Issue issue) {
+
+                Instant completedAt = issue.getCompletedAt() != null
+                        ? issue.getCompletedAt().atZone(java.time.ZoneOffset.UTC).toInstant()
+                        : null;
+
                 return new InternalIssueResponse(
                         issue.getId(),
                         issue.getAssigneeId(),
@@ -39,7 +38,7 @@ public record InternalIssueResponse(
                         issue.getStatus(),
                         issue.getType(),
                         issue.getPriority(),
-                        issue.getCompletedAt()
+                        completedAt
                 );
         }
 }

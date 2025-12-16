@@ -8,14 +8,18 @@ import com.example.boardservice.dto.models.ProjectMember;
 import com.example.boardservice.dto.models.ProjectRole;
 import com.example.boardservice.dto.models.enums.ActionType;
 import com.example.boardservice.dto.models.enums.EntityType;
+import com.example.boardservice.dto.rabbit.ProjectMemberAddedEvent;
+import com.example.boardservice.dto.rabbit.ProjectMemberRemovedEvent;
 import com.example.boardservice.dto.response.MemberExistResponse;
 import com.example.boardservice.dto.response.ProjectMemberResponse;
 import com.example.boardservice.dto.response.PublicProfileResponse;
 import com.example.boardservice.exception.*;
 import com.example.boardservice.repository.ProjectMemberRepository;
+import com.example.boardservice.repository.ProjectRepository;
 import com.example.boardservice.repository.ProjectRoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -30,9 +34,11 @@ import java.util.stream.Collectors;
 public class ProjectMemberService {
     private final ProjectMemberRepository memberRepository;
     private final ProjectRoleRepository roleRepository;
+    private final ProjectRepository projectRepository;
     private final UserServiceClient userClient;
     private final AuthService authService;
     private final RedisCacheService redisCacheService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public ProjectMember addMember(Long userId, Long projectId, Long roleId) {
@@ -47,7 +53,8 @@ public class ProjectMemberService {
             throw new AlreadyMemberException("You are already a project member");
         }
 
-        Project project = Project.builder().id(projectId).build();
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
         ProjectRole role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new RoleNotFoundException("Role with ID: " + roleId + "not found"));
 
@@ -60,6 +67,10 @@ public class ProjectMemberService {
                 .userId(userId)
                 .role(role)
                 .build();
+
+        eventPublisher.publishEvent(
+                ProjectMemberAddedEvent.fromMember(member, project.getOwnerId())
+        );
 
         return memberRepository.save(member);
     }
@@ -85,6 +96,10 @@ public class ProjectMemberService {
                 .userId(userId)
                 .role(role)
                 .build();
+
+        eventPublisher.publishEvent(
+                ProjectMemberAddedEvent.fromMember(member, project.getOwnerId())
+        );
 
         return memberRepository.save(member);
     }
@@ -174,6 +189,10 @@ public class ProjectMemberService {
         }
 
         memberRepository.deleteByUserIdAndProject_Id(kickedId, projectId);
+
+        eventPublisher.publishEvent(
+                ProjectMemberRemovedEvent.from(projectId, kickedId, userId)
+        );
 
         TransactionSynchronizationManager.registerSynchronization(
                 new TransactionSynchronization() {

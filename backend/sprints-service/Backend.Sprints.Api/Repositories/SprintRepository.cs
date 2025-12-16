@@ -15,25 +15,15 @@ public class SprintRepository
 
     public async Task<Sprint?> GetByIdAsync(long id)
     {
-        return await _context.Sprints
-            .Include(s => s.SprintIssues)
-            .FirstOrDefaultAsync(s => s.Id == id);
+        return await _context.Sprints.FindAsync(id);
     }
 
     public async Task<List<Sprint>> GetByProjectIdAsync(long projectId)
     {
         return await _context.Sprints
+            .AsNoTracking()
             .Where(s => s.ProjectId == projectId)
-            .Include(s => s.SprintIssues)
             .OrderBy(s => s.StartDate)
-            .ToListAsync();
-    }
-
-    public async Task<List<Sprint>> GetByProjectIdAndStatusAsync(long projectId, SprintStatus status)
-    {
-        return await _context.Sprints
-            .Where(s => s.ProjectId == projectId && s.Status == status)
-            .Include(s => s.SprintIssues)
             .ToListAsync();
     }
 
@@ -44,16 +34,14 @@ public class SprintRepository
         return sprint;
     }
 
-    public async Task<Sprint> UpdateAsync(Sprint sprint)
+    public async Task UpdateAsync(Sprint sprint)
     {
-        _context.Sprints.Update(sprint);
         await _context.SaveChangesAsync();
-        return sprint;
     }
 
     public async Task DeleteAsync(long id)
     {
-        var sprint = await GetByIdAsync(id);
+        var sprint = await _context.Sprints.FindAsync(id);
         if (sprint != null)
         {
             _context.Sprints.Remove(sprint);
@@ -61,22 +49,21 @@ public class SprintRepository
         }
     }
 
-    public async Task<bool> ExistsAsync(long id)
+    public async Task<List<Sprint>> GetPlannedSprintsWithStartDatePassedAsync()
     {
-        return await _context.Sprints.AnyAsync(s => s.Id == id);
+        var today = DateTime.UtcNow.Date;
+        return await _context.Sprints
+            .Where(s => s.Status == SprintStatus.Planned)
+            .Where(s => s.StartDate <= today)
+            .ToListAsync();
     }
 
-    public async Task<bool> HasDateOverlapAsync(long projectId, DateTime startDate, DateTime endDate, long? excludeSprintId = null)
+    public async Task<List<Sprint>> GetActiveExpiredSprintsAsync()
     {
-        var query = _context.Sprints.Where(s => s.ProjectId == projectId);
-
-        if (excludeSprintId.HasValue)
-        {
-            query = query.Where(s => s.Id != excludeSprintId.Value);
-        }
-
-        return await query
-            .Where(s => s.StartDate <= endDate && s.EndDate >= startDate)
-            .AnyAsync();
+        var today = DateTime.UtcNow.Date;
+        return await _context.Sprints
+            .Where(s => s.Status == SprintStatus.Active)
+            .Where(s => s.EndDate < today)
+            .ToListAsync();
     }
 }

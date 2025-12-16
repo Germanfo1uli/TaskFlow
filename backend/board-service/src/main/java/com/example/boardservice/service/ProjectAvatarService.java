@@ -4,11 +4,14 @@ import com.example.boardservice.dto.models.Project;
 import com.example.boardservice.dto.models.ProjectAvatar;
 import com.example.boardservice.dto.models.enums.ActionType;
 import com.example.boardservice.dto.models.enums.EntityType;
+import com.example.boardservice.dto.rabbit.ProjectCreatedEvent;
+import com.example.boardservice.dto.rabbit.ProjectUpdatedEvent;
 import com.example.boardservice.exception.InvalidFileException;
 import com.example.boardservice.exception.ProjectNotFoundException;
 import com.example.boardservice.repository.ProjectAvatarRepository;
 import com.example.boardservice.repository.ProjectRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,6 +27,7 @@ public class ProjectAvatarService {
     private final ProjectAvatarRepository avatarRepository;
     private final ProjectRepository projectRepository;
     private final AuthService authService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void uploadAvatar(Long userId, Long projectId, MultipartFile file) {
@@ -50,6 +54,10 @@ public class ProjectAvatarService {
         }
 
         avatarRepository.save(avatar);
+
+        eventPublisher.publishEvent(
+                ProjectUpdatedEvent.fromProject(project, userId)
+        );
     }
 
     private String getExtension(String originalName) {
@@ -73,5 +81,9 @@ public class ProjectAvatarService {
 
         project.setAvatar(null);
         projectRepository.save(project);
+
+        eventPublisher.publishEvent(
+                ProjectUpdatedEvent.fromProject(project, userId)
+        );
     }
 }

@@ -170,15 +170,32 @@ dashboard-service	user-service	REST	GET /api/internal/users?ids=...	      Раз
 dashboard-service	project-service	REST	GET /api/internal/projects/{id}	      Получение данных о проекте для дашборда.
 notifications-service	user-serviceREST	GET /api/internal/users?ids=...	      Валидация участников уведомления.
 
-user-service	(All)	RabbitMQ	user.created	                          { "userId": 123, "email": "..." }
-user-service	(All)	RabbitMQ	user.updated	                          { "userId": 123, "newEmail": "..." }
-user-service	(All)	RabbitMQ	user.deleted	                          { "userId": 123 }
-project-service	(All)	RabbitMQ	project.created	                          { "projectId": 55, "creatorId": 123 }
-project-service	(All)	RabbitMQ	project.member.added	                  { "projectId": 55, "userId": 456 }
-issue-service	(All)	RabbitMQ	issue.created	                          { "issueId": 789, "projectId": 55, "creatorId": 123 }
-issue-service	(All)	RabbitMQ	issue.assigned	                          { "issueId": 789, "assigneeId": 456 }
-issue-service	(All)	RabbitMQ	issue.status.changed	                  { "issueId": 789, "newStatus": "In Progress" }
-sprint-service	(All)	RabbitMQ	sprint.created	                          { "sprintId": 11, "projectId": 55 }
-sprint-service	(All)	RabbitMQ	sprint.started	                          { "sprintId": 11, "projectId": 55 }
-dashboard-service	(All)	RabbitMQ	dashboard.snapshot.generated	      { "projectId": 55, "timestamp": "..." }
-notifications-service	(All)	RabbitMQ	notification.created	          { "notificationId": 999, "userId": 456, "type": "..." }
+Отправляющий сервис
+Сущность (EntityType)
+Действие (ActionType)
+Routing Key (Ключ маршрутизации)
+Обрабатывающая очередь
+project-service	Project	Created	activity.Project.Created	dashboard.activity.queue
+Project	Updated	activity.Project.Updated	dashboard.activity.queue
+Project	Deleted	activity.Project.Deleted	dashboard.activity.queue
+ProjectMember	Added	activity.ProjectMember.Added	dashboard.activity.queue
+ProjectMember	Removed	activity.ProjectMember.Removed	dashboard.activity.queue
+issue-service	Issue	Created	activity.Issue.Created	dashboard.activity.queue
+Issue	Deleted	activity.Issue.Deleted	dashboard.activity.queue
+Issue	TitleChanged	activity.Issue.TitleChanged	dashboard.activity.queue
+Issue	DescriptionChanged	activity.Issue.DescriptionChanged	dashboard.activity.queue
+Issue	StatusChanged	activity.Issue.StatusChanged	dashboard.activity.queue
+Issue	TypeChanged	activity.Issue.TypeChanged	dashboard.activity.queue
+Issue	PriorityChanged	activity.Issue.PriorityChanged	dashboard.activity.queue
+IssueAssignee	Added	activity.IssueAssignee.Added	dashboard.activity.queue
+IssueAssignee	Removed	activity.IssueAssignee.Removed	dashboard.activity.queue
+IssueComment	Created	activity.IssueComment.Created	dashboard.activity.queue
+IssueComment	Updated	activity.IssueComment.Updated	dashboard.activity.queue
+IssueComment	Deleted	activity.IssueComment.Deleted	dashboard.activity.queue
+Attachment	Created	activity.Attachment.Created	dashboard.activity.queue
+Attachment	Deleted	activity.Attachment.Deleted	dashboard.activity.queue
+sprints-service	Sprint	Created	activity.Sprint.Created	dashboard.activity.queue
+Sprint	Started	activity.Sprint.Started	dashboard.activity.queue
+Sprint	Completed	activity.Sprint.Completed	dashboard.activity.queue
+SprintIssue	Added	activity.SprintIssue.Added	dashboard.activity.queue
+SprintIssue	Removed	activity.SprintIssue.Removed	dashboard.activity.queue

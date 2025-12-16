@@ -1,49 +1,47 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Backend.Sprints.Api.Services;
+using Backend.Shared.DTOs;
 
 namespace Backend.Sprints.Api.Controllers;
 
 [ApiController]
-[Route("api/sprints/{sprintId}/[controller]")]
+[Route("api/sprints/{sprintId}/issues")]
 public class SprintIssuesController : ControllerBase
 {
     private readonly ISprintIssueService _sprintIssueService;
+    private readonly ICurrentUserService _currentUser;
 
-    public SprintIssuesController(ISprintIssueService sprintIssueService)
+    public SprintIssuesController(ISprintIssueService sprintIssueService, ICurrentUserService currentUser)
     {
         _sprintIssueService = sprintIssueService;
+        _currentUser = currentUser;
     }
 
-    [HttpPost]
-    public async Task<IActionResult> AddIssueToSprint(long sprintId, [FromBody] AddIssueRequest request)
+    [HttpPost("batch")]
+    public async Task<IActionResult> AddIssuesToSprint(long sprintId, [FromBody] AddIssuesRequestDto request)
     {
         try
         {
-            await _sprintIssueService.AddIssueToSprintAsync(sprintId, request.IssueId);
-            return Ok(new { message = "Issue added to sprint successfully" });
+            await _sprintIssueService.AddIssuesToSprintAsync(_currentUser.UserId, sprintId, request.IssueIds);
+            return Ok(new { message = $"Added {request.IssueIds.Count} issues to sprint successfully" });
         }
-        catch (Exception ex)
+        catch (KeyNotFoundException ex)
         {
-            return BadRequest(ex.Message);
+            return NotFound(ex.Message);
         }
     }
 
     [HttpDelete("{issueId}")]
     public async Task<IActionResult> RemoveIssueFromSprint(long sprintId, long issueId)
     {
-        await _sprintIssueService.RemoveIssueFromSprintAsync(sprintId, issueId);
-        return NoContent();
+        try
+        {
+            await _sprintIssueService.RemoveIssueFromSprintAsync(_currentUser.UserId, sprintId, issueId);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
     }
-
-    [HttpGet]
-    public async Task<IActionResult> GetSprintIssues(long sprintId)
-    {
-        var issueIds = await _sprintIssueService.GetIssueIdsBySprintIdAsync(sprintId);
-        return Ok(new { SprintId = sprintId, IssueIds = issueIds });
-    }
-}
-
-public class AddIssueRequest
-{
-    public long IssueId { get; set; }
 }

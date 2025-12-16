@@ -12,15 +12,19 @@ public class SprintIssueRepository
         _context = context;
     }
 
-    public async Task AddIssueToSprintAsync(long sprintId, long issueId)
+    public async Task AddIssuesToSprintAsync(long sprintId, List<long> issueIds)
     {
-        var sprintIssue = new SprintIssue
+        var existing = await GetIssueIdsBySprintIdAsync(sprintId);
+        var newIds = issueIds.Except(existing).ToList();
+        if (!newIds.Any()) return;
+
+        var sprintIssues = newIds.Select(id => new SprintIssue
         {
             SprintId = sprintId,
-            IssueId = issueId
-        };
+            IssueId = id
+        }).ToList();
 
-        _context.SprintIssues.Add(sprintIssue);
+        _context.SprintIssues.AddRange(sprintIssues);
         await _context.SaveChangesAsync();
     }
 
@@ -31,10 +35,10 @@ public class SprintIssueRepository
             .ExecuteDeleteAsync();
     }
 
-    public async Task RemoveIssueFromAllSprintsAsync(long issueId)
+    public async Task RemoveIssuesFromAllSprintsAsync(List<long> issueIds)
     {
         await _context.SprintIssues
-            .Where(si => si.IssueId == issueId)
+            .Where(si => issueIds.Contains(si.IssueId))
             .ExecuteDeleteAsync();
     }
 
@@ -46,12 +50,17 @@ public class SprintIssueRepository
             .ToListAsync();
     }
 
-    public async Task<List<long>> GetSprintIdsByIssueIdAsync(long issueId)
+    public async Task<int> GetIssueCountBySprintIdAsync(long sprintId)
     {
         return await _context.SprintIssues
-            .Where(si => si.IssueId == issueId)
-            .Select(si => si.SprintId)
-            .ToListAsync();
+            .CountAsync(si => si.SprintId == sprintId);
+    }
+
+    public async Task ClearAllIssuesFromSprintAsync(long sprintId)
+    {
+        await _context.SprintIssues
+            .Where(si => si.SprintId == sprintId)
+            .ExecuteDeleteAsync();
     }
 
     public async Task<bool> IsIssueInSprintAsync(long sprintId, long issueId)

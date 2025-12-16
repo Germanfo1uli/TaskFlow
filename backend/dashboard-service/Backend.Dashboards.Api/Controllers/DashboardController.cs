@@ -4,46 +4,41 @@ using Backend.Dashboard.Api.Services;
 namespace Backend.Dashboard.Api.Controllers;
 
 [ApiController]
-[Route("api/projects/{projectId}/[controller]")]
+[Route("api/dashboards/{projectId}/[controller]")]
 public class DashboardController : ControllerBase
 {
     private readonly IDashboardService _dashboardService;
+    private readonly ICurrentUserService _currentUser;
+    private readonly ILogger<DashboardController> _logger;
 
-    public DashboardController(IDashboardService dashboardService)
+    public DashboardController(IDashboardService dashboardService, ICurrentUserService currentUser, ILogger<DashboardController> logger)
     {
         _dashboardService = dashboardService;
+        _currentUser = currentUser;
+        _logger = logger;
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetDashboard(long projectId, [FromQuery] DateTime? fromDate, [FromQuery] DateTime? toDate)
+    public async Task<ActionResult<DashboardEfficiencyDto>> GetDashboard(long projectId)
     {
         try
         {
-            var dashboardData = await _dashboardService.GetDashboardDataAsync(projectId, fromDate, toDate);
+            var dashboardData = await _dashboardService.CalculateAndSaveDashboardDataAsync(_currentUser.UserId, projectId);
             return Ok(dashboardData);
         }
-        catch (Exception ex)
+        catch (KeyNotFoundException ex)
         {
-            return BadRequest(ex.Message);
-        }
-    }
-
-    [HttpPost("snapshots")]
-    public async Task<IActionResult> CreateSnapshot(long projectId, [FromBody] CreateSnapshotRequest request)
-    {
-        try
-        {
-            var snapshot = await _dashboardService.CreateSnapshotAsync(projectId, request.MetricName, request.MetricValue, request.SnapshotDate);
-            return Ok(snapshot);
+            return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            _logger.LogError(ex, "An error occurred while fetching dashboard for ProjectId: {ProjectId}", projectId);
+            return StatusCode(500, "An internal server error occurred.");
         }
     }
 
     [HttpGet("metrics/{metricName}/trend")]
-    public async Task<IActionResult> GetMetricTrend(long projectId, string metricName, [FromQuery] DateTime fromDate, [FromQuery] DateTime toDate)
+    public async Task<ActionResult<List<MetricTrendDto>>> GetMetricTrend(long projectId, string metricName, [FromQuery] DateTime fromDate, [FromQuery] DateTime toDate)
     {
         try
         {
@@ -52,14 +47,8 @@ public class DashboardController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "An error occurred while fetching trend for ProjectId: {ProjectId}", projectId);
             return BadRequest(ex.Message);
         }
     }
-}
-
-public class CreateSnapshotRequest
-{
-    public string MetricName { get; set; } = string.Empty;
-    public decimal MetricValue { get; set; }
-    public DateTime SnapshotDate { get; set; } = DateTime.UtcNow;
 }

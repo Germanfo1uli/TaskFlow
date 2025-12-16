@@ -5,11 +5,16 @@ import com.example.issueservice.dto.models.Issue;
 import com.example.issueservice.dto.models.enums.ActionType;
 import com.example.issueservice.dto.models.enums.AssignmentType;
 import com.example.issueservice.dto.models.enums.EntityType;
+import com.example.issueservice.dto.models.enums.IssueStatus;
+import com.example.issueservice.dto.rabbit.IssueAssigneeAddedEvent;
+import com.example.issueservice.dto.rabbit.IssueAssigneeRemovedEvent;
+import com.example.issueservice.dto.rabbit.IssueUpdatedEvent;
 import com.example.issueservice.exception.IssueNotFoundException;
 import com.example.issueservice.exception.UserNotFoundException;
 import com.example.issueservice.repositories.IssueRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +27,7 @@ public class AssignService {
     private final AuthService authService;
     private final BoardServiceClient boardClient;
     private final AssignHelper assignHelper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void assignUserTo(Long userId, Long issueId, Long assigneeId, AssignmentType type) {
@@ -38,6 +44,10 @@ public class AssignService {
         assignHelper.setAssignee(issue, type, assigneeId);
         issueRepository.save(issue);
 
+        eventPublisher.publishEvent(
+                IssueAssigneeAddedEvent.from(issue, assigneeId, userId)
+        );
+
         log.info("Successfully assigned user {} as {} to issue {}", assigneeId, type.name(), issueId);
     }
 
@@ -53,7 +63,17 @@ public class AssignService {
 
         assignHelper.validateRoleAvailable(issue, userId, type);
         assignHelper.setAssignee(issue, type, userId);
+
+        if (type == AssignmentType.ASSIGNEE && issue.getStatus() == IssueStatus.SELECTED_FOR_DEVELOPMENT) {
+            issue.setStatus(IssueStatus.IN_PROGRESS);
+            log.info("Changed status of issue {} from SELECTED_FOR_DEVELOPMENT to IN_PROGRESS due to self-assignment", issueId);
+        }
+
         issueRepository.save(issue);
+
+        eventPublisher.publishEvent(
+                IssueAssigneeAddedEvent.from(issue, userId, userId)
+        );
 
         log.info("Successfully self-assigned user {} as {} to issue {}", userId, type.name(), issueId);
     }
@@ -65,6 +85,17 @@ public class AssignService {
                 .orElseThrow(() -> new IssueNotFoundException("Issue with ID: " + issueId + " not found"));
 
         authService.hasPermission(userId, issue.getProjectId(), EntityType.ISSUE, ActionType.ASSIGN);
+
+        Long assigneeId = null;
+        switch (type) {
+            case ASSIGNEE -> assigneeId = issue.getAssigneeId();
+            case CODE_REVIEWER -> assigneeId = issue.getCodeReviewerId();
+            case QA_ENGINEER -> assigneeId = issue.getQaEngineerId();
+        }
+
+        eventPublisher.publishEvent(
+                IssueAssigneeRemovedEvent.from(issue, assigneeId, userId)
+        );
 
         log.info("Removing assignee from {} of issue {} by {}", type.name(), issueId, userId);
 
@@ -86,6 +117,10 @@ public class AssignService {
         assignHelper.validateUserAssignedToRole(issue, userId, type);
         assignHelper.setAssignee(issue, type, null);
         issueRepository.save(issue);
+
+        eventPublisher.publishEvent(
+                IssueAssigneeRemovedEvent.from(issue, userId, userId)
+        );
 
         log.info("Successfully removed self from {} of issue {}", type.name(), issueId);
     }

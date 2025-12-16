@@ -5,12 +5,10 @@ namespace Backend.Sprints.Api.Services;
 
 public interface ISprintService
 {
-    Task<Sprint> CreateSprintAsync(long projectId, string name, string? goal, DateTime startDate, DateTime endDate);
-    Task<Sprint?> GetSprintByIdAsync(long id);
-    Task<List<Sprint>> GetSprintsByProjectIdAsync(long projectId);
-    Task<Sprint> UpdateSprintAsync(long id, string name, string? goal, DateTime startDate, DateTime endDate, SprintStatus status);
-    Task DeleteSprintAsync(long id);
-    Task CompleteSprintAsync(long sprintId);
-    Task<SprintBoardDto> GetSprintBoardAsync(long sprintId);
-    Task<bool> HasDateOverlapAsync(long projectId, DateTime startDate, DateTime endDate, long? excludeSprintId = null);
+    Task<SprintWithIssuesDto> CreateSprintWithIssuesAsync(long userId, long projectId, CreateSprintRequestDto request);
+    Task<SprintWithIssuesDto> GetSprintByIdAsync(long userId, long id, long? projectId = null);
+    Task<ProjectSprintsDto> GetSprintsByProjectIdAsync(long userId, long projectId);
+    Task<SprintDto> UpdateSprintAsync(long userId, long id, UpdateSprintRequestDto request);
+    Task DeleteSprintAsync(long userId, long id);
+    Task<SprintWithIssuesDto> StartSprintAsync(long userId, long sprintId);
 }
