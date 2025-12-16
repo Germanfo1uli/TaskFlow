@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { FaTasks, FaProjectDiagram, FaCalendarAlt } from 'react-icons/fa';
+import { FaMedal, FaTrophy } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import styles from './ProfileStats.module.css';
 
@@ -10,33 +10,20 @@ interface ProfileStatsProps {
 }
 
 export const ProfileStats = memo(({ completedTasks, activeProjects, joinDate }: ProfileStatsProps) => {
-    const formatJoinDate = (dateString: string) => {
-        if (!dateString) return 'Не указано';
-        return new Date(dateString).toLocaleDateString('ru-RU', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-    };
-
-    const stats = [
+    const achievements = [
         {
-            icon: FaTasks,
-            value: completedTasks,
-            label: 'Завершено задач',
-            color: '#3d6bb3'
+            icon: FaTrophy,
+            title: 'Новичок',
+            description: 'Добро пожаловать в команду!',
+            color: '#FFD700',
+            unlocked: true
         },
         {
-            icon: FaProjectDiagram,
-            value: activeProjects,
-            label: 'Активных проектов',
-            color: '#4facfe'
-        },
-        {
-            icon: FaCalendarAlt,
-            value: formatJoinDate(joinDate),
-            label: 'В команде с',
-            color: '#10b981'
+            icon: FaMedal,
+            title: 'Первые шаги',
+            description: 'Выполни первую задачу',
+            color: '#C0C0C0',
+            unlocked: false
         }
     ];
 
@@ -51,10 +38,10 @@ export const ProfileStats = memo(({ completedTasks, activeProjects, joinDate }: 
     };
 
     const itemVariants = {
-        hidden: { opacity: 0, x: -12 },
+        hidden: { opacity: 0, scale: 0.9 },
         visible: {
             opacity: 1,
-            x: 0,
+            scale: 1,
             transition: {
                 type: 'spring',
                 stiffness: 320,
@@ -65,32 +52,38 @@ export const ProfileStats = memo(({ completedTasks, activeProjects, joinDate }: 
 
     return (
         <div className={styles.profileStats}>
-            <h3 className={styles.statsTitle}>Статистика активности</h3>
+            <h3 className={styles.statsTitle}>Достижения</h3>
             <motion.div
                 className={styles.statsGrid}
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
             >
-                {stats.map((stat, index) => (
+                {achievements.map((achievement) => (
                     <motion.div
-                        key={stat.label}
-                        className={styles.statItem}
+                        key={achievement.title}
+                        className={`${styles.achievementItem} ${achievement.unlocked ? styles.unlocked : styles.locked}`}
                         variants={itemVariants}
                         whileHover={{
-                            y: -2,
+                            scale: 1.03,
                             transition: { type: 'spring', stiffness: 400, damping: 20 }
                         }}
                     >
                         <div
-                            className={styles.statIconWrapper}
-                            style={{ background: `linear-gradient(135deg, ${stat.color} 0%, ${stat.color}99 100%)` }}
+                            className={styles.achievementIconWrapper}
+                            style={{
+                                background: `linear-gradient(135deg, ${achievement.color} 0%, ${achievement.color}99 100%)`,
+                                opacity: achievement.unlocked ? 1 : 0.5
+                            }}
                         >
-                            <stat.icon className={styles.statIcon} />
+                            <achievement.icon className={styles.achievementIcon} />
                         </div>
-                        <div className={styles.statInfo}>
-                            <h3>{stat.value}</h3>
-                            <p>{stat.label}</p>
+                        <div className={styles.achievementInfo}>
+                            <h3>{achievement.title}</h3>
+                            <p>{achievement.description}</p>
+                            <span className={styles.achievementStatus}>
+                                {achievement.unlocked ? 'Получено' : 'Заблокировано'}
+                            </span>
                         </div>
                     </motion.div>
                 ))}
@@ -98,5 +91,3 @@ export const ProfileStats = memo(({ completedTasks, activeProjects, joinDate }: 
         </div>
     );
 });
-
-ProfileStats.displayName = 'ProfileStats';

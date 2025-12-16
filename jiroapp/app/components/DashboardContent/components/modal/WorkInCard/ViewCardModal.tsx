@@ -515,10 +515,6 @@ const ViewCardModal = ({
                     </div>
 
                     <div className={styles.modalFooter}>
-                        <button className={styles.editButton} onClick={handleEditClick}>
-                            <FaEdit />
-                            Редактировать
-                        </button>
                     </div>
                 </motion.div>
             </motion.div>

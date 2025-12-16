@@ -45,20 +45,6 @@ export const ReportsHeader = ({ isLoading, dateRange, onDateRangeChange, onRefre
                         </Typography.Text>
                     </div>
                 </div>
-
-                <div className={styles.filtersSection}>
-                    <Space>
-                        <Tooltip title="Выберите период для анализа данных">
-                            <RangePicker
-                                placeholder={['Начальная дата', 'Конечная дата']}
-                                suffixIcon={<FaCalendarAlt />}
-                                onChange={onDateRangeChange}
-                                format="DD.MM.YYYY"
-                                size="large"
-                            />
-                        </Tooltip>
-                    </Space>
-                </div>
             </motion.div>
         </ConfigProvider>
     )
