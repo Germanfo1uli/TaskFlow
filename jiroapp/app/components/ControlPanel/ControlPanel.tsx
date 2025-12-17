@@ -1,13 +1,8 @@
 'use client'
 
-<<<<<<< HEAD
+
 import { useState, useEffect } from 'react'
-import { FaThLarge, FaChartBar, FaCog, FaUsers, FaProjectDiagram, FaHome, FaLightbulb } from 'react-icons/fa'
-||||||| 147e969
-import { FaThLarge, FaChartBar, FaCog, FaUsers, FaProjectDiagram, FaHome, FaLightbulb } from 'react-icons/fa'
-=======
 import { FaThLarge, FaChartBar, FaCog, FaUsers, FaProjectDiagram, FaHome, FaLightbulb, FaList } from 'react-icons/fa'
->>>>>>> origin/Sprints
 import styles from './ControlPanel.module.css'
 
 interface Permission {
