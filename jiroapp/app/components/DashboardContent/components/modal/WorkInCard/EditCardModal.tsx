@@ -10,7 +10,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { editCardSchema, EditCardFormData } from './validation/schemas'
 import { boardToStatusMap, priorityToApiMap } from './hooks/utils'
-import { Card, Board, Author, Tag } from './types/types'
+import { Card, Board, Author } from '../../../types/dashboard.types'
+import { Tag } from './types/types'
 import TagSelector from './components/TagSelector'
 import FileUploadArea from './components/FileUploadArea'
 import BoardSelector from './components/BoardSelector'
@@ -26,6 +27,7 @@ interface EditCardModalProps {
         priority: string;
         tagIds: number[];
         tagNames: string[];
+        assigneeId?: number;
     }) => Promise<void>
     card: Card | null
     boards: Board[]
@@ -77,6 +79,7 @@ export default function EditCardModal({
         watch,
         setValue,
         reset,
+        getValues,
         formState: { errors, isDirty, isSubmitting },
     } = useForm<EditCardFormData>({
         resolver: zodResolver(editCardSchema),
@@ -84,7 +87,7 @@ export default function EditCardModal({
             title: '',
             description: '',
             priority: 'medium',
-            authorId: '',
+            assigneeId: '',
             tags: [],
             selectedBoard: currentBoardId,
         },
@@ -94,17 +97,23 @@ export default function EditCardModal({
     const [newTagInput, setNewTagInput] = useState('')
     const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
     const [existingAttachments, setExistingAttachments] = useState<any[]>([])
+    const [currentAssigneeId, setCurrentAssigneeId] = useState<number | null>(null)
 
     useEffect(() => {
         if (card && isOpen) {
+            const mainAssignee = card.assignees?.find(a => a.role === 'Исполнитель' || !a.role) || card.assignees?.[0];
+            const currentAssignee = mainAssignee?.id || null;
+
             reset({
                 title: card.title,
                 description: card.description,
                 priority: card.priority,
-                authorId: card.author.name || '',
+                assigneeId: currentAssignee?.toString() || '',
                 tags: [...card.tags],
                 selectedBoard: currentBoardId,
             })
+
+            setCurrentAssigneeId(currentAssignee);
             setExistingAttachments(card.attachmentsList || [])
         }
     }, [card, currentBoardId, isOpen, reset])
@@ -119,6 +128,7 @@ export default function EditCardModal({
 
     const tags = watch('tags')
     const selectedBoard = watch('selectedBoard')
+    const assigneeId = watch('assigneeId')
 
     const handleAddTag = useCallback((tagName: string) => {
         if (tags.includes(tagName)) {
@@ -157,10 +167,45 @@ export default function EditCardModal({
             setExistingAttachments(prev => prev.filter(att => att.id !== attachmentId))
             toast.success('Файл удален')
         } catch (error) {
-            console.error('Ошибка при удалении файла:', error)
             toast.error('Не удалось удалить файл')
         }
     }, [card])
+
+    const handleAssignAssignee = useCallback(async (issueId: number, userId: number | null, currentAssigneeId?: number | null) => {
+        try {
+            if (currentAssigneeId && currentAssigneeId !== userId) {
+                try {
+                    await api.delete(`/issues/${issueId}/assignees`, {
+                        data: { type: "ASSIGNEE" }
+                    });
+                } catch (deleteError: any) {
+                    console.warn(deleteError);
+                }
+            }
+
+            try {
+                await api.delete(`/issues/${issueId}/assignees`, {
+                    data: {
+                        type: "ASSIGNEE"
+                    }
+                });
+            } catch (error) {
+                console.log('Старый исполнитель не найден или уже удален');
+            }
+
+            if (userId && userId > 0) {
+                await api.post(`/issues/${issueId}/assignees`, {
+                    userId: userId,
+                    type: "ASSIGNEE"
+                });
+            }
+
+            return true;
+        } catch (error: any) {
+            toast.error('Не удалось обновить исполнителя');
+            throw error;
+        }
+    }, []);
 
     const handleUploadFiles = async (issueId: number) => {
         if (uploadedFiles.length === 0) return
@@ -177,7 +222,6 @@ export default function EditCardModal({
                 })
                 return response.data
             } catch (error) {
-                console.error('Ошибка при загрузке файла:', error)
                 toast.error(`Не удалось загрузить файл ${file.name}`)
                 return null
             }
@@ -195,6 +239,11 @@ export default function EditCardModal({
         async (data: EditCardFormData) => {
             if (!card) return
 
+            if (authors.length === 0) {
+                toast.error('Не удалось загрузить список пользователей');
+                return;
+            }
+
             const existingTagIds: number[] = []
             const newTagNames: string[] = []
 
@@ -208,13 +257,29 @@ export default function EditCardModal({
             })
 
             try {
+                const getAssigneeIdFromForm = (assigneeIdValue: string): number | null => {
+                    if (!assigneeIdValue || assigneeIdValue === '' || assigneeIdValue === 'undefined') {
+                        return null;
+                    }
+
+                    const id = parseInt(assigneeIdValue, 10);
+                    return isNaN(id) ? null : id;
+                };
+
+                const newAssigneeId = getAssigneeIdFromForm(data.assigneeId);
+
+                if (newAssigneeId !== currentAssigneeId) {
+                    await handleAssignAssignee(card.id, newAssigneeId, currentAssigneeId);
+                }
+
                 await onSave({
                     issueId: card.id,
                     title: data.title,
                     description: data.description || '',
                     priority: priorityToApiMap[data.priority] || 'MEDIUM',
                     tagIds: existingTagIds,
-                    tagNames: newTagNames
+                    tagNames: newTagNames,
+                    assigneeId: newAssigneeId
                 })
 
                 if (uploadedFiles.length > 0) {
@@ -237,11 +302,10 @@ export default function EditCardModal({
                 toast.success('Карточка успешно обновлена')
                 onClose()
             } catch (error) {
-                console.error('Ошибка при обновлении карточки:', error)
                 toast.error('Не удалось обновить карточку')
             }
         },
-        [card, availableTags, uploadedFiles, onSave, isOwner, currentBoardId, boards, moveCard, refreshIssues, onClose]
+        [card, availableTags, uploadedFiles, onSave, isOwner, currentBoardId, boards, moveCard, refreshIssues, onClose, authors, handleAssignAssignee, currentAssigneeId, getValues]
     )
 
     if (!isOpen || !card) return null
@@ -335,11 +399,20 @@ export default function EditCardModal({
                                                 <FaUserCircle className={styles.labelIcon} />
                                                 Исполнитель (опционально)
                                             </span>
-                                            <select className={styles.select} {...register('authorId')}>
+                                            <select
+                                                className={styles.select}
+                                                {...register('assigneeId')}
+                                                onChange={(e) => {
+                                                    setValue('assigneeId', e.target.value, { shouldDirty: true, shouldValidate: true });
+                                                }}
+                                            >
                                                 <option value="">Не назначено</option>
-                                                {authors.map((author) => (
-                                                    <option key={author.name} value={author.name}>
-                                                        {author.name}
+                                                {authors.map((author, index) => (
+                                                    <option
+                                                        key={`author-${author.id || index}`}
+                                                        value={author.id?.toString() || '0'}
+                                                    >
+                                                        {author.name} (ID: {author.id})
                                                     </option>
                                                 ))}
                                             </select>

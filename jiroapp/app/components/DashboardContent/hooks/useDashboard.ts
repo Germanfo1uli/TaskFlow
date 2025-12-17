@@ -4,10 +4,12 @@ import { api } from '@/app/auth/hooks/useTokenRefresh';
 import toast from 'react-hot-toast';
 
 interface IssueUser {
-    id: number;
+    userId: number;
     username: string;
     tag: string;
     bio: string;
+    roleId: number;
+    role: string;
 }
 
 interface IssueTag {
@@ -175,6 +177,7 @@ export const useDashboard = (projectId: number | null) => {
             const response = await api.get<IssueUser>('/users/me');
             const userData = response.data;
             const user: Author = {
+                id: userData.userId || 0,
                 name: userData.username || 'Текущий пользователь',
                 avatar: null,
                 role: 'Пользователь'
@@ -182,8 +185,8 @@ export const useDashboard = (projectId: number | null) => {
             setCurrentUser(user);
             return user;
         } catch (error) {
-            console.error('Ошибка при получении текущего пользователя:', error);
             const fallbackUser: Author = {
+                id: 0,
                 name: 'Текущий пользователь',
                 avatar: null,
                 role: 'Пользователь'
@@ -201,7 +204,6 @@ export const useDashboard = (projectId: number | null) => {
             setUserRole(response.data);
             return response.data;
         } catch (error) {
-            console.error('Ошибка при получении роли пользователя:', error);
             setUserRole(null);
             return null;
         }
@@ -223,35 +225,40 @@ export const useDashboard = (projectId: number | null) => {
     const transformIssueToCard = (issue: IssueResponse): Card => {
         const assignees: Author[] = [];
 
-        if (issue.assignee && issue.assignee.username) {
+        if (issue.assignee) {
             assignees.push({
-                name: issue.assignee.username,
+                id: issue.assignee.userId || 0,
+                name: issue.assignee.username || 'Неизвестный исполнитель',
                 avatar: null,
                 role: 'Исполнитель'
             });
         }
 
-        if (issue.reviewer && issue.reviewer.username) {
+        if (issue.reviewer) {
             assignees.push({
-                name: issue.reviewer.username,
+                id: issue.reviewer.userId || 0,
+                name: issue.reviewer.username || 'Неизвестный ревьюер',
                 avatar: null,
                 role: 'Ревьюер'
             });
         }
 
-        if (issue.qa && issue.qa.username) {
+        if (issue.qa) {
             assignees.push({
-                name: issue.qa.username,
+                id: issue.qa.userId || 0,
+                name: issue.qa.username || 'Неизвестный QA',
                 avatar: null,
                 role: 'QA'
             });
         }
 
-        const author: Author = issue.creator && issue.creator.username ? {
-            name: issue.creator.username,
+        const author: Author = issue.creator ? {
+            id: issue.creator.userId || 0,
+            name: issue.creator.username || 'Неизвестный пользователь',
             avatar: null,
             role: 'Создатель'
         } : {
+            id: 0,
             name: 'Неизвестный пользователь',
             avatar: null,
             role: 'Создатель'
@@ -271,7 +278,8 @@ export const useDashboard = (projectId: number | null) => {
         const commentsList: Comment[] = issue.comments?.map(comment => ({
             id: comment.id,
             author: {
-                name: comment.creator.username,
+                id: comment.creator.userId || 0,
+                name: comment.creator.username || 'Неизвестный пользователь',
                 avatar: null,
                 role: 'Участник'
             },
@@ -279,7 +287,7 @@ export const useDashboard = (projectId: number | null) => {
             createdAt: new Date(comment.createdAt).toLocaleString('ru-RU')
         })) || [];
 
-        return {
+        const card: Card = {
             id: issue.id,
             title: issue.title,
             description: issue.description || 'Без описания',
@@ -295,6 +303,8 @@ export const useDashboard = (projectId: number | null) => {
             commentsList: commentsList,
             createdAt: issue.createdAt ? new Date(issue.createdAt).toLocaleDateString('ru-RU') : 'Дата не указана'
         };
+
+        return card;
     };
 
     const fetchProjectData = useCallback(async () => {
@@ -302,13 +312,12 @@ export const useDashboard = (projectId: number | null) => {
 
         try {
             const usersResponse = await api.get<IssueUser[]>(`/projects/${projectId}/members`);
-
             const authorsData: Author[] = usersResponse.data.map(user => ({
+                id: user.userId || 0,
                 name: user.username,
                 avatar: null,
-                role: 'Участник проекта'
+                role: user.role || 'Участник проекта'
             }));
-
             setAuthors(authorsData);
         } catch (error) {
             console.error('Ошибка при загрузке данных проекта:', error);
@@ -330,7 +339,6 @@ export const useDashboard = (projectId: number | null) => {
             ]);
 
             const issues = issuesResponse.data;
-
             const updatedBoards = initialBoards.map(board => {
                 const boardCards = issues
                     .filter(issue => {
@@ -367,7 +375,8 @@ export const useDashboard = (projectId: number | null) => {
     const fetchIssueById = async (issueId: number): Promise<Card | null> => {
         try {
             const response = await api.get<IssueResponse>(`/issues/${issueId}`);
-            return transformIssueToCard(response.data);
+            const card = transformIssueToCard(response.data);
+            return card;
         } catch (error) {
             console.error('Ошибка при загрузке задачи:', error);
             return null;
@@ -413,7 +422,7 @@ export const useDashboard = (projectId: number | null) => {
                 allTagIds = [...allTagIds, ...newTagIds];
             }
 
-            await api.patch(`/issues/${issueId}`, {
+            const response = await api.patch(`/issues/${issueId}`, {
                 title: data.title,
                 description: data.description,
                 priority: data.priority,
@@ -460,6 +469,47 @@ export const useDashboard = (projectId: number | null) => {
             return false;
         }
     };
+
+    const handleAssignAssignee = useCallback(async (issueId: number, userId: number | null, currentAssigneeId?: number | null) => {
+        try {
+            if (currentAssigneeId && currentAssigneeId !== userId) {
+                try {
+                    await api.delete(`/issues/${issueId}/assignees`, {
+                        data: { type: "ASSIGNEE" }
+                    });
+                } catch (deleteError: any) {
+                    console.warn(deleteError);
+                }
+            }
+
+            if (userId && userId > 0) {
+                try {
+                    const response = await api.post(`/issues/${issueId}/assignees`, {
+                        userId: userId,
+                        type: "ASSIGNEE"
+                    });
+                    return true;
+                } catch (assignError: any) {
+                    throw assignError;
+                }
+            }
+            else if (!userId && currentAssigneeId) {
+                try {
+                    await api.delete(`/issues/${issueId}/assignees`, {
+                        data: { type: "ASSIGNEE" }
+                    });
+                    return true;
+                } catch (deleteError: any) {
+                    throw deleteError;
+                }
+            }
+
+            return true;
+        } catch (error: any) {
+            toast.error('Не удалось обновить исполнителя');
+            throw error;
+        }
+    }, []);
 
     const getPriorityColor = (priority: Priority): string => {
         const colors: Record<Priority, string> = {
@@ -557,6 +607,7 @@ export const useDashboard = (projectId: number | null) => {
         priority: string;
         tagIds: number[];
         tagNames: string[];
+        assigneeId?: number;
     }) => {
         try {
             let allTagIds = [...data.tagIds];
@@ -592,6 +643,19 @@ export const useDashboard = (projectId: number | null) => {
             const newIssue = response.data;
             const newCard = transformIssueToCard(newIssue);
 
+            if (data.assigneeId) {
+                try {
+                    await handleAssignAssignee(newIssue.id, data.assigneeId, null);
+                    const updatedCard = await fetchIssueById(newIssue.id);
+                    if (updatedCard) {
+                        newCard.assignees = updatedCard.assignees;
+                    }
+                } catch (assigneeError) {
+                    console.error('Ошибка при назначении исполнителя:', assigneeError);
+                    toast.error('Задача создана, но не удалось назначить исполнителя');
+                }
+            }
+
             const targetBoard = boards.find(board => board.title === 'TO DO');
 
             if (targetBoard) {
@@ -611,7 +675,7 @@ export const useDashboard = (projectId: number | null) => {
             toast.success('Карточка успешно создана');
             closeAddCardModal();
             return newIssue.id;
-        } catch (error) {
+        } catch (error: any) {
             console.error('Ошибка при создании задачи:', error);
             toast.error('Не удалось создать карточку');
             return false;
@@ -649,6 +713,7 @@ export const useDashboard = (projectId: number | null) => {
         priority: string;
         tagIds: number[];
         tagNames: string[];
+        assigneeId?: number;
     }) => {
         try {
             let allTagIds = [...data.tagIds];
@@ -679,6 +744,14 @@ export const useDashboard = (projectId: number | null) => {
                 tagIds: allTagIds
             });
 
+            const currentIssue = await fetchIssueById(data.issueId);
+            const currentAssignee = currentIssue?.assignees?.find(a => a.role === 'Исполнитель' || !a.role);
+            const currentAssigneeId = currentAssignee?.id || null;
+
+            if (data.assigneeId !== currentAssigneeId) {
+                await handleAssignAssignee(data.issueId, data.assigneeId || null, currentAssigneeId);
+            }
+
             const updatedCard = await fetchIssueById(data.issueId);
             if (updatedCard) {
                 const updatedBoards = boards.map(board => ({
@@ -693,9 +766,10 @@ export const useDashboard = (projectId: number | null) => {
             await fetchProjectTags();
             updateState({ editingCard: null });
             toast.success('Карточка успешно обновлена');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Ошибка при обновлении карточки:', error);
             toast.error('Не удалось обновить карточку');
+            throw error;
         }
     };
 
@@ -900,6 +974,7 @@ export const useDashboard = (projectId: number | null) => {
         fetchCurrentUser,
         fetchUserRole,
         refreshCardData,
-        onRefreshCard
+        onRefreshCard,
+        handleAssignAssignee
     };
 };

@@ -10,7 +10,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { addCardSchema, AddCardFormData } from './validation/schemas'
 import { boardToStatusMap, priorityToApiMap, typeDisplayNames } from './hooks/utils'
-import { Board, Author, Tag } from './types/types'
+import { Board, Author } from '../../../types/dashboard.types'
+import { Tag } from './types/types'
 import TagSelector from './components/TagSelector'
 import FileUploadArea from './components/FileUploadArea'
 import BoardSelector from './components/BoardSelector'
@@ -27,6 +28,7 @@ interface AddCardModalProps {
         priority: string
         tagIds: number[]
         tagNames: string[]
+        assigneeId?: number
     }) => Promise<number | boolean>
     boards: Board[]
     authors: Author[]
@@ -55,6 +57,7 @@ export default function AddCardModal({
         watch,
         setValue,
         reset,
+        getValues,
         formState: { errors, isDirty, isSubmitting },
     } = useForm<AddCardFormData>({
         resolver: zodResolver(addCardSchema),
@@ -63,7 +66,7 @@ export default function AddCardModal({
             description: '',
             type: 'TASK',
             priority: 'medium',
-            authorId: '',
+            assigneeId: '',
             tags: [],
             selectedBoard: boards[0]?.id || 1,
         },
@@ -76,7 +79,7 @@ export default function AddCardModal({
                 description: '',
                 type: 'TASK',
                 priority: 'medium',
-                authorId: '',
+                assigneeId: '',
                 tags: [],
                 selectedBoard: boards[0]?.id || 1,
             })
@@ -102,6 +105,7 @@ export default function AddCardModal({
 
     const tags = watch('tags')
     const selectedBoard = watch('selectedBoard')
+    const assigneeId = watch('assigneeId')
 
     const handleAddTag = useCallback((tagName: string) => {
         if (tags.includes(tagName)) {
@@ -132,6 +136,23 @@ export default function AddCardModal({
         toast.success('Файл удален')
     }, [])
 
+    const handleAssignAssignee = useCallback(async (issueId: number, userId: number | null, currentAssigneeId?: number | null) => {
+        if (!userId || userId === 0) {
+            return false;
+        }
+
+        try {
+            await api.post(`/issues/${issueId}/assignees`, {
+                userId: userId,
+                type: "ASSIGNEE"
+            });
+            return true;
+        } catch (error: any) {
+            toast.error('Не удалось назначить исполнителя');
+            return false;
+        }
+    }, []);
+
     const handleUploadFiles = async (issueId: number) => {
         if (uploadedFiles.length === 0) return
 
@@ -147,7 +168,6 @@ export default function AddCardModal({
                 })
                 return response.data
             } catch (error) {
-                console.error('Ошибка при загрузке файла:', error)
                 toast.error(`Не удалось загрузить файл ${file.name}`)
                 return null
             }
@@ -168,6 +188,11 @@ export default function AddCardModal({
                 return
             }
 
+            if (authors.length === 0) {
+                toast.error('Не удалось загрузить список пользователей');
+                return;
+            }
+
             const existingTagIds: number[] = []
             const newTagNames: string[] = []
 
@@ -181,6 +206,17 @@ export default function AddCardModal({
             })
 
             try {
+                const getAssigneeIdFromForm = (assigneeIdValue: string): number | null => {
+                    if (!assigneeIdValue || assigneeIdValue === '' || assigneeIdValue === 'undefined') {
+                        return null;
+                    }
+
+                    const id = parseInt(assigneeIdValue, 10);
+                    return isNaN(id) ? null : id;
+                };
+
+                const formAssigneeId = getAssigneeIdFromForm(data.assigneeId);
+
                 const issueId = await onSave({
                     projectId,
                     title: data.title,
@@ -188,10 +224,15 @@ export default function AddCardModal({
                     type: data.type,
                     priority: priorityToApiMap[data.priority] || 'MEDIUM',
                     tagIds: existingTagIds,
-                    tagNames: newTagNames
+                    tagNames: newTagNames,
+                    assigneeId: formAssigneeId
                 })
 
                 if (issueId && typeof issueId === 'number') {
+                    if (formAssigneeId) {
+                        await handleAssignAssignee(issueId, formAssigneeId, null);
+                    }
+
                     const selectedBoardObj = boards.find(board => board.id === data.selectedBoard)
                     if (selectedBoardObj && isOwner) {
                         const targetStatus = boardToStatusMap[selectedBoardObj.title]
@@ -201,7 +242,6 @@ export default function AddCardModal({
                         }
                     }
 
-                    // Upload files after card creation
                     if (uploadedFiles.length > 0) {
                         await handleUploadFiles(issueId)
                     }
@@ -210,11 +250,10 @@ export default function AddCardModal({
                 toast.success('Карточка успешно создана')
                 onClose()
             } catch (error) {
-                console.error('Ошибка при создании задачи:', error)
                 toast.error('Не удалось создать карточку')
             }
         },
-        [projectId, availableTags, uploadedFiles, onSave, boards, isOwner, moveCard, refreshIssues, onClose]
+        [projectId, availableTags, uploadedFiles, onSave, boards, isOwner, moveCard, refreshIssues, onClose, authors, handleAssignAssignee, getValues]
     )
 
     if (!isOpen) return null
@@ -323,11 +362,20 @@ export default function AddCardModal({
                                                 <FaUserCircle className={styles.labelIcon} />
                                                 Исполнитель (опционально)
                                             </span>
-                                            <select className={styles.select} {...register('authorId')}>
+                                            <select
+                                                className={styles.select}
+                                                {...register('assigneeId')}
+                                                onChange={(e) => {
+                                                    setValue('assigneeId', e.target.value, { shouldDirty: true, shouldValidate: true });
+                                                }}
+                                            >
                                                 <option value="">Не назначено</option>
-                                                {authors.map((author) => (
-                                                    <option key={author.name} value={author.name}>
-                                                        {author.name}
+                                                {authors.map((author, index) => (
+                                                    <option
+                                                        key={`author-${author.id || index}`}
+                                                        value={author.id?.toString() || '0'}
+                                                    >
+                                                        {author.name} (ID: {author.id})
                                                     </option>
                                                 ))}
                                             </select>

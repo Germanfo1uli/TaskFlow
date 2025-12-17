@@ -60,7 +60,6 @@ export const StatsCards = ({ stats }: StatsCardsProps) => {
                                 value={card.value}
                                 suffix={card.suffix}
                                 prefix={card.icon}
-                                // Используем formatter для карточки эффективности
                                 formatter={card.formatter ? (value) => card.formatter?.(value as number) : undefined}
                                 styles={{
                                     content: { color: card.color, fontSize: '28px', fontWeight: 700 }

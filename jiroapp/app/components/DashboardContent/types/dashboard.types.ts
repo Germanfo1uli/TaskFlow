@@ -4,6 +4,7 @@ export type FilterOption = 'all' | 'high' | 'medium' | 'low'
 export type TaskType = 'TASK' | 'BUG' | 'EPIC' | 'STORY'
 
 export interface Author {
+    id?: number
     name: string
     avatar: string | null
     role?: string

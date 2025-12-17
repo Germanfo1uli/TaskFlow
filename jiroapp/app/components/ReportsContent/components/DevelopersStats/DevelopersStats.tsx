@@ -12,9 +12,12 @@ interface DevelopersStatsProps {
 
 export const DevelopersStats = ({ developerStats }: DevelopersStatsProps) => {
     const getEfficiencyColor = (efficiency: number) => {
-        if (efficiency >= 90) return '#10b981'
-        if (efficiency >= 75) return '#3b82f6'
-        if (efficiency >= 60) return '#f59e0b'
+        // Округляем эффективность до целого числа
+        const roundedEfficiency = Math.round(efficiency)
+
+        if (roundedEfficiency >= 90) return '#10b981'
+        if (roundedEfficiency >= 75) return '#3b82f6'
+        if (roundedEfficiency >= 60) return '#f59e0b'
         return '#ef4444'
     }
 
@@ -31,45 +34,52 @@ export const DevelopersStats = ({ developerStats }: DevelopersStatsProps) => {
     return (
         <Card title="Статистика по участникам команды" className={styles.developersCard} variant="borderless">
             <Row gutter={[16, 16]}>
-                {developerStats.map((dev, index) => (
-                    <Col xs={24} sm={12} md={8} lg={6} key={dev.name}>
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.4, delay: index * 0.05, ease: 'easeOut' }}
-                            whileHover={{ scale: 1.02 }}
-                        >
-                            <Card size="small" className={styles.devCard}>
-                                <div className={styles.devHeader}>
-                                    <div className={styles.avatar}>
-                                        <FaUser />
+                {developerStats.map((dev, index) => {
+                    // Округляем эффективность до целого числа
+                    const roundedEfficiency = Math.round(dev.efficiency)
+
+                    return (
+                        <Col xs={24} sm={12} md={8} lg={6} key={dev.name}>
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.4, delay: index * 0.05, ease: 'easeOut' }}
+                                whileHover={{ scale: 1.02 }}
+                            >
+                                <Card size="small" className={styles.devCard}>
+                                    <div className={styles.devHeader}>
+                                        <div className={styles.avatar}>
+                                            <FaUser />
+                                        </div>
+                                        <Text strong className={styles.devName}>
+                                            {dev.name}
+                                        </Text>
+                                        <Badge
+                                            count={`${roundedEfficiency}%`}
+                                            style={{
+                                                backgroundColor: getEfficiencyColor(dev.efficiency)
+                                            }}
+                                        />
                                     </div>
-                                    <Text strong className={styles.devName}>
-                                        {dev.name}
-                                    </Text>
-                                    <Badge
-                                        count={`${dev.efficiency}%`}
-                                        style={{ backgroundColor: getEfficiencyColor(dev.efficiency) }}
-                                    />
-                                </div>
-                                <div className={styles.devStats}>
-                                    <div className={styles.devStat}>
-                                        <FaCheckCircle className={styles.statIcon} />
-                                        <Text>{dev.completedTasks} выполнено</Text>
+                                    <div className={styles.devStats}>
+                                        <div className={styles.devStat}>
+                                            <FaCheckCircle className={styles.statIcon} />
+                                            <Text>{dev.completedTasks} выполнено</Text>
+                                        </div>
+                                        <div className={styles.devStat}>
+                                            <FaExclamationTriangle className={styles.statIcon} />
+                                            <Text>{dev.overdueTasks} просрочено</Text>
+                                        </div>
+                                        <div className={styles.devStat}>
+                                            <FaChartLine className={styles.statIcon} />
+                                            <Text>{dev.totalTasks} всего</Text>
+                                        </div>
                                     </div>
-                                    <div className={styles.devStat}>
-                                        <FaExclamationTriangle className={styles.statIcon} />
-                                        <Text>{dev.overdueTasks} просрочено</Text>
-                                    </div>
-                                    <div className={styles.devStat}>
-                                        <FaChartLine className={styles.statIcon} />
-                                        <Text>{dev.totalTasks} всего</Text>
-                                    </div>
-                                </div>
-                            </Card>
-                        </motion.div>
-                    </Col>
-                ))}
+                                </Card>
+                            </motion.div>
+                        </Col>
+                    )
+                })}
             </Row>
         </Card>
     )
