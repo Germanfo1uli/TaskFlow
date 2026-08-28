@@ -1,201 +1,180 @@
 Схема взаимодействия микросервисов
-Этот документ описывает все синхронные (REST API) и асинхронные (RabbitMQ) взаимодействия между микросервисами.
+Этот документ описывает все синхронные (REST API) и асинхронные (RabbitMQ) взаимодействия между микросервисами на основе фактической реализации в коде.
 
 Основные принципы
 Синхронные запросы (REST) используются для немедленной валидации данных или получения информации, необходимой для продолжения операции.
 Асинхронные сообщения (RabbitMQ) используются для уведомления о произошедших событиях. Это позволяет слабо связать сервисы и избежать блокировок.
 Прямые подключения к БД других сервисов запрещены. Вся коммуникация происходит через API или брокер сообщений.
 
+Фактическое состояние
+user-service не публикует события user.created/updated/deleted — в нём только мёртвый каркас RabbitMQ (RabbitMQConfig с myQueue, consumer только println). Эти события не реализованы.
+sprints-service не имеет интеграции с RabbitMQ вообще (ничего не публикует и не потребляет). События sprint.* не реализованы.
+notifications-service не реализован (дефолтный шаблон ASP.NET, эндпоинт /weatherforecast). Уведомления не генерируются.
+dashboard-service только потребляет события (MassTransit, queue activity.all) и не публикует никаких событий.
+Издатели событий в RabbitMQ: только board-service и issue-service (exchange activity.exchange, TopicExchange).
 
-1. user-service
-
+user-service
 Этот сервис в основном предоставляет информацию. Он почти не зависит от других.
 
-Что он предоставляет другим (REST API):
-Эти эндпоинты должны быть "внутренними" (/api/internal/...) и не доступны напрямую снаружи (через API Gateway).
+Что он предоставляет другим (REST API, внутренние эндпоинты /api/internal/...):
+Эти эндпоинты защищены @PreAuthorize("hasRole('SYSTEM')") и недоступны снаружи через шлюз напрямую.
 
-GET /api/internal/users/{id}
-Назначение: Получить информацию о пользователе по его ID.
-Кто использует: project-service, issue-service.
-Возвращает: JSON с id, email, avatar_id. Без пароля!
+GET /api/internal/users/{userId}
+Назначение: Профиль пользователя по ID (без пароля).
+Кто использует: board-service, issue-service (через Feign).
 
-GET /api/internal/users?ids={id1,id2,id3}
-Назначение: Получить информацию о нескольких пользователях за один запрос. Критически важно для производительности!
-Кто использует: issue-service (чтобы показать имена создателя, исполнителей, комментаторов на одной странице).
-Возвращает: Массив JSON-объектов пользователей.
+POST /api/internal/users/batch
+Назначение: Профили нескольких пользователей по списку id за один запрос.
+Кто использует: board-service, issue-service (через Feign).
 
 Какие события он публикует (RabbitMQ):
+Никакие. В коде есть только мёртвый каркас (RabbitMQConfig + RabbitMQConsumer с System.out.println). События user.created / user.updated / user.deleted не реализованы.
 
-user.created: Когда регистрируется новый пользователь.
-Payload: { "userId": 123, "email": "test@example.com" }
-Кто слушает: project-service (может, нужно создать приветственную задачу?), notification-service .
+board-service (управление проектами)
+Этот сервис управляет проектами, участниками, ролями, правами и приглашениями. Он — источник истины по правам доступа для всех остальных сервисов.
 
-user.updated: Когда пользователь меняет email или аватар.
-Payload: { "userId": 123, "newEmail": "new@example.com", "newAvatarId": 456 }
-Кто слушает: issue-service, project-service (чтобы обновить кэшированную информацию о пользователе).
+Что он предоставляет другим (REST API, внутренние эндпоинты /api/internal/...):
 
-user.deleted: Когда пользователь удаляет аккаунт.
-Payload: { "userId": 123 }
-Кто слушает: Все. Это сложное событие, требующее бизнес-логики (что делать с его проектами и задачами?).
+GET /api/internal/projects/{projectId}
+Назначение: Информация о проекте.
+Кто использует: issue-service (Feign), sprints-service (Refit), dashboard-service (Refit).
 
-2. project-service (Зависит от user-service)
-Этот сервис управляет проектами и их участниками.
+GET /api/internal/permissions?userId=&projectId=
+Назначение: Права пользователя в проекте (матрица permissions, isOwner).
+Кто использует: issue-service (Feign), sprints-service (Refit), dashboard-service (Refit) — для резолва прав (с кэшем в Redis).
 
-Какие запросы он отправляет (REST API):
-
-При добавлении участника в проект (POST /projects/{id}/members):
-project-service -> user-service: GET /api/internal/users/{userId}
-Цель: Проверить, что такой пользователь вообще существует, прежде чем добавлять его в проект.
-
-При отображении списка участников проекта (GET /projects/{id}/members):
-project-service -> user-service: GET /api/internal/users?ids={id1,id2,...}
-Цель: Получить email'ы и имена всех участников для отображения в UI.
-
-Какие события он публикует (RabbitMQ):
-project.created: Создан новый проект.
-Payload: { "projectId": 55, "creatorId": 123, "projectName": "JiroProj" }
-
-project.member.added: В проект добавлен новый участник.
-Payload: { "projectId": 55, "userId": 456, "addedBy": 123 }
-Кто слушает: issue-service (чтобы знать, кого теперь можно назначать на задачи в этом проекте).
-
-project.member.removed: Участник удален из проекта.
-Payload: { "projectId": 55, "userId": 456 }
-
-project.deleted: Проект удален.
-Payload: { "projectId": 55 }
-
-3. issue-service (Самый сложный, зависит от user-service и project-service)
-Этот сервис — центр логики задач.
+GET /api/internal/projects/{projectId}/members/{userId}
+Назначение: Проверка членства пользователя в проекте.
+Кто использует: issue-service (Feign).
 
 Какие запросы он отправляет (REST API):
-При создании задачи (POST /issues):
-issue-service -> project-service: GET /api/internal/projects/{projectId}
-Цель: Проверить, что проект существует и что creator_id имеет на это право.
-issue-service -> user-service: GET /api/internal/users/{creatorId}
-Цель: Проверить, что создатель задачи существует.
+board-service -> user-service: GET /api/internal/users/{userId} и POST /api/internal/users/batch (через Feign UserServiceClient + InternalAuthInterceptor).
+Цель: получить профили/имена участников проекта.
 
-При назначении исполнителя на задачу (POST /issues/{id}/assignees):
+Какие события он публикует (RabbitMQ, exchange activity.exchange, TopicExchange):
+board-service -> dashboard-service (через очередь activity.all, routing key "#"):
+project.created
+project.updated
+project.deleted
+project.member.added
+project.member.removed
+Сообщения несут заголовок MT-MessageType = "urn:message:Backend.Shared.DTOs:<ClassName>".
+Публикация происходит после коммита БД (TransactionalEventForwarder -> EventProducerService).
+Кто слушает: dashboard-service (пишет ActivityLog).
+
+issue-service (центр логики задач; зависит от user-service и board-service)
+
+Какие запросы он отправляет (REST API):
+При создании задачи (POST /api/issues):
+issue-service -> board-service: GET /api/internal/projects/{projectId}
+Цель: проверить существование проекта.
+issue-service -> user-service: GET /api/internal/users/{userId}
+Цель: проверить существование создателя.
+
+При назначении исполнителя (POST /api/issues/{id}/assignees):
 issue-service -> user-service: GET /api/internal/users/{assigneeId}
-Цель: Проверить, что такой пользователь существует и является участником проекта (информацию об участниках можно взять из project-service или кэшировать).
+Цель: проверить существование пользователя.
 
-При отображении полной информации о задаче (GET /issues/{id}):
-issue-service -> user-service: GET /api/internal/users?ids={creatorId, assigneeId1, assigneeId2, commenterId1, ...}
-Цель: Получить имена и аватары всех упомянутых в задаче пользователей за ОДИН запрос.
+При отображении задачи (GET /api/issues/{id}) и резолве прав:
+issue-service -> user-service: GET /api/internal/users/batch (профили)
+issue-service -> board-service: GET /api/internal/permissions (права, с кэшем в Redis через PermissionCacheReader)
 
-issue-service -> project-service: GET /api/internal/projects/{projectId}
-Цель: Получить название проекта.
+При старте спринта (вызывается sprints-service):
+sprints-service -> issue-service: POST /api/internal/issues/startsprint?projectId=
+Цель: перевести задачи спринта в активное состояние.
 
-Какие события он публикует (RabbitMQ):
-issue.created: Создана новая задача.
-Payload: { "issueId": 789, "projectId": 55, "creatorId": 123, "title": "Fix login bug" }
-Кто слушает: notification-service (в будущем), аналитические сервисы.
+Какие события он публикует (RabbitMQ, exchange activity.exchange, TopicExchange):
+issue-service -> dashboard-service (через очередь activity.all, routing key "#"):
+issue.created
+issue.updated
+issue.deleted
+issue.status.changed
+issue.assignee.added
+issue.assignee.removed
+issue.comment.created
+issue.comment.updated
+issue.comment.deleted
+attachment.created (в коде публикуется с ключом project.created — BUG)
+attachment.deleted (в коде публикуется с ключом project.deleted — BUG)
+Сообщения несут заголовок MT-MessageType.
+Кто слушает: dashboard-service (пишет ActivityLog).
 
-issue.assigned: Задачу назначили на исполнителя.
-Payload: { "issueId": 789, "assigneeId": 456, "assignedBy": 123 }
-Кто слушает: notification-service (отправить уведомление исполнителю).
+sprints-service (управление спринтами)
+Управляет спринтами и привязкой задач. Не имеет интеграции с RabbitMQ.
 
-issue.status.changed: Изменился статус задачи (ToDo -> In Progress).
-Payload: { "issueId": 789, "oldStatus": "ToDo", "newStatus": "In Progress", "changedBy": 123 }
+Исходящие REST API (запросы к другим сервисам, через Refit + InternalAuthHandler):
+sprints-service -> board-service: GET /api/internal/projects/{id}
+Цель: валидация проекта при создании спринта.
+sprints-service -> board-service: GET /api/internal/permissions?userId=&projectId=
+Цель: резолв прав (SPRINT:VIEW / SPRINT:MANAGE), с кэшем в Redis.
+sprints-service -> issue-service: GET /api/internal/issues/{id}
+Цель: валидация задачи при добавлении в спринт.
+sprints-service -> issue-service: GET /api/internal/issues?projectId=
+Цель: получение задач проекта.
+sprints-service -> issue-service: POST /api/internal/issues/startsprint?projectId=
+Цель: старт спринта (перевод задач).
+sprints-service -> issue-service: GET /api/internal/issues/batch
+Цель: пакетная выдача задач по id (GET с телом — нестандарт).
 
-issue.commented: Оставлен комментарий к задаче.
-Payload: { "issueId": 789, "commentId": 101, "authorId": 456, "text": "Working on it..." }
+Публикуемые события (RabbitMQ):
+Отсутствуют. sprints-service не подключён к RabbitMQ. События sprint.created / sprint.started / sprint.ended / issue.added.to.sprint не реализованы.
 
-4. sprint-service
-Управляет спринтами и задачами в них.
-
-Исходящие REST API (запросы к другим сервисам)
-sprint-service -> project-service: GET /api/internal/projects/{id}
-Цель: Валидация проекта при создании спринта.
-
-sprint-service -> issue-service: GET /api/internal/issues/{id}
-Цель: Валидация задачи при добавлении ее в спринт.
-
-Публикуемые события (RabbitMQ)
-sprint.created
-Payload: { "sprintId": 11, "projectId": 55, "name": "Sprint 1" }
-
-sprint.started
-Payload: { "sprintId": 11, "projectId": 55 }
-
-sprint.ended
-Payload: { "sprintId": 11, "projectId": 55 }
-
-issue.added.to.sprint
-Payload: { "issueId": 789, "sprintId": 11, "projectId": 55 }
-
-5. dashboard-service 
+dashboard-service
 Агрегирует метрики и историю активности.
 
-Исходящие REST API (запросы к другим сервисам)
-dashboard-service -> user-service: GET /api/internal/users?ids=...
-Цель: Разрешение user_id из ActivityLogs в данные о пользователях.
+Исходящие REST API (запросы к другим сервисам, через Refit + InternalAuthHandler):
+dashboard-service -> board-service: GET /api/internal/projects/{id}
+Цель: проверка существования проекта для дашборда.
+dashboard-service -> board-service: GET /api/internal/permissions?projectId=&userId=
+Цель: резолв прав (ANALYTICS:VIEW, LOGS:VIEW), с кэшем в Redis (который фактически не пишется).
 
-dashboard-service -> project-service: GET /api/internal/projects/{id}
-Цель: Получение данных о проекте для дашборда.
+Публикуемые события (RabbitMQ):
+Отсутствуют. dashboard-service только потребляет события.
 
-Публикуемые события (RabbitMQ)
-dashboard.snapshot.generated (публикуется по расписанию от SignalR сервера)
-Payload: { "projectId": 55, "timestamp": "..." }
+Подписанные события (RabbitMQ, MassTransit):
+Слушает exchange activity.exchange (topic) с routing key "#", очередь activity.all.
+Потребляет 21 событие: ProjectCreated/Updated/Deleted, ProjectMemberAdded/Removed, IssueCreated/Updated/Deleted, IssueStatusChanged, IssueAssigneeAdded/Removed, IssueCommentCreated/Updated/Deleted, AttachmentCreated/Deleted, SprintCreated/Started/Completed, SprintIssueAdded/Removed.
+Действие: при получении события создаёт запись в таблице activity_logs (через соответствующий consumer в Messages/*).
 
-Подписанные события (RabbitMQ)
-Слушает: project.created, project.member.added, issue.created, issue.assigned, issue.status.changed, sprint.created, sprint.started и т.д.
-Действие: При получении события создает запись в таблице ActivityLogs.
-
-6. notifications-service (Зависит от user-service)
+notifications-service
 Отправляет уведомления пользователям на основе их предпочтений.
 
-Исходящие REST API (запросы к другим сервисам)
-notifications-service -> user-service: GET /api/internal/users?ids={userId, triggeredById}
-Цель: Валидация получателя и инициатора уведомления.
+Фактическое состояние: сервис не реализован. Это дефолтный шаблон ASP.NET Core с эндпоинтом /weatherforecast. Нет контроллеров уведомлений, нет DbContext, нет RabbitMQ-кода, нет Eureka-регистрации, нет аутентификации. Модели Notifications/UserPreferences есть, но не используются.
 
-Публикуемые события (RabbitMQ)
-notification.created
-Payload: { "notificationId": 999, "userId": 456, "type": "issue_assigned", "message": "..." }
-Назначение: Может быть использованоSignalR сервисом для real-time push-уведомления.
+Итоговая таблица взаимодействия (REST, фактическая)
+board-service	user-service	REST	GET /api/internal/users/{userId}	Профили участников (Feign).
+board-service	user-service	REST	POST /api/internal/users/batch	Пакет профилей (Feign).
+issue-service	board-service	REST	GET /api/internal/projects/{projectId}	Валидация проекта.
+issue-service	board-service	REST	GET /api/internal/permissions	Резолв прав задачи.
+issue-service	board-service	REST	GET /api/internal/projects/{projectId}/members/{userId}	Проверка членства.
+issue-service	user-service	REST	GET /api/internal/users/{userId}	Валидация создателя/исполнителя.
+issue-service	user-service	REST	POST /api/internal/users/batch	Профили упомянутых в задаче.
+sprints-service	board-service	REST	GET /api/internal/projects/{projectId}	Валидация проекта спринта.
+sprints-service	board-service	REST	GET /api/internal/permissions	Резолв прав спринта.
+sprints-service	issue-service	REST	GET /api/internal/issues/{issueId}	Валидация задачи.
+sprints-service	issue-service	REST	GET /api/internal/issues?projectId=	Задачи проекта.
+sprints-service	issue-service	REST	POST /api/internal/issues/startsprint	Старт спринта.
+sprints-service	issue-service	REST	GET /api/internal/issues/batch	Пакет задач по id.
+dashboard-service	board-service	REST	GET /api/internal/projects/{projectId}	Проверка проекта дашборда.
+dashboard-service	board-service	REST	GET /api/internal/permissions	Резолв прав дашборда/логов.
 
-Подписанные события (RabbitMQ)
-Слушает: project.member.added, issue.assigned, issue.commented, sprint.started и т.д.
-Действие: При получении события проверяет userpreferences для целевого пользователя и, если уведомление разрешено, создает его в БД.
+Маршрутизация событий RabbitMQ (фактическая)
+Издатель	Exchange	Routing key	Очередь	Потребитель
+board-service	activity.exchange	topic	project.created/#	activity.all	dashboard-service
+board-service	activity.exchange	topic	project.updated/#	activity.all	dashboard-service
+board-service	activity.exchange	topic	project.deleted/#	activity.all	dashboard-service
+board-service	activity.exchange	topic	project.member.added/#	activity.all	dashboard-service
+board-service	activity.exchange	topic	project.member.removed/#	activity.all	dashboard-service
+issue-service	activity.exchange	topic	issue.created/#	activity.all	dashboard-service
+issue-service	activity.exchange	topic	issue.updated/#	activity.all	dashboard-service
+issue-service	activity.exchange	topic	issue.deleted/#	activity.all	dashboard-service
+issue-service	activity.exchange	topic	issue.status.changed/#	activity.all	dashboard-service
+issue-service	activity.exchange	topic	issue.assignee.added/#	activity.all	dashboard-service
+issue-service	activity.exchange	topic	issue.assignee.removed/#	activity.all	dashboard-service
+issue-service	activity.exchange	topic	issue.comment.created/#	activity.all	dashboard-service
+issue-service	activity.exchange	topic	issue.comment.updated/#	activity.all	dashboard-service
+issue-service	activity.exchange	topic	issue.comment.deleted/#	activity.all	dashboard-service
+issue-service	activity.exchange	topic	attachment.created (BUG: project.created)	activity.all	dashboard-service
+issue-service	activity.exchange	topic	attachment.deleted (BUG: project.deleted)	activity.all	dashboard-service
 
-Итоговая таблица взаимодействия
-project-service	user-service	    REST	GET /api/internal/users/{id}	      Валидация пользователя при добавлении в проект.
-project-service	user-service	    REST	GET /api/internal/users?ids=...	      Получение данных о нескольких участниках.
-issue-service	project-service	    REST	GET /api/internal/projects/{id}	      Валидация проекта и прав при изменении задачи.
-issue-service	user-service	    REST	GET /api/internal/users/{id}	      Валидация создателя/исполнителя задачи.
-issue-service	user-service	    REST	GET /api/internal/users?ids=	      Получение данных, упомянутых в задаче.
-sprint-service	project-service	    REST	GET /api/internal/projects/{id}	      Валидация проекта при создании спринта.
-sprint-service	issue-service	    REST	GET /api/internal/issues/{id}	      Валидация задачи при добавлении в спринт.
-dashboard-service	user-service	REST	GET /api/internal/users?ids=...	      Разрешение ID пользователей в логах активности.
-dashboard-service	project-service	REST	GET /api/internal/projects/{id}	      Получение данных о проекте для дашборда.
-notifications-service	user-serviceREST	GET /api/internal/users?ids=...	      Валидация участников уведомления.
-
-Отправляющий сервис
-Сущность (EntityType)
-Действие (ActionType)
-Routing Key (Ключ маршрутизации)
-Обрабатывающая очередь
-project-service	Project	Created	activity.Project.Created	dashboard.activity.queue
-Project	Updated	activity.Project.Updated	dashboard.activity.queue
-Project	Deleted	activity.Project.Deleted	dashboard.activity.queue
-ProjectMember	Added	activity.ProjectMember.Added	dashboard.activity.queue
-ProjectMember	Removed	activity.ProjectMember.Removed	dashboard.activity.queue
-issue-service	Issue	Created	activity.Issue.Created	dashboard.activity.queue
-Issue	Deleted	activity.Issue.Deleted	dashboard.activity.queue
-Issue	TitleChanged	activity.Issue.TitleChanged	dashboard.activity.queue
-Issue	DescriptionChanged	activity.Issue.DescriptionChanged	dashboard.activity.queue
-Issue	StatusChanged	activity.Issue.StatusChanged	dashboard.activity.queue
-Issue	TypeChanged	activity.Issue.TypeChanged	dashboard.activity.queue
-Issue	PriorityChanged	activity.Issue.PriorityChanged	dashboard.activity.queue
-IssueAssignee	Added	activity.IssueAssignee.Added	dashboard.activity.queue
-IssueAssignee	Removed	activity.IssueAssignee.Removed	dashboard.activity.queue
-IssueComment	Created	activity.IssueComment.Created	dashboard.activity.queue
-IssueComment	Updated	activity.IssueComment.Updated	dashboard.activity.queue
-IssueComment	Deleted	activity.IssueComment.Deleted	dashboard.activity.queue
-Attachment	Created	activity.Attachment.Created	dashboard.activity.queue
-Attachment	Deleted	activity.Attachment.Deleted	dashboard.activity.queue
-sprints-service	Sprint	Created	activity.Sprint.Created	dashboard.activity.queue
-Sprint	Started	activity.Sprint.Started	dashboard.activity.queue
-Sprint	Completed	activity.Sprint.Completed	dashboard.activity.queue
-SprintIssue	Added	activity.SprintIssue.Added	dashboard.activity.queue
-SprintIssue	Removed	activity.SprintIssue.Removed	dashboard.activity.queue
+Примечание: dashboard-service подписан на exchange activity.exchange с routing key "#", то есть получает все события независимо от конкретного ключа; mapping событие->consumer выполняется по типу сообщения (MassTransit), а не по routing key.
